@@ -1,0 +1,13 @@
+# this file contains lines consisting of:
+# <character><space><arguments>
+# character is one of:
+#    #:  comment
+#    p: set path to argument if there's none of these, there will be
+#       no path, so you'll need to specify absolute pathnames.
+#    g: add a global pattern.  commands are let through if they match
+#       the arguments of any of these.
+# this specifies the path and possible commands available for @exec.
+p ../rbin
+#g echo *
+#g archie *
+#g wais *

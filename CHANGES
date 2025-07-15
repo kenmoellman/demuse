@@ -1,0 +1,330 @@
+04/03/91 April 3 distribution - koosh takes over for bard.
+04/19/91 - Added @alias... player aliases
+04/19/91 - Added @tel <thing/player>=home.. sends'm home with a nifty message.
+04/20/91 - fixed do_nuke to 1) work for non-#1's.. 2) boot'm off if they're logged on more than once
+04/20/91 -- fixed boot_off to return 1 if the player's still connected so we can do a while(boot_off()); to boot the player off all the times that he/she's on.
+04/20/91 - added 'X_ok" flag to set on things to enable them to be sacrificed.. this way we can have temples and they can be safe.... XX change the messages to be more suitable for the futuristic theme.
+04/20/91 - added erk's enter_ok mods... objects can't be picked up by people who aren't their owners if they're enter_ok... the lock applys to whether people can enter them or not... allong with some A_EFAIL, A_OEFAIL, A_AEFAIL attributes for failing.
+04/20/91 - got rid of EXIT_CLONE and THING_ROBOT -- they don't do anything at all.
+04/20/91 - do_name tells people in the room when something that hears changes its name.
+04/20/91 - fixed do_edit to disallow editing of admin-only props by mortals! gack!
+04/20/91 - MORTAL flag on #1 now works right! yay! ok, only sorta.
+04/20/91 - fixed announce_[dis]connect to set the 'speaker' to the player so %n will work right.
+04/20/91 - added a Last login: for when people log on... 
+04/20/91 - DARK flag on puppets = debug -- commands are echoed to owner.
+04/20/91 - @search class=<guest,trial,...,director> to find out who's each.
+04/20/91 - +mail -- server mail! yahoo!
+04/21/91 - changed @chown to allow '@chown obj' and '@chown obj=me' to chown to the player. also administrators and higher can @chown things they don't have in their inventory.
+04/21/91 - fixed the @va me=[s(get(me/va))];say get(me/va) bug... igg.
+04/21/91 - fixed @chown to work long distance for wizzes & to have 'me' or '' as a second argument mean @chown to the executer.
+04/22/91 - fixed @search class= to throw junior officials in with officials and directors in with administrators if the searcher is under an administrator.
+04/22/91 - fixed @whereis to not notify the person who's being [not] located if they're haven.
+04/22/91 - added @dbtop to show the top players in credits & in how many objects are in the contents list.
+04/22/91 - Released code -- koosh
+04/24/91 - Changed @pemit to only echo .. saw .. for players that don't have the QUIET flag set.
+04/27/91 - fixed @hide to not set the stupid hidden flag on objects.
+04/28/91 - fixed match_controlled to match anything for admins and up
+04/28/91 - fixed the functions to work for honwiz's too.
+04/28/91 - fixed controls() to let directors control everything exept the #1.
+04/28/91 - added fun_class(thing) to get someone's class.
+04/29/91 - fixed do_class to log @class's! *GACK*!
+04/30/91 - now only players can set INHERIT bits... security stuff.
+05/02/91 - fixed do_slay to check to see if the player controls the thing.. and took out all the junk about checking the room they're in.
+05/02/91 - now Officials and higher can see numbers. all the time.
+05/03/91 - I don't see that here changed to I don't see <whatever was tried to be found> here.
+05/03/91 - Added mods to work w/HPUX! yay!
+05/04/91 - fixed +mail to limit number of messages you send to the same player to MAX_MAIL(5 probably).
+05/04/91 - now your NO_WALLS flag goes away when you log in.
+05/04/91 - added warnings if the db doesn't dump correctly.
+05/04/91 - added IT attribute -- last thing matched. you can match it again.
+05/05/91 - fixed unparse_object to show the numbers on see_ok objects
+05/05/91 - added A_LEAVE, A_OLEAVE, and A_ALEAVE... and fixed'm to work even if the room is dark.
+05/05/91 - added ... loses its ears and becomes deaf in addition to the grows ears and can now hear message.
+05/06/91 - added com-net.
+05/08/91 - added MAIL_KEY and MAIL_MESS dumping...
+05/08/91 - released code. -koosh
+05/11/91 - fixed externs.h up Real Cool
+05/11/91 - added A_QUOTA.. total quota. so we don't have to dbsearch. but we do dbsearch when we get on though.. igg.
+05/11/91 - fixed @dbtop a bit..
+05/15/91 - think we got sysv stable... major change, new base_version
+05/20/91 - added new improved @ps...
+05/20/91 - moved pennies to attribute
+05/20/91 - only honwizzes and up can change things they don't own.. don't let officials anymore!
+05/21/91 - New Improved @ps -- shows which are @wait'd commands and which are immidiate, and how long till the @wait'd commands execute
+05/22/91 - no longer can you connect to a player using an encrypted password
+05/22/91 - added @giveto -- credits give w/o a message at request from ender
+05/22/91 - added LIGHT flag on objects to be seen in dark room at request from ender
+05/22/91 - changed Honorary Wizard class to Builder.
+06/01/91 - fixed the \n in do_search
+06/08/91 - added WHO for objects.. costs 50 credits.
+06/08/91 - Added checks to make sure people don't impersonate other players.
+06/08/91 - moved log files to logs/ directory. *make* *sure* *this* *is* *mkdir*'d or the game will crash.
+06/12/91 - added exits & rooms can do things. fun!
+06/15/91 - HUH logs can be automagically mailed out with -DLOG_FAILED_COMMANDS
+06/15/91 - added lookup_players so you can do 'page player1 player2 player3 player4=message'
+06/15/91 - fixed stupid bug in which players set builder are sent home when the object they're in teleports.
+06/15/91 - added page player1 player2 ...=message
+06/16/91 - WHO now displays IP numbers if it can't find a name.
+06/16/91 - added RWHO! fun! (if USE_RWHO is defined)
+06/17/91 - Fixed ODROPS. cewl.
+08/01/91 - changed do_clone to use can_pay_fees (not tested)
+08/07/91 - finished adding new powers. try @powers and @empower.
+08/11/91 - added LIGHT flag for exits too
+08/11/91 - fixed the hidden/rwho bug..
+08/12/91 - huhs are not logged when it triggers an object action.
+08/12/91 - can't recycle #0, #1, GOD, or PLAYER_START.
+08/14/91 - weird bug when #0 has a listen, it hears strange stuff. #-1's next pointer = #0. notify_except(#-1,...
+09/05/91 - used gcc to clean up a *LOT* of unused variables. sheesh.
+09/21/91 - fixed wd to spawn a new process and get rid of the ppid and control terminal
+10/06/91 - new concentrator stuff is done!
+10/06/91 - added @reboot; @shutdown no longer lets wd restart the muse.
+10/06/91 - added +ls, +mkdir. useful things. also changed the files/p directory ot use dbrefs instead of names. more robust.
+10/12/91 - added hpux compatibility again.
+
+------------------
+MUSE 1.8a4 changes
+------------------
+moved lots of stuff from config.h into config.c
+renamed slave to idiot
+outgoing and incoming connections, newpasswording non-players
+renamed god to root
+spiffy perm denied messages
+@cboot
+who cp
+@swap
+cleaned up lots of defines
+fixed lots of security bugs, and others.
+@dbtop mail
+af_builtin, ex me/flags etc.
+no more inh attrs thru examine. ex me=all shows them all.
+af_dbref
+pow_backstage, pow_host gonner
+@whereis non-players
+last -> lastconn,lastdisc
+spaces in player names
+guest descriptions use config.c
+cleaned up guest reuse code (still needs work)
+nuke -> toast
+destroy -> recycle
+removed _obj/attr
+alias in parens after name in pages 
+@reboot w/o disconnecting
+@upfront
+warn on com channels
+warn_security
+haven no +mail notiufy
+lockout
+log_root
+no talent, doing bigger
+average idle and onfor
+log channels renamed
+made various messages more interesting
+added port function
+cleaned up parser to not munge as bad. (still needs work)
+escape, secure functions (still needs work)
+puppet flag on players disallows spoofing
+@as, @at
+@su
+@noop
+@ljoin
+@info
+-------------------------------------------------------------------------------
+ MUSE '97
+
+ Added ANSI.
+ Revamped +mail -- almost finished.
+ Combat started, but not yet distributed.
+ Fixed lots of wizbugs.
+ +ban/+unban users from Com channels.
+ Added Universe type. Will be used for Combat, possibly power structuring.
+ idiot back to slave.
+ toast back to nuke.
+ nuke, boot require reasons. prevent pow_abuse.
+ log channel reorganization
+
+-------------------------------------------------------------------------------
+dmMUSE TinyMUSE variant.
+
+dm98 branch from tinymuse 97 w/ mods from flipsidemuse ~1998/05/01
+
++motd on the who list 
+@cemit -> @chemit - for channel emits 
+@cemit emits to a concid. 
+'w' works for 'who' and 'whisper'. 
+Added *log_force channel to watch for people doing bad things with force. 
+db loading is MUCH faster. 
+the amount of 'bytes' tracked by MUSE now also includes +mail. 
++channel channelname will make channelname your default channel. 
+@info pid shows process information. 
+@doing is parsed on the who list.  -- I'm not sure about this.
+Added WHEN flag which timestamps all text output. 
+Added player Freeze to disable user ability to move. 
+Added @moves to limit # of moves in universe/game. 
+Updated help files.
+
+
+dm 98b1 changes:
+
+Bug fixes! Lots of them!  Security and little fixes
+@paste system replaced with system from MAZE.  @cpaste kept for compat.
+@gpaste removed.
+config/config.h has been used to make MUSE more versatile. see that file.
+config/config.c might have a few new options.
+reorganized hdrs/externs.h so it's a little more organized.
+fixed bug with compressed databases. -- still not perfect. I wouldn't use it.
+added SHRINK_DB option to erase +mail and @swap poofed objects to end of db
+added RLPage and LRLpage
++mail bugs fixed!
+updated help files. joy ren!
+Changed the way +motd works.
+Added Multihoming support - same machine, same port, different IP address.
+
+dm98b2 changes:
+
+made rlpage log to it's own channel
+added suspect flag and suspect logging
+fixed lrlpage attr.
+can't (rl)page someone you're l(rl)page-ing
+cant +mail someone who's lpaged you.
+cant +mail someone who can't page you (lpage)
++mail notification when you unidle and have new/unread mail
+Added new idle system (manual idling, changed auto idle) added PLAYER_IDLE flag
+Re-enabled use of @idletime attribute.
+Removed PLAYER_NEWBIE flag. it was pretty useless.
+Modified do_help to look a bit better.
+Fixed do_to() problems.
+Fixed @doing buffer overrun problem.
+
+dm2kb1 changes:
+
+fixed possible +mail atoi() bugs.
+stack code (from MUzine website - thank you Saruk!) added.  glurp removed.
+fixed Idle system - replaced with one I (wm) wrote for MAZE
+Cleaned up code - Removed HTTP (un)functionality completely.
+Removed extraneous crap from externs.h
+Removed remnants of old @paste system.
+Option in config.h to allow guests to survive reboots
+Moved ident/ directory into io/ident.c, and changes to accomdate this move.
+Made reboot, Shutdown, lockout messgaes more MU*-personal.
+Added ATime attribute from MAZE
+Added Guest/unconnected idlebooting from MAZE - modified to work a little differently.
+Other miscellaneous things from MAZE.
+More @info stuff, and code changes to support new @info stuff.
+More @config stuff.
+More #ifdef's in config.h
+little bugfixes and quirkfizes here and there (I forget them all, sorry :))
+removed uses of sizeof() where it was abused.
+repaired bug in spoof protection that caused crashes. (string_compare)
+dbrefs are now type long - praying for the IA64 to come soon so pows can be a long long.
+tprintf function replaced with new function which uses modern function and new memory system.
+cleaning up code, removing old crap from code that's no longer used.
+added # in front of users' name on who list when they are > citizen, added @ in front of users' name on who list when they are wizard
+reduced # of static char uses by using stack code instead - reduced memory use.
+Added size accouting to stack code.
+Added turning users' line on the who list colors when they're idle.
+Changed stuff in dump_users() to use stack code, partially fixed memleak.
+Added #ifdef for sorting who list by idle time or not.
+Added #ifdef for the color idle who list thing.
+Added #ifdef for Host Lookups (for speed on non-resolvable servers)
+Added memory accounting to the text_block malloc'd structure.
+Split bsd.c into sock.c, signal.c, who.c, bsd.c for easier reading and modification
+Cleaning out obsolete code from the system.
+Debugged rlpage and added more features (see help)
+Added "PUPPET" flag spoof protection on com channels.
+Removed old spoof protections and POW_SPOOF
+Objects can talk on channels - will show owner of object speaking when PUPPET flag set on recipient.
+Removed protections on @chemit - anyone can now.
+Added @aidle and @aunidle attrs so that players can execute commands when they idle/unidle automatically
+Added @blacklist attributes.
+Added @ATport, @AFTport, @OTport for telelport triggered stuff.
+Removed last of old spoof protection.
+New function - dbref real_owner(dbref) - Fixed a Dagger-bug which allowed him to take over MUSEs :)
+Removed much of old command queue system, replaced with a priority-based queuing system.
+New function - did_it_now - works like did_it, but puts commands at top of queue.  Done for @aunidle and @adefeat.
+Fixed memory leak in the command queue dealing with @haltall.
+New function - check_for_connect_idlers() - checks to see if a player has unidled by reconnecting and deals with accordingly.
+Fixed bug with read command (undocumented alias for look).
+Consolodated code between comsystem and the rest of the output in MUSE so that there was only one place to modify output effects.
+@prefix and @suffix added.
+changed time-related functions around.
+Preparing to eliminate the WHEN flag (next release it will go away)
+Consolidated some duplicated code in the idle system for ease of upkeep/modification.
+Fixed the stupid parsing problem that's been plaguing us for quite some time.
+Made @paste strip leading spaces to save space.  Added @pastecode to prevent spaces from being stripped on demand.
+WHEN flag is automatically removed from anyone who has it and logs in. Will stay this way for a while till we're sure everyone's not using it.
+Users are made to @pasteabort if in @paste and go idle.
+rlpage now has it's own queue and works MUCH better. :)
+you actually read all of these things? wow. thanks :)
+Fixed bug with @su when multiple people are logged into the same account.
+Fixed bug with guest alias prefixes being allowed to be used by players.
+Moving Credits, Quota, Moves attributes to LONG instead of INT
+Fixed more references to the database to long/dbref type, instead of INT
+Removed MNEMOSYME and replaced with MEMWATCH - MNEMO wasn't working right with modern C compilers.
+Changed more atoi to atol references throughout the game to fix things.
+Changed all references of bzero to memset
+Changed all references of bcopy to memcpy
+Quantum Fire made the code work under glibc2. Yay Quantum Fire, you rock!
+Fixed bug in prioritized command queues.
+@npaste works for @pastecode as MUSE style would dictate.
+Made wait queue part of the normal command queue and therefore it works right (fixed softcode crashing MUSE problem)
+Added +board system (created custom rather than copy other people's) in db/board.c
+Fixed VERY nasty +mail bug (would let you send +mail to and from anyone you wanted. yick!)
+Made create_guest independant of create_player, and made new #define GUEST_PASSWORD configurable in config.h .. Also guests have freeze flag by default.
+Changed command queue to allow as much as memory will allow from directors. Took idea and a little code from fantasymuse source.
+
+dk2kb2 changes:
+
+fixed bug in login screen which caused an overflow and thus crashed the muse.
+Fixed bug in new command queue. oops.
+Server address can now be cached for people using Multihoming so that connection go a ton faster. Read the notes on this in config.h
+Fixed problem with FNDELAY not being defined in RedHat 6.2 (oh joy. another redhat problem.)
+Increased function depth/recursion limit. yay.
+Fixed hostname and concid from being shown on who list to anyone but directors.
+Fixed @paste so it takes into account the BLACKLIST atribute 
+Made it so that people with an LHide or Blacklist attr, when paging someone, are known to that person to be hidden from someone.
+Fixed bug where queue wouldn't show last command queued.
+New com system. woo.
+@paste works with puppet - made @paste use less code to accomplish same tasks while I was at it.
+@name can now support color changes as well. This should have been done ages ago.
+Removed connections channel. made new pub_io channel to replace it.  made log_io a * channel again.
+Users don't show up on pub_io for users they're hidden from.
+Colorized Who List. Added Active Users information per request
+Moved loginstats from maze.c to lstats.c, and made work. Made less spammy that MAZE version.
+Moved all time functions from various sources into time.c
+Moved @reboot to @reload to more accurately describe what's happening.
+Broadcast, announce, and notify_all made to work through notify_all to eliminate duplicated code.
+notify_all - based on MAZE function - heavily modified, moved into game.c by notify() function
+log_rlpage eliminated.  goes to log_io again, now that log_io is director-only
+fixed bug in rlpage that would never set the variable "last_send" to anything but 0. oops. :)
+fixed bug in blacklist - could see person was on the channel with +com <channel>=who
+new atr_fgets in db.c - loads database faster. yay.
+lowered number of retries in ident.c to 2 from 5. makes reboots and connects faster.
+
+dm2kb3 changes:
++mail write / @paste mail now work
+250 credits given at the beginning of each day to people who are online at that time.
+credits are given at login based upon last logoff, not last login. also check to see if currently connected.
+Added support for  turning channels on/off thing.
+Added PIDs to queued commands. Added more functionality to @halt. 
+Fixed queue bug in do_haltall. 
+@nice attribute. see helpfile.
+@blacklisted people won't see MOTDs from blacklistees.
+"Fixed" bug with @password and blanked out password fields.
+Able to disallow unidling with plain carriage return. (config.h CR_UNIDLE)
+Cannot have "idle" in your aunidle attribute. prevents @aunidle me=idle.
+Fixed bug in idle command when using = in the idle message.
+Header on do_help now shows subject looked up, and not what was typed (in case of confusion)
+Fixed possible bug in parse_attrib() in set.c
+Fixed some possible buffer overruns in code I'd never even seen before :)
+Cleaned up some more memory stuff - more memory efficient.
+Can use OLEAVE and OENTER to set custom leave and joining messages on channels.
+Took ident.c from tinyMAZE 2 (which they took from TinyMARE) and sped up ident lookups.  Connections to game MUCH faster now. possibly pthread this later.
+Fixed @selfboot on UZO.  Was problem because new queue terminates all commands caused by a player if they log off. Ooops.
+check_lockout now checks the first character in a line, and if it's # it ignores the line.  Much better than trying to resolve hosts with a # at the front. :)
+getpeername() is only called once now, and info is passed get_ident rather than calling it twice.
+moved outgoing stuff to sock.c from bsd.c
+moved ident stuff to sock.c from ident.c
+fixed crashbug in mid() - thanks to itsme for the quick code fix
+renamed exec() to museexec()
+
+-------------------------------------------------------------------------------
