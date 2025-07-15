@@ -1,0 +1,12 @@
+topdir="../.."
+lib="libprog.a"
+srcs="ctrl.c hash.c eval.c"
+objs="ctrl.o hash.o eval.o"
+gperfs="funcs"
+extrarules="
+eval.o: funcs.c
+"
+#extrarules="
+#eval.c: eval.c.gp
+#	gperf -t -p -r -j 0 -k '*' < eval.c.gp > eval.c || (rm eval.c;false)
+#"

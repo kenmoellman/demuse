@@ -1,0 +1,744 @@
+ 
+#include "config.h"
+#include "externs.h"
+#ifdef MEMWATCH
+#include "memwatch.h"
+#endif
+ 
+#include <sys/ioctl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <netdb.h>
+
+#include "sock.h"
+
+
+/* int check_lockout P((struct descriptor_data *, char *, char *)); */
+struct hostdata *my_gethostbyaddr(char *, int, int);
+struct hostdata *my_gethostbyname(char *);
+struct hostdata *my_gethostinfo(char *, int, int, int);
+
+struct hostdata
+{
+  char *h_name;  /* hostent h_name */
+  /* char **h_addr_list; * hostent h_addr_list */
+  long addr;  /* long for of hostent h_addr_list[0] */
+  int h_length;  /* hostent h_length */
+  time_t expire;  /* expiration date. */
+  struct hostdata *prev;
+  struct hostdata *next;
+}; 
+
+static struct hostdata *hostlist;
+
+int reserved;
+int sock;
+
+void close_sockets()
+{
+  struct descriptor_data *d, *dnext;
+  FILE *x = NULL;
+
+  if (exit_status == 1)
+  {
+    unlink("logs/socket_table");
+    x = fopen("logs/socket_table", "w");
+    fprintf(x, "%ld\n", muse_up_time);
+    fprintf(x, "%d\n", sock);
+    fcntl(sock, F_SETFD, 0);
+  }
+
+/*shutdown_flag = 1;          * just in case. so announce_disconnect *
+                              * doesn't reset the CONNECT flags.     */
+
+  for (d = descriptor_list; d; d = dnext)
+  {
+    dnext = d->next;
+    if (!(d->cstatus & C_REMOTE))
+    {
+      if (exit_status == 1)
+	write(d->descriptor, tprintf("%s %s", muse_name, REBOOT_MESSAGE), (strlen(REBOOT_MESSAGE) + strlen(muse_name) + 1));
+      else
+	write(d->descriptor, tprintf("%s %s", muse_name, SHUTDOWN_MESSAGE), (strlen(SHUTDOWN_MESSAGE) + strlen(muse_name) + 1));
+      process_output(d);
+#ifndef BOOT_GUEST
+      if (x && d->player >= 0 && d->state == CONNECTED )
+#else
+      if (x && d->player >= 0 && d->state == CONNECTED && !Guest(d->player))
+#endif
+      {
+	fprintf(x, "%010d %010ld %010ld %010ld\n", d->descriptor, d->connected_at, d->last_time, d->player);
+	fcntl(d->descriptor, F_SETFD, 0);
+      }
+      else
+	shutdownsock(d);
+    }
+  }
+  if (x)
+    fclose(x);
+}
+
+void open_sockets()
+{
+  struct descriptor_data *d, *oldd, *nextd;
+  FILE *x = NULL;
+  char buf[1024];
+
+  if (!(x = fopen("logs/socket_table", "r")))
+    return;
+  unlink("logs/socket_table");	/* so we don't try to use it again. */
+  fgets(buf, 1024, x);
+  muse_up_time = atol(buf);
+  fgets(buf, 1024, x);
+  sock = atoi(buf);
+  fcntl(sock, F_SETFD, 1);
+  close(sock);
+  for (sock = 0; sock < 1000; sock++)
+    fcntl(sock, F_SETFD, 1);
+  while (fgets(buf, 1024, x))
+  {
+    int desc = atoi(buf);
+    struct sockaddr_in in;
+    extern char *inet_ntoa();
+    int namelen = sizeof(in);
+
+    fcntl(desc, F_SETFD, 1);
+    getpeername(desc, (struct sockaddr *)&in, &namelen);
+    {
+      char buff[100];
+#ifdef HOST_LOOKUPS
+/* when the game comes back online after a reboot, these connections are reopened. */
+      struct hostdata *hent;
+
+      hent = my_gethostbyaddr((char *)&(in.sin_addr.s_addr),
+			   sizeof(in.sin_addr.s_addr), AF_INET);
+      if (hent)
+	strcpy(buff, hent->h_name);
+      else
+      {
+#endif /* HOST_LOOKUPS */
+	extern char *inet_ntoa();
+
+	strcpy(buff, inet_ntoa(in.sin_addr));
+#ifdef HOST_LOOKUPS
+      } 
+#endif
+      d = initializesock(desc, &in, buff, RELOADCONNECT);
+    }
+    d->connected_at = atol(buf + 11);
+    d->last_time = atol(buf + 22);
+    d->player = atol(buf + 33);
+  }
+  fclose(x);
+  oldd = descriptor_list;
+  descriptor_list = NULL;
+  for (d = oldd; d; d = nextd)
+  {
+    nextd = d->next;
+    d->next = descriptor_list;
+    descriptor_list = d;
+  }
+  oldd = NULL;
+  for (d = descriptor_list; d; d = d->next)
+  {
+    if (oldd == NULL)
+      d->prev = &descriptor_list;
+    else
+      d->prev = &oldd->next;
+    oldd = d;
+  }
+}
+
+int make_socket(port)
+int port;
+{ 
+  int s;
+  struct sockaddr_in server;
+  int opt;
+#ifdef MULTIHOME
+  unsigned long int inaddr;
+#endif
+  
+  s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s < 0)
+  {
+    perror(tprintf("creating stream socket on port %d", port));
+#ifndef RESOCK
+    exit_status = 1;            /* try again. */
+    shutdown_flag = 1;
+#endif
+    return -1;
+  }
+  opt = 1;
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
+                 (char *)&opt, sizeof(opt)) < 0)
+  {
+    perror("setsockopt");
+#ifndef RESOCK
+    shutdown_flag = 1;
+    exit_status = 1;
+#endif
+    close(s);
+    return -1;
+  }
+  
+  server.sin_family = AF_INET;
+
+#ifdef MULTIHOME
+  inaddr = inet_addr(HOSTNAME); /* Try out #.#.#.# address format first */
+  if (inaddr != INADDR_NONE)
+  { 
+    memcpy(&server.sin_addr, &inaddr, sizeof(inaddr));
+  }
+  else
+  {
+    struct hostdata *hent_server;
+    hent_server = my_gethostbyname(HOSTNAME);     
+    if (hent_server == NULL)
+      return -1;
+  
+    memcpy(&server.sin_addr, &hent_server->addr, hent_server->h_length);
+  }
+  server.sin_port = htons(port);
+  if (bind(s, (struct sockaddr *)&server, sizeof(server)) == -1)
+  { 
+    perror("binding stream socket");
+    close(s);
+#ifndef RESOCK
+    shutdown_flag = 1;
+    exit_status = 1;
+#endif /* RESOCK */
+    return -1;
+  }
+#else /* if not MULTIHOME */
+  
+  server.sin_addr.s_addr = INADDR_ANY;
+  server.sin_port = htons(port);
+  
+  if (bind(s, (struct sockaddr *)&server, sizeof(server)) == -1)
+  { 
+    perror("binding stream socket");
+    close(s);
+#ifndef RESOCK
+    shutdown_flag = 1;
+    exit_status = 1;
+#endif /* RESOCK */
+    return -1;
+  }
+#endif /* MULTIHOME */
+  
+  listen(s, 5);
+  return s;
+}
+
+
+struct descriptor_data *initializesock(s, a, addr, state)
+int s;
+struct sockaddr_in *a;
+char *addr;
+enum descriptor_state state;
+{ 
+  struct descriptor_data *d;
+  time_t tt;
+  char *ct;
+
+  /* fprintf(stderr,"3\n");fflush(stderr); */
+  ndescriptors++;
+  MALLOC(d, struct descriptor_data, 1);
+
+  d->snag_input = 0;
+  d->descriptor = s;
+  d->concid = make_concid();
+  d->cstatus = 0;
+  d->parent = 0;
+  d->state = state;
+  make_nonblocking(s);
+  d->output_prefix = 0;
+  d->output_suffix = 0;
+  d->output_size = 0;
+  d->output.head = 0;
+  d->output.tail = &d->output.head;
+  d->input.head = 0;
+  d->input.tail = &d->input.head;
+  d->raw_input = 0;
+  d->raw_input_at = 0;
+  d->quota = command_burst_size;
+  d->last_time = now;
+  strncpy(d->addr, addr, 50);
+  d->address = *a;              /* added 5/3/90 SCG */
+  if (descriptor_list)
+    descriptor_list->prev = &d->next;
+  d->next = descriptor_list;
+  d->prev = &descriptor_list;
+  descriptor_list = d;
+  get_ident(d->user, s, 3, *a);
+  
+  tt = now;
+  ct = ctime(&tt);
+  if (ct && *ct)
+    ct[strlen(ct) - 1] = '\0';
+  
+  log_io(tprintf("|G+USER CONNECT|: concid: %ld host %s@%s time: %s",
+                 d->concid, d->user, addr, ct));
+   
+  if (state == WAITCONNECT)
+  { 
+    if (check_lockout(d, welcome_lockout_file, welcome_msg_file))
+    {
+      process_output(d);
+      shutdownsock(d);
+    }
+  }
+ 
+  if (nologins)
+  {
+    log_io(tprintf("Refused connection on concid %ld due to @nologins.",
+                   d->concid));
+    write(d->descriptor, tprintf("%s %s", muse_name, NOLOGINS_MESSAGE), (strlen(NOLOGINS_MESSAGE) + strlen(muse_name) + 1));
+    process_output(d);
+    shutdownsock(d);
+    return 0;
+  }
+  if (d->descriptor >= maxd)
+    maxd = d->descriptor + 1;
+  return d;
+}
+
+void shutdownsock(d)
+struct descriptor_data *d;
+{ 
+  int count;
+  dbref guest_player;
+  struct descriptor_data *sd;
+  
+  /* if this is a guest player, save his reference # */
+  guest_player = NOTHING;
+  if (d->state == CONNECTED)
+    if (d->player > 0)
+      if (Guest(d->player))
+        guest_player = d->player;
+
+  if (d->state == CONNECTED)
+  {
+    if (d->player > 0)
+    { 
+      time_t tt;
+      char *ct;
+
+      tt = now;
+      ct = ctime(&tt);
+      if (ct && *ct)
+        ct[strlen(ct) - 1] = '\0';
+
+      log_io(tprintf("|R+DISCONNECT| concid %ld player %s at %s",
+                     d->concid, unparse_object_a(d->player, d->player), ct));
+      com_send_as_hidden("pub_io",tprintf("|R+DISCONNECT| %s - %s",
+                     unparse_object_a(d->player, d->player), ct), d->player);
+
+      announce_disconnect(d->player);
+    }
+  }
+  else
+    log_io(tprintf("|R+DISCONNECT| concid %ld never connected",
+                   d->concid));
+  
+  clearstrings(d);
+  if (!(d->cstatus & C_REMOTE))
+  { 
+    shutdown(d->descriptor, 0);
+    close(d->descriptor);
+  }
+  else
+  {
+    register struct descriptor_data *k;
+
+    for (k = descriptor_list; k; k = k->next)
+      if (k->parent == d)
+        k->parent = 0;
+  }
+  freeqs(d);
+  *d->prev = d->next;
+  if (d->next)
+    d->next->prev = d->prev;
+  if (!(d->cstatus & C_REMOTE))
+    ndescriptors--;
+  
+  FREE(d);
+  
+  /* if this is a guest account and the last to disconnect from it, kill it */
+  if (guest_player != NOTHING)
+  {
+    count = 0;
+    for (sd = descriptor_list; sd; sd = sd->next)
+    {
+      if (sd->state == CONNECTED && sd->player == guest_player)
+        ++count;
+    }
+    if (count == 0)
+      destroy_guest(guest_player);
+  }
+}
+
+
+void make_nonblocking(s)
+int s;
+{ 
+/*  if (fcntl(s, F_SETFL, FNDELAY) == -1) */
+  if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+  {
+    perror("make_nonblocking: fcntl");
+    panic("FNDELAY fcntl failed");
+  }
+}
+
+struct descriptor_data *new_connection(sock)
+int sock;
+{ 
+  int newsock;
+  struct sockaddr_in addr;
+  int addr_len;
+  
+  addr_len = sizeof(addr);
+  newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
+  if (newsock < 0)
+  { 
+    if (errno == EALREADY)
+    {                           /* screwy sysv buf. */
+      static int k = 0;
+
+      if (k++ > 50)
+      {
+        log_error("Killing EALREADY, restarting socket.");
+        puts("Killing EALREADY, restarting socket.");
+        close(sock);
+        sock = make_socket(inet_port);
+        k = 0;
+      }
+    }
+    return 0;
+  }
+  else
+  { 
+    char buff[100];
+#ifdef HOST_LOOKUPS
+/* when the game has a new connection, reverse resolve it's host. */
+    struct hostdata *hent;
+
+    log_io(tprintf("sock.c:428 s_addr: %ld | %s ", addr.sin_addr.s_addr, (char *)&addr.sin_addr.s_addr));
+    hent = my_gethostbyaddr((char *)&(addr.sin_addr.s_addr),
+                         sizeof(addr.sin_addr.s_addr), AF_INET);
+    if (hent)
+      strcpy(buff, hent->h_name);
+    else
+    {
+#endif /* HOST_LOOKUPS */
+      extern char *inet_ntoa();
+
+      strcpy(buff, inet_ntoa(addr.sin_addr));
+#ifdef HOST_LOOKUPS
+    } 
+#endif /* HOST_LOOKUPS */
+
+    return initializesock(newsock, &addr, buff, WAITCONNECT);
+  }
+}
+
+void clearstrings(d)
+struct descriptor_data *d;
+{
+  if (d->output_prefix)
+  {
+    FREE(d->output_prefix);
+    d->output_prefix = 0;
+  }
+  if (d->output_suffix)
+  {
+    FREE(d->output_suffix);
+    d->output_suffix = 0;
+  }
+}
+
+void freeqs(d)
+struct descriptor_data *d;
+{
+  struct text_block *cur, *next;
+  
+  cur = d->output.head;
+  while (cur)
+  {
+    next = cur->nxt;
+    free_text_block(cur);
+    cur = next;
+  }
+  d->output.head = 0;
+  d->output.tail = &d->output.head;
+  
+  cur = d->input.head;
+  while (cur)
+  {
+    next = cur->nxt;
+    free_text_block(cur);
+    cur = next;
+  }
+  d->input.head = 0;
+  d->input.tail = &d->input.head;
+  
+  if (d->raw_input)
+    FREE(d->raw_input);
+  d->raw_input = 0;
+  d->raw_input_at = 0;
+}
+
+int check_lockout(d, file, default_msg)
+struct descriptor_data *d;
+char *file;
+char *default_msg;
+{ 
+  FILE *f;
+  char *lock_host, *lock_enable, *msg_file, *ptr;
+  char buf[1024];
+  struct hostdata *hent;
+  
+  close(reserved);
+  
+  f = fopen(file, "r");
+  if (!f)
+  { 
+    queue_string(d, "Error opening lockout file.\n");
+    return 1;
+  }
+  while (fgets(buf, 1024, f))
+  { 
+    if (*buf)
+    {
+      buf[strlen(buf) - 1] = '\0';
+    }
+    else
+      continue;  /* added else continue to skip checking other stuff, if buf is empty. duh.  wm 05/08/2000 */
+    ptr = buf;
+    if (!(*ptr = '#'))
+    {
+      if (!(lock_host = parse_up(&ptr, ' ')))
+        continue;
+      if (!(lock_enable = parse_up(&ptr, ' ')))
+        continue;
+      if (!(msg_file = parse_up(&ptr, ' ')))
+        continue;
+      if (parse_up(&ptr, ' '))
+        continue;
+      hent = my_gethostbyname(lock_host);
+      if (!hent)
+        continue;
+      if (hent->addr == d->address.sin_addr.s_addr)
+      { 
+        /* bingo. */
+        fclose(f);
+        connect_message(d, msg_file, 0);
+        return *lock_enable == 'l' || *lock_enable == 'L';
+      }
+    }
+  }
+  fclose(f);
+  connect_message(d, default_msg, 0);
+  return 0;
+}
+
+#ifdef RESOCK
+void resock()
+{ 
+  log_io("Resocking...");
+  close(sock);
+  sock = make_socket(port);
+  log_io("Resocking done");
+}
+#endif
+
+#ifdef USE_OUTGOING
+static struct descriptor_data *open_outbound(player, host, port)
+dbref player;
+char *host;
+int port;
+{
+  struct descriptor_data *d;
+  int sock;
+  struct sockaddr_in addr;
+  struct hostdata *hent;
+
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0)
+    return 0;
+
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(port);
+  if (!(hent = my_gethostbyname(host)))
+    addr.sin_addr.s_addr = inet_addr(host);
+  else
+    addr.sin_addr.s_addr = hent->addr;
+
+  if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+  {
+    close(sock);
+    return 0;
+  }
+  d = initializesock(sock, &addr, host, CONNECTED);
+  d->player = player;
+  d->last_time = d->connected_at = now;
+  db[d->player].flags |= CONNECT;
+  return d;
+}
+
+void do_outgoing(player, arg1, arg2)
+dbref player;
+char *arg1, *arg2;
+{
+  dbref thing1;
+  char host[1024];
+  int port;
+  struct descriptor_data *d;
+
+  if (!power(player, POW_OUTGOING))
+  {
+    notify(player, perm_denied());
+    return;
+  }
+  if ((thing1 = match_controlled(player, arg1, POW_BOOT)) == NOTHING)
+    return;
+  if (!*atr_get(thing1, A_INCOMING))
+  {
+    notify(player, "You need to set your @incoming attribute.");
+    return;
+  }
+  if (!*arg2 || !strchr(arg2, ' '))
+  {
+    notify(player, "You must specify a port number.");
+    return;
+  }
+  strcpy(host, arg2);
+  *strchr(host, ' ') = '\0';
+  port = atoi(strchr(arg2, ' ') + 1);
+  if (port <= 0)
+  {
+    notify(player, "Bad port.");
+    return;
+  }
+  if ((d = open_outbound(thing1, host, port)))
+  {
+    did_it(player, thing1, NULL, NULL, NULL, NULL, A_ACONN);
+    log_io(tprintf("%s opened outbound connection to %s, concid %d, attached to %s", unparse_object_a(root, player), arg2, d->concid, unparse_object_a(root, thing1)));
+  }
+  else
+    notify(player, tprintf("Problems opening connection. errno %d.", errno));
+}
+#endif
+
+
+/*
+ * for caching gethostbyaddr() calls, since this function is single threaded 
+ * at the os level (yuck) it can make things SLOW when many servers run on 
+ * one machine (bad for creating a MU* hosting service :))  - wm
+ */
+
+
+struct hostdata *my_gethostbyaddr(char *addr, int len, int type)
+{
+  return my_gethostinfo(addr, len, type, 1); 
+}
+
+struct hostdata *my_gethostbyname(char *name)
+{
+  return my_gethostinfo(name, 0, 0, 2);
+}
+
+struct hostdata *my_gethostinfo(char *addr, int len, int type, int which)
+{
+  struct hostdata *hl;
+  struct hostent *hent;
+  struct sockaddr_in in;
+
+  if (which == 1)
+  {
+    memcpy(&in, &addr, len);
+  }
+
+  for (hl = hostlist; hl != NULL; )
+  {
+
+    log_io(tprintf("sock.c:667 hl->addr: %ld   in.sin_addr.s_addr: %ld", hl->addr, &in.sin_addr.s_addr));
+    if (which == 1) 
+    {
+      if (hl->addr == in.sin_addr.s_addr) 
+      {
+        return hl;
+      }
+    }
+    else if ( (which == 2) && (!strcmp(hl->h_name, addr)) )
+    {
+      return hl;
+    }
+    hl = hl->next;
+  }
+
+  if (which == 1)
+  {
+    hent = gethostbyaddr(addr, len, type);
+  }
+  else
+  {
+    hent = gethostbyname(addr);
+  }
+
+  if(!hent)
+  {
+    if (which == 1)
+    {
+      hl = malloc(sizeof(struct hostdata) + 1);
+      hl->h_name = malloc(8);
+      strcpy(hl->h_name, "Unknown");
+      hl->addr = in.sin_addr.s_addr;
+      hl->h_length = 4;
+    }
+    else
+    {
+      log_io("Help. Someone has an unknown IP. This is bad, mmmkay?");
+      return NULL;
+    }
+  }
+  else
+  {
+    hl = malloc(sizeof(struct hostdata) + 1);
+    hl->h_name = malloc(strlen(hent->h_name) + 1);
+    strcpy(hl->h_name, hent->h_name);
+    hl->h_length = hent->h_length;
+    hl->addr = *(long *)hent->h_addr_list[0]; 
+/*    log_io(tprintf("hl->addr: %ld  hent->addr: %ld", hl->addr, hent->h_addr_list[0])); */
+    log_io(tprintf("hl->addr: %ld  hent->h_addr: %ld", hl->addr, *(long*)hent->h_addr_list[0]));
+/* no more.
+    int x;
+    int exitflag = 0;
+
+    for (x = 0; !exitflag; x++)
+    {
+      if ((long *)hent->h_addr_list[x])
+      {
+        *hl->h_addr_list[x] = malloc(sizeof(*hent->h_addr_list[x]) + 1);
+        memcpy(*hl->h_addr_list[x], *hent->h_addr_list[x], sizeof(*hent->h_addr_list[x]));
+        log_io(tprintf("hl->addr: %ld  hent->addr: %ld", hl->h_addr_list[0], hent->h_addr_list[0]));
+      }
+      else
+      {
+        exitflag = 1;
+      }
+    }
+*/
+  }
+  hl->prev = NULL;
+  hl->next = hostlist;
+  if (hostlist)
+  {
+    hostlist->prev = hl;
+  }
+  hostlist = hl;
+
+  return hostlist;
+}
