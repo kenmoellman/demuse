@@ -1,0 +1,8 @@
+cc="gcc"
+cflags="-Wall -g $cflags"
+ar="ar qcv"
+mkdep=
+libs="-lc -lm -lcrypt"
+install="install"
+ranlib="-ranlib"
+# add local mods after this line.

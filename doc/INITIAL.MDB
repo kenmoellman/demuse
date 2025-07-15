@@ -1,0 +1,12 @@
+The initial test database
+-------------------------
+
+The initial test database (run/db/test.mdb) comes with two characters.
+One wizard, 'Wizard', and one GOD character that shouldn't normally be
+used, 'root'. Both have password 'mike'.
+
+This database contains a few rooms, but nothing much. It is mostly
+used for testing out things. If you want to start completely over,
+just @destroy everything.  A minimal database may be provided in a
+future release.
+

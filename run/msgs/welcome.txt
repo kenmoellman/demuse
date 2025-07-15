@@ -1,0 +1,10 @@
+
+Welcome to a new MUSE 
+                                                       
+Standard commands:
+            connect guest -- to connect as a guest
+connect <name> <password> -- to connect as a player
+                    QUIT  -- leave
+
+Type your command now:
+

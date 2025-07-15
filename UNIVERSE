@@ -1,0 +1,10 @@
+
+This file was create by draco to give examples on how to use
+the Universe code.  The Universe code is incomplete at this 
+time.  - wm
+
+
+@class *user=#univ_dbref:class
+@empower *user=#univ_dbref/power:level
+@ucreate univ_name [=univ_owner]
+

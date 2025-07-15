@@ -1,0 +1,21 @@
+Starting your muse
+------------------
+
+go into the run directory, and type '../bin/wd'
+and things will restart. if you want to give
+arguments to wd, they should be as follows:
+
+wd <database load file> <database save file> <general log file> <port number>.
+
+by default, this should probably be
+
+wd db/mdb db/mdb logs/out.log 4201
+or, if you're using DBCOMP,
+wd db/mdb.Z db/mdb.Z logs/out.log 4201
+
+-shkoo
+
+
+I would recommend you compile in the changes for mdb and port, etc, if you're
+going to change them.  I've seen problems (user errors) that are caused by 
+not doing so.  Shop smart, shop S-Mart!    -wm

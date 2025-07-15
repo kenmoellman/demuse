@@ -1,0 +1,28 @@
+Installation instructions
+-------------------------
+
+1) the ./domakefile script is broken.  it hasn't worked in years.
+   I don't know enough about make to make it function properly.
+   I edit the Makefiles. Dangerous? yes.  But keep a backup copy
+   and it's no big deal.  if you need help, ask a Unix/C 
+   programmer or email me.
+
+2) if you're familiar with MUSE and C programming, you may wish
+   to edit config/config.[ch] and change some options around.
+
+3) go to the src directory, and do a 'make install'
+
+4) go into run/msgs and edit the files as you please.  This can 
+   wait until last, but, i would recommend that you edit the files
+   before you make your MUSE publicly known as "online".  The
+   special files, helpindx and newsindx are created by first 
+   editting helptext and newstext, and then executing: 
+   ../../bin/mkindx news ; ../../bin/mkindx help
+
+5) Unless you are upgrading from a previous version of demuse,
+   tinymuse 97, or tinymuse 1.8a4 or earlier, you will need to
+   go to the run/db directory and copy initial.mdb to mdb
+
+6) You're now ready to go on.
+
+

@@ -1,0 +1,361 @@
+/* config.h */
+/* config-dist,v 1.3 1993/02/06 18:00:09 nils Exp */
+
+/* note: some of the options in here may not work/compile correctly.
+ * please try compiling first without changing things like
+ * REGISTRATION and RESTRICTED_BUILDING. */
+
+#ifndef _LOADED_CONFIG_
+#define _LOADED_CONFIG_
+
+/* The following three *NEED* to be defined. do NOT #undef them. */
+#define GOD_PRIV
+#define DESTROY
+#define GENDER
+
+/* should be the email address of someone who looks over crash
+ * logs to try and figure out what the problem is. #undef if
+ * you don't want to enable emailing of crash logs */
+/* #define TECH_EMAIL "nils@chezmoto.ai.mit.edu" */
+#undef TECH_EMAIL
+
+/* define this if you want to be able to use external commands */
+#undef EXEC
+
+#ifdef EXEC
+/* define this to be the name of the file that contains @exec
+ * configuration. */
+#define EXEC_CONFIG "../config/ext_commands"
+
+/* define this as the shell you want to use @exec things with.
+ * this should probably be a restricted shell, as there are ways
+ * to get around the minimal security checking TinyMUSE does.
+ * this should probably be either /bin/rsh5, /bin/rsh, or /bin/sh.
+ * the last one isn't very secure, though on some systems if
+ * you specify EXEC_SHELLAV0 as 'rsh', it will work correctly.
+ * your shell is doing the right thing if it gives an error on
+ * @exec me=/bin/echo hi */
+#define EXEC_SHELL "/bin/rsh5"
+#define EXEC_SHELLAV0 "rsh"
+#endif /* #ifdef EXEC */
+
+/* Name of +com channel to which db-info announcements should
+ * be sent to. */
+#define DBINFO_CHAN "dbinfo"
+
+/* When one player whispers to another, other players won't be notified
+   that they have been whispering. */
+#define QUIET_WHISPER
+
+/* maximum number of aliases each user may have. */
+#define MAX_ALIASES 3
+
+/* Send information to a RWHO server. you need to contact a RWHO server
+ * administrator to do this. */
+#undef USE_RWHO
+/* Retrieve information from a RWHO server */
+#undef USER_RWHO
+
+#if defined(USER_RWHO) && !defined(USER_RWHO)
+#define RWHO_SERVER "139.78.10.3"
+#endif
+
+#ifdef USE_RWHO
+#define RWHO_SERVER "192.5.214.1" /* the RWHO server to send updates to */
+#define RWHO_MUSE_NAME "Unnamed" /* the shortened name of this muse, for
+				 * constructing unique player id's. */
+#define RWHO_PASSWORD "<password>" /* The password to get into the RWHO
+				  * server */
+#define RWHO_INTERVAL 200	/* how long between updating the RWHO
+				 * server with the list of connected
+				 * people. */
+#endif
+
+/* If you wish people to create characters that have the same permissions
+ * as they do, define this */
+#define ROBOT
+
+/* Use the 'compress' utility to compress the db at dump, and uncompress
+ * it at startup. */
+#undef DBCOMP
+
+/* use the mnemosyne malloc debugging package. this is recommended for
+ * server developers. */
+#undef MALLOCDEBUG
+
+#ifdef MALLOCDEBUG
+# define MDEBUG_LIBS -lmnem
+#else
+# define MDEBUG_LIBS
+#endif
+
+/* Use system 5 transport utilities (t_open, t_close, ...) for communication
+ * with the internet. (you might have to fiddle with this some to get it to
+ * work.) */
+#undef SYSV_IO
+
+/* the 'create' command is disabled, and the only way characters can be
+ * created is by using the '@pcreate' command */
+#define WCREAT
+
+/* Players must specify an email address using the create command, as in
+ * create <playname> <password> <email address>. WCREAT must not be defined
+ * for this to work correctly */
+#undef EMAIL_CREATE
+
+/* keep a 'HUH' log, which contains all the failed commands for people who
+ * have the HUHTO attribute set on them.. see the god's guide to tinymuse
+ * for details */
+#define LOG_FAILED_COMMANDS
+
+/* Log the last 1000-2000 commands... useful if you make local mods, and you
+ * want to see where it crashes, and you don't have a debugger. */
+#define LOG_COMMANDS
+
+/* If your machine doesn't have enough virtual memory to make a whole copy
+ * of the netmud process, then define this. be warned that the netmud process
+ * will hang while the database saves. */
+#undef USE_VFORK
+
+/* If you want only selected people to be able to build things, set the
+ * following, and set the people BUILDER. */
+#undef RESTRICTED_BUILDING
+
+/* If you want brackets ([] characters) around the host name in the
+   output of the who command (for 'H' flag only (see documentation)).
+   Personally I think the output is cleaner without 'em, but if you are
+   worried about things breaking that expect brackets, use this. */
+#define BRACKET_HOST
+
+/* Number of objects to allocate initially when the database starts up.
+ * Note that this is only effective in old databases where there is no
+ * database size at the beginning. */
+#define DB_INITIAL_SIZE 1000
+
+/* This should be the name of the local muse */
+#define  MUSE_NAME	"UnnamedMUSE"
+
+/* Miscelanious files */
+#ifdef DBCOMP
+#define  DEF_DB_IN      "db/mdb.Z" /* default startup database */
+#define  DEF_DB_OUT     "db/mdb.Z" /* default dump database */
+#else
+#define  DEF_DB_IN	"db/mdb" /* default startup database */
+#define  DEF_DB_OUT	"db/mdb" /* default dump database */
+#endif
+#define  DEF_LOGFILE	"logs/out.log" /* default muse log file */
+#define  WD_LOGFILE	"logs/wd.log" /* default watchdog log file */
+#define  HELPTEXT       "msgs/helptext" /* help text file */
+#define  HELPINDX       "msgs/helpindx"	/* help index file */
+#define  NEWSTEXT	"msgs/newstext" /* news text file */
+#define  NEWSINDX	"msgs/newsindx" /* news index file */
+#define  MUSE_PID_FILE	"logs/muse_pid" /* file with the active muse pid */
+#define  WD_PID_FILE    "logs/wd_pid" /* file with the active wd pid */
+
+/* room number that players start in, and their home is also linked to here.
+ * this is also the room which is flood-filled to find out which rooms
+ * don't have any entrances into them. */
+#define PLAYER_START ((dbref) 0)
+
+/* The following is the maximum number of guests allowed to be on at once.
+ * If you set this to be zero, no guests will be allowed. */
+#define  NUMBER_GUESTS 30
+
+/* This is the string that is prefixed on to the guest number to compute
+ * the name for the guest */
+#define  GUEST_PREFIX	"Guest"
+
+#ifdef GOD_PRIV
+/* If you have GOD_PRIV defined, the following is the database number of the
+ * god. */
+#define GOD ((dbref) 1)
+#endif /* GOD_PRIV */
+
+/* The following are various amounts of money players need to pay to create
+ * various types of objects */
+#define OBJECT_COST 10		/* cost for creating a thing */
+#define EXIT_COST 1		/* cost for creating an exit */
+#define ROOM_COST 10		/* cost for creating a room */
+#define ROBOT_COST 1000		/* cost for creating a robot */
+
+/* Other costs */
+#define  FIND_COST	10	/* cost to do a @find. */
+#define  SEARCH_COST	10	/* cost to do a @search */
+#define  HIDE_COST	10	/* cost to @hide your name from the WHO list */
+#define  PAGE_COST	1	/* cost to page somebody */
+#define  ANNOUNCE_COST	250	/* cost for people to @announce */
+#define  COM_COST	1	/* cost to use the com channels */
+#define LINK_COST 1		/* cost for linking an exit */
+#define QUEUE_COST 10		/* deposit (you get it back) for having
+				 * a command in the command queue. */
+#define QUOTA_COST 1		/* how many quota points it takes to create an
+				 * object */
+#define QUEUE_LOSS 15		/* putting commands in the command queue takes
+				 * approximately 1/(queue_loss+1) money. */
+
+/* The following is the number of commands any player may have in the queue
+ * at any one time. */
+#define QUEUE_QUOTA 100
+
+/* The following is how many credits players get when they first are
+ * created. */
+#define START_BONUS 1950
+
+/* the following is how many credits players get paid the first time they
+ * connect each day. */
+#define PAY_CHECK 250
+
+/* The following is a string that contains the building quota for
+ * new players. */
+#define START_QUOTA "20"  /* starting building quota for new players */
+
+/* This is the maximum number of messages minus one that a player
+ * may send to a specific player */
+#define MAX_MAIL 99
+
+/* This is how long player names can be, maximum. If you change this, you
+ * probably have to change the format specifications for the WHO list too. */
+#define PLAYER_NAME_LIMIT 16
+
+/* These are various characters that do special things. I recommend you
+ * don't change these unless you won't have any people who are used
+ * to tinymud using the muse. */
+#define NOT_TOKEN '!'
+#define AND_TOKEN '&'
+#define OR_TOKEN '|'
+#define THING_TOKEN 'x'
+#define LOOKUP_TOKEN '*'
+#define NUMBER_TOKEN '#'
+#define AT_TOKEN '@'
+#define ARG_DELIMITER '='
+#define IS_TOKEN '='
+#define CARRY_TOKEN '+'
+
+/* These are various tokens that are abbreviations for special commands.
+ * Again, i recommend you don't change these unless you won't have any people
+ * who are used to tinymud. */
+#define SAY_TOKEN '"'
+#define POSE_TOKEN ':'
+#define NOSP_POSE ';'
+#define COM_TOKEN '='
+
+/* This is the maximum value of an object. You can @create <object>=a
+ * value like 505, and it'll turn out to have a value of 100. use the
+ * two formulas afterwrds. */
+#define MAX_OBJECT_ENDOWMENT 100
+#define OBJECT_ENDOWMENT(cost) (((cost)-5)/5)
+#ifdef DESTROY
+#define OBJECT_DEPOSIT(pennies) ((pennies)*5+5)
+#endif /* DESTROY */
+
+/* After a player gets this many credits, a few things stop giving the
+ * player more. */
+#define MAX_PENNIES 100000
+
+/* costs of kill command *
+#define KILL_BASE_COST 100      * prob = expenditure/KILL_BASE_COST *
+#define KILL_MIN_COST 10
+#define KILL_BONUS 50           * paid to victim */
+
+/* This is the maximum number of arguments you can give to a
+ * command like @switch, which takes many comma seperated arguments.
+ * i'm not sure this does anything. */
+#define MAX_ARG 100
+
+/* This is the character that seperates different exit aliases. If you change
+ * this, you'll probably have a lot of work fixing up your database. */
+#define EXIT_DELIMITER ';'
+
+/* Define this if you want a different port than 4201. */
+#undef TINYPORT
+
+/* This attempts to figure out what to put for tinyport if you don't have
+ * it. */
+#ifndef TINYPORT
+# ifdef ALPHA
+#  define TINYPORT 4208		/* alpha version.. must be koosh's muse. */
+# else
+#  define TINYPORT 4201		/* just a normal place. put it on 4201. */
+# endif
+#endif
+
+/* These are various files which will spit to players at various times. */
+#define NEW_CONNECT_MSG_FILE "msgs/create.txt" /* file spit to player when
+						* they create a new
+						* character. */
+#define CONNECT_MSG_FILE "msgs/connect.txt" /* file spit to player when
+					     * they connect to an existing
+					     * character. */
+#define WELCOME_MSG_FILE "msgs/welcome.txt" /* file spit to player when
+					     * they've just connected,
+					     * and haven't typed anything
+					     * yet. */
+#define REGISTER_MSG_FILE "msgs/register.txt" /* file spit to player when
+					       * registration is in effect,
+					       * and they try to create a
+					       * caracter. */
+#define LEAVE_MSG_FILE "msgs/leave.txt" /* file spit to player when
+					 * they QUIT. */
+#define EDIT_HELP_FILE "msgs/edit.txt" /* file for editor help */
+
+
+/* special interface commands. i suggest you don't change these. */
+#define QUIT_COMMAND "QUIT"
+#define WHO_COMMAND "WHO"
+
+/* commands to set the output suffix and output prefix. */
+#define PREFIX_COMMAND "OUTPUTPREFIX"
+#define SUFFIX_COMMAND "OUTPUTSUFFIX"
+
+/* I'm not sure if lockout works, but you should be able to put
+ * hostnames in lockout.txt and have it not accept connections
+ * from those machines. This is generally anti-social, so don't
+ * do it. */
+#ifdef LOCKOUT
+#define LOCKOUT_FILE "msgs/lockout.txt"
+#endif
+
+/* These are various intervals when things are done. I suggest you don't
+ * make these multiples of each other, or there will be minor lags. */
+#define FIXUP_INTERVAL 678 /* fixup free list about every 11 minutes */
+#define DUMP_INTERVAL 311 /* dump every 5 minutes */
+
+/* This is how many objects should be re-allocated each second. Puny
+ * garbage collection. */
+#define GARBAGE_CHUNK 3
+
+/* how much input a player can store up before bad things happen. */
+#define MAX_INPUT 1024
+
+/* This is the amount of output a player can get before they get an
+ * <Output flushed> message. */
+#define MAX_OUTPUT 16384
+
+#define COMMAND_TIME_MSEC 1000  /* time slice length in milliseconds */
+#define COMMAND_BURST_SIZE 100  /* commands allowed per user in a burst */
+#define COMMANDS_PER_TIME 1     /* commands per time slice after burst */
+
+/* If this is a usg-based system, redefine random and junk */
+#if defined(XENIX) || defined(HPUX) || defined(SYSV) || defined(USG)
+#define random rand
+#define srandom srand
+#endif
+
+/* change this if you add or delete a directory in the directory tree. */
+#define MUSE_DIRECTORIES "src src/hdrs src/comm src/io src/db src/util src/files src/core run run/files run/files/p run/files/p/1 run/db run/msgs run/logs doc bin config"
+
+/* these are for various doomsday values. make sure these are in quotes. */
+#define BAD_OBJECT_DOOMSDAY "600"
+#define DEFAULT_DOOMSDAY "600"
+
+/* Define this is you want to use the optional space system, also space.h */
+#undef USE_SPACE
+
+/* WARNING_CHUNK is the number of non-checked objects that should be
+ * gone through when doing incremental warnings.
+ * WARNING_BONUS is the number of non-checked objects that one
+ * checked objects count as. */
+#define WARNING_CHUNK 50
+#define WARNING_BONUS 30
+
+#endif /* _LOADED_CONFIG_ */

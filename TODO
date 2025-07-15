@@ -1,0 +1,85 @@
+This is my TODO list as of now.  It's just fun to see where people are going
+with things, IMO, so here's some stuff i'm planning on doing as of today
+(12/31/2000)
+
+test @passwording root with a blanked out PW
+check for bug in examine... broke at look.c line 581.. had bad information. looks like an overrun.
+ -- replace the global matching functions with onesthat return variables instead.
+puppet objects don't send colored text, send color codes instead.
+who list on login screen sends ansi codes rather than stripping out color.
+@mode lets you set yourself IRC/MUSE/MUSH/whatever and uses the parituclar parser you specify.
+  -- rebuild parser to include functionality from many games.
+
+----------
+Replace command and function parsers with new hash tables.
+  -  bug in @prefix/@suffix - if have prefix set to show time in aidle, after a good number of days, start getting "too many levels of recursion" instead. 
+  -  functions leak memory.
+  - be sure to build compatability object for MUSE legacy command table.
+----------
+use fork() to fork off host lookups? ident lookups?  Don't let player connect until they return, but let the rest of the game continue without lag.
+add hash table of hosts that have been looked up before.  look there before calling gethostbyname and whatnot.  Will make lookups much faster.
+add hash table of locked out guest sites and locked out sites, dynamically changable by admins inside the game. check_lockout()
+fix bug with @booting yourself
+Pueblo support.  In progress, what a pain. Stripping stuff out of every other musers' text is annoying.
+Save the who-list MOTD in a file.
+Add support for multiple aliases. might be a bit tricky.
+check all references of type int to ensure they shouldn't be type long or dbref
++sitelock
++denied
+Add some MAZE features once I get time to look at MAZE src.
+Add readable/writeable flags to attributes like UNIX and MOO do it.
+Add support for multiple doing_msgs, multiple-lined doing_msgs, and a MAX_DOING_LEN #define for maximum length of doing_msgs. -- this is VERY difficult w/ current who list method.
+finish adding MAZE combat + tm97 mods for skills
+gnu autoconfigure and make.
+Remove WHEN flag completely.  (next release)
+Look at MAZE v2's who list for example of dynamically spaced who fields.
+Is there an issue with YESEQ and YESLT being equal to YES when they shouldn't be?  See: pow_modify
+Fix time in MUSE - actually use the damned TZ variables?  Need to just rewrite all time-related functions.
+Com system expansion - Ajoin and a format command like VChicago?
+Set limit on how many times you can set yourself idle in a certain period.
+Weird time latency problem -- idle after (idletime + 1) and db stops dumping.
+Bug with @blacklist - odd problems with checking the lock. sometimes the first person on the list doesn't get blacklisted?
+
+
+
+Move most config.h parameters to config.c and make #ifdefs switches.
+
+
+
+Idle system is still a little weird:  (this may already be fixed. need to try to recreate)
+
+[00:19:10] ."viper(#194PpDIcai)" descriptor: 7, concid: 163
+[00:19:10] ."Kadriana(#94Pcai)" descriptor: 14, concid: 155
+[00:19:10] ."Andy(#1853PoIqcNa)" descriptor: 8, concid: 143
+[00:19:10] ."Quantum Fire(#1829Pcai)" descriptor: 23, concid: 140
+[00:19:10] ."Fyre(#45PpDIqcNai)" descriptor: 18, concid: 132
+[00:19:10] ."Coke(#105Pcai)" descriptor: 9, concid: 125
+[00:19:10] ."Saruk(#55Pvqcai)" descriptor: 12, concid: 121
+[00:19:10] ."Bobby Newmark(#4PpcNaw)" descriptor: 11, concid: 112
+[00:19:10] ."lothar(#196PIcawi)" descriptor: 24, concid: 43
+[00:19:10] ."Logan(#364Pcai)" descriptor: 17, concid: 40
+[00:19:10] ."Thor(#69Pcai)" descriptor: 10, concid: 6
+[00:19:10] ."Bobby Newmark(#4PpcNaw)" descriptor: 6, concid: 1
+[00:19:24] Sorry, this is disabled. Try @selfboot.
+[00:19:29] [public] Bobby Newmark: shit.
+[00:19:37] [public] Bobby Newmark [to Andy]: @cboot 112 please.
+[00:19:58] [public] Bobby Newmark: I can't @cboot myself.
+[00:20:28] [log_imp] * Andy(#1853PoIqcNa) executes: @cboot 112 (descriptor 11, player Bobby Newmark(#4PpcNaw))
+[00:20:28] You have been @cbooted by Andy(#1853PoIqcNa). [#1853/PP]
+[00:20:28] [log_io] * DISCONNECT concid 112 player Bobby Newmark(#4PpcNaw)
+[00:20:28] [log_io] * Bobby Newmark idled after 5103 minutes inactivity (out. - disconnect re-idle)
+[00:20:37] [log_io] * Bobby Newmark(#4PpcNaw) unidled after 39 seconds.
+[00:20:37] +mail: You have 95 messages. 3 of them are unread.
+[00:20:37] [public] Bobby Newmark: weird.
+[00:20:37] [public] Andy: @fo *pp=@cboot 112?
+[00:20:56] [public] Bobby Newmark: looks like the idling stuff is still a little whacked.
+[00:21:09] [public] Bobby Newmark needs to fix that. weird.
+
+
+this stuff prolly won't happen anytime soon:
+
+universe power expansion project.
+more +mail -- +mail auto deleteion, +mail protect, +mail user@host (external email receive and send)
+universe database split project
+
+
