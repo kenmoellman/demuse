@@ -11,14 +11,17 @@
 
 #define DOWNCASE(x) to_lower(x)
 
-static dbref exact_match = NOTHING;	/* holds result of exact match */
 static int check_keys = 0;	/* if non-zero, check for keys */
 static dbref last_match = NOTHING;	/* holds result of last match */
 static int match_count;		/* holds total number of inexact matches */
 static dbref match_who;		/* player who is being matched around */
-static char *match_name;	/* name to match */
 static int preferred_type = NOTYPE;	/* preferred type */
-static dbref it;		/* the *IT*! */
+//static dbref exact_match = NOTHING;	/* holds result of exact match */
+//static char *match_name;	/* name to match */
+//static dbref it;		/* the *IT*! */
+dbref exact_match = NOTHING;	/* holds result of exact match */
+char *match_name;	/* name to match */
+dbref it;		/* the *IT*! */
 
 static void store_it P((dbref));
 
@@ -63,7 +66,7 @@ char *string;
 
 void init_match(player, name, type)
 dbref player;
-char *name;
+const char *name;
 int type;
 {
   exact_match = last_match = NOTHING;

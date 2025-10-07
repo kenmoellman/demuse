@@ -8,8 +8,6 @@
 #include "externs.h"
 #include "sock.h"
 
-time_t now;
-
 #define  mklinebuf(fp)	setvbuf(fp, NULL, _IOLBF, 0)
 #define _USE_BSD
 #include <sys/types.h>
@@ -24,7 +22,6 @@ time_t now;
 #include <ctype.h>
 
 extern int errno;
-extern int reserved;
 extern long spot;
 static void init_args P((int, char **));
 static void init_io P((void));
@@ -38,16 +35,6 @@ const char *NullFile = "logs/null";
 
 #define  DEF_MODE	0644
 
-int shutdown_flag = 0;
-int exit_status = 136;		/* we will change this when we set *
-
-				   shutdown_flag to 1... */
-int sig_caught = 0;
-
-time_t muse_up_time;
-time_t muse_reboot_time;
-
-
 
 static char *connect_fail_char = "That player does not exist.\n";
 static char *connect_fail_passwd = "Incorrect password.\n";
@@ -60,16 +47,6 @@ static char *get_password = "Please enter password:\n\373\001";
 static char *got_password = "\374\001";
 
 struct descriptor_data *descriptor_list = 0;
-
-
-int sock = (-1);
-
-int ndescriptors = 0;
-char ccom[1024];
-dbref cplr;
-
-int restrict_connect_class = 0;
-int nologins = 0;
 
 static void check_connect P((struct descriptor_data *, char *));
 static void parse_connect P((char *, char *, char *, char *));
@@ -90,10 +67,11 @@ static int process_input P((struct descriptor_data *));
 char *my_cb_parse(dbref, int, char *, int);
 void check_for_idlers_int(dbref, char *);
 
-void main(argc, argv)
+int main(argc, argv)
 int argc;
 char *argv[];
 {
+  init_io_globals();
   init_args(argc, argv);
   init_io();
   printf("--------------------------------\n");
@@ -160,6 +138,7 @@ char *argv[];
   }
   shutdown_stack();
   exit_nicely(exit_status);
+  exit(exit_status);
 }
 
 static void init_args(argc, argv)
@@ -484,7 +463,6 @@ struct timeval current;
 }
 
 int need_more_proc;
-int maxd = 0;
 
 static void shovechars(port)
 int port;

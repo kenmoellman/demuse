@@ -1,4 +1,3 @@
- 
 #include "config.h"
 #include "externs.h"
  
@@ -7,18 +6,20 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <ctype.h>
 
 #include "sock.h"
 
+/* Null device for reserving file descriptors */
+static const char *NullFile = "logs/null";
 
-int check_lockout P((struct descriptor_data *, char *, char *));
+/* Function prototypes */
+int check_lockout(struct descriptor_data *, char *, char *);
 void get_ident(char *, int, int, struct sockaddr_in);
 
-
-int reserved;
-int sock;
-
-void close_sockets()
+void close_sockets(void)
 {
   struct descriptor_data *d, *dnext;
   FILE *x = NULL;
@@ -27,13 +28,12 @@ void close_sockets()
   {
     unlink("logs/socket_table");
     x = fopen("logs/socket_table", "w");
-    fprintf(x, "%ld\n", muse_up_time);
-    fprintf(x, "%d\n", sock);
-    fcntl(sock, F_SETFD, 0);
+    if (x) {
+      fprintf(x, "%ld\n", (long)muse_up_time);
+      fprintf(x, "%d\n", sock);
+      fcntl(sock, F_SETFD, 0);
+    }
   }
-
-/*shutdown_flag = 1;          * just in case. so announce_disconnect *
-                              * doesn't reset the CONNECT flags.     */
 
   for (d = descriptor_list; d; d = dnext)
   {
@@ -41,28 +41,31 @@ void close_sockets()
     if (!(d->cstatus & C_REMOTE))
     {
       if (exit_status == 1)
-	write(d->descriptor, tprintf("%s %s", muse_name, REBOOT_MESSAGE), (strlen(REBOOT_MESSAGE) + strlen(muse_name) + 1));
+        write(d->descriptor, tprintf("%s %s", muse_name, REBOOT_MESSAGE), 
+              (strlen(REBOOT_MESSAGE) + strlen(muse_name) + 1));
       else
-	write(d->descriptor, tprintf("%s %s", muse_name, SHUTDOWN_MESSAGE), (strlen(SHUTDOWN_MESSAGE) + strlen(muse_name) + 1));
+        write(d->descriptor, tprintf("%s %s", muse_name, SHUTDOWN_MESSAGE), 
+              (strlen(SHUTDOWN_MESSAGE) + strlen(muse_name) + 1));
       process_output(d);
 #ifndef BOOT_GUEST
-      if (x && d->player >= 0 && d->state == CONNECTED )
+      if (x && d->player >= 0 && d->state == CONNECTED)
 #else
       if (x && d->player >= 0 && d->state == CONNECTED && !Guest(d->player))
 #endif
       {
-	fprintf(x, "%010d %010ld %010ld %010ld\n", d->descriptor, d->connected_at, d->last_time, d->player);
-	fcntl(d->descriptor, F_SETFD, 0);
+        fprintf(x, "%010d %010ld %010ld %010ld\n", d->descriptor, 
+                (long)d->connected_at, (long)d->last_time, (long)d->player);
+        fcntl(d->descriptor, F_SETFD, 0);
       }
       else
-	shutdownsock(d);
+        shutdownsock(d);
     }
   }
   if (x)
     fclose(x);
 }
 
-void open_sockets()
+void open_sockets(void)
 {
   struct descriptor_data *d, *oldd, *nextd;
   FILE *x = NULL;
@@ -70,53 +73,59 @@ void open_sockets()
 
   if (!(x = fopen("logs/socket_table", "r")))
     return;
-  unlink("logs/socket_table");	/* so we don't try to use it again. */
-  fgets(buf, 1024, x);
-  muse_up_time = atol(buf);
-  fgets(buf, 1024, x);
-  sock = atoi(buf);
+  unlink("logs/socket_table");
+  
+  if (fgets(buf, 1024, x)) {
+    muse_up_time = atol(buf);
+  }
+  if (fgets(buf, 1024, x)) {
+    sock = atoi(buf);
+  }
+  
   fcntl(sock, F_SETFD, 1);
   close(sock);
+  
   for (sock = 0; sock < 1000; sock++)
     fcntl(sock, F_SETFD, 1);
+    
   while (fgets(buf, 1024, x))
   {
     int desc = atoi(buf);
     struct sockaddr_in in;
-    extern char *inet_ntoa();
-    int namelen = sizeof(in);
+    socklen_t namelen = sizeof(in);
+    char buff[INET_ADDRSTRLEN];
 
     fcntl(desc, F_SETFD, 1);
-    getpeername(desc, (struct sockaddr *)&in, &namelen);
-    {
-      char buff[100];
-#ifdef HOST_LOOKUPS
-/* when the game comes back online after a reboot, these connections are reopened. */
-      struct hostent *hent;
-
-      hent = gethostbyaddr((char *)&(in.sin_addr.s_addr),
-			   sizeof(in.sin_addr.s_addr), AF_INET);
-      if (hent)
-      {
-	strcpy(buff, hent->h_name);
-        log_io(tprintf("h_name: %s  h_addr_list[0]: %ld  h_length: %d", hent->h_name, (long *)hent->h_addr_list[0], hent->h_length));
-      }
-      else
-      {
-#endif /* HOST_LOOKUPS */
-	extern char *inet_ntoa();
-
-	strcpy(buff, inet_ntoa(in.sin_addr));
-#ifdef HOST_LOOKUPS
-      } 
-#endif
-      d = initializesock(desc, &in, buff, RELOADCONNECT);
+    
+    if (getpeername(desc, (struct sockaddr *)&in, &namelen) < 0) {
+      continue;
     }
-    d->connected_at = atol(buf + 11);
-    d->last_time = atol(buf + 22);
-    d->player = atol(buf + 33);
+
+#ifdef HOST_LOOKUPS
+    struct hostent *hent;
+    hent = gethostbyaddr((char *)&(in.sin_addr.s_addr),
+                         sizeof(in.sin_addr.s_addr), AF_INET);
+    if (hent)
+    {
+      strncpy(buff, hent->h_name, sizeof(buff) - 1);
+      buff[sizeof(buff) - 1] = '\0';
+      log_io(tprintf("h_name: %s", hent->h_name));
+    }
+    else
+#endif
+    {
+      inet_ntop(AF_INET, &in.sin_addr, buff, sizeof(buff));
+    }
+    
+    d = initializesock(desc, &in, buff, RELOADCONNECT);
+    if (d) {
+      d->connected_at = atol(buf + 11);
+      d->last_time = atol(buf + 22);
+      d->player = atol(buf + 33);
+    }
   }
   fclose(x);
+  
   oldd = descriptor_list;
   descriptor_list = NULL;
   for (d = oldd; d; d = nextd)
@@ -136,31 +145,31 @@ void open_sockets()
   }
 }
 
-int make_socket(port)
-int port;
+int make_socket(int port)
 { 
   int s;
   struct sockaddr_in server;
   int opt;
-#ifdef MULTIHOME
-  unsigned long int inaddr;
-#endif
   
+  /* Create socket */
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0)
   {
-    perror(tprintf("creating stream socket on port %d", port));
+    perror("socket creation failed");
+    log_error(tprintf("Failed to create socket on port %d: %s", port, strerror(errno)));
 #ifndef RESOCK
-    exit_status = 1;            /* try again. */
+    exit_status = 1;
     shutdown_flag = 1;
 #endif
     return -1;
   }
+  
+  /* Set socket options */
   opt = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
-                 (char *)&opt, sizeof(opt)) < 0)
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
   {
-    perror("setsockopt");
+    perror("setsockopt SO_REUSEADDR failed");
+    log_error(tprintf("setsockopt failed: %s", strerror(errno)));
 #ifndef RESOCK
     shutdown_flag = 1;
     exit_status = 1;
@@ -169,77 +178,84 @@ int port;
     return -1;
   }
   
+  /* Initialize server address structure */
+  memset(&server, 0, sizeof(server));
   server.sin_family = AF_INET;
+  server.sin_port = htons(port);
 
 #ifdef MULTIHOME
-  inaddr = inet_addr(HOSTNAME); /* Try out #.#.#.# address format first */
-  if (inaddr != INADDR_NONE)
-  { 
-    memcpy(&server.sin_addr, &inaddr, sizeof(inaddr));
+  /* Try to resolve the configured hostname */
+  struct addrinfo hints, *res = NULL;
+  int err;
+  
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags = AI_PASSIVE;
+  
+  err = getaddrinfo(HOSTNAME, NULL, &hints, &res);
+  if (err != 0)
+  {
+    log_error(tprintf("getaddrinfo failed for '%s': %s", HOSTNAME, gai_strerror(err)));
+    log_error("Falling back to INADDR_ANY (binding to all interfaces)");
+    server.sin_addr.s_addr = INADDR_ANY;
   }
   else
   {
-
-#ifndef CACHED_SERVER_HENT
-    struct hostent *hent_server;
+    struct sockaddr_in *addr_in = (struct sockaddr_in *)res->ai_addr;
+    server.sin_addr = addr_in->sin_addr;
+    log_io(tprintf("Binding to hostname: %s", HOSTNAME));
+    freeaddrinfo(res);
+  }
 #else
-    static struct hostent *hent_server;  /* okay, let's try caching the hent for the server. wm 05/08/2000 */
-
-    if (!hent_server)
-#endif
-      hent_server = gethostbyname(HOSTNAME);     /* Try dns lookup of address, since # 
-                                            format failed */
-    if (hent_server == NULL)
-      return -1;
-  
-    memcpy(&server.sin_addr, hent_server->h_addr_list[0], hent_server->h_length);
-  }
-  server.sin_port = htons(port);
-  if (bind(s, (struct sockaddr *)&server, sizeof(server)) == -1)
-  { 
-    perror("binding stream socket");
-    close(s);
-#ifndef RESOCK
-    shutdown_flag = 1;
-    exit_status = 1;
-#endif /* RESOCK */
-    return -1;
-  }
-#else /* if not MULTIHOME */
-  
+  /* Bind to all interfaces */
   server.sin_addr.s_addr = INADDR_ANY;
-  server.sin_port = htons(port);
+  log_io("Binding to all interfaces (INADDR_ANY)");
+#endif
   
+  /* Bind socket */
   if (bind(s, (struct sockaddr *)&server, sizeof(server)) == -1)
   { 
-    perror("binding stream socket");
+    perror("bind failed");
+    log_error(tprintf("Failed to bind to port %d: %s", port, strerror(errno)));
     close(s);
 #ifndef RESOCK
     shutdown_flag = 1;
     exit_status = 1;
-#endif /* RESOCK */
+#endif
     return -1;
   }
-#endif /* MULTIHOME */
   
-  listen(s, 5);
+  /* Listen on socket */
+  if (listen(s, 5) == -1)
+  {
+    perror("listen failed");
+    log_error(tprintf("Failed to listen on port %d: %s", port, strerror(errno)));
+    close(s);
+#ifndef RESOCK
+    shutdown_flag = 1;
+    exit_status = 1;
+#endif
+    return -1;
+  }
+  
+  log_io(tprintf("Successfully opened socket on port %d", port));
   return s;
 }
 
-
-struct descriptor_data *initializesock(s, a, addr, state)
-int s;
-struct sockaddr_in *a;
-char *addr;
-enum descriptor_state state;
+struct descriptor_data *initializesock(int s, struct sockaddr_in *a, 
+                                       char *addr, enum descriptor_state state)
 { 
   struct descriptor_data *d;
   time_t tt;
   char *ct;
 
-  /* fprintf(stderr,"3\n");fflush(stderr); */
   ndescriptors++;
   MALLOC(d, struct descriptor_data, 1);
+  if (!d) {
+    log_error("Failed to allocate descriptor");
+    return NULL;
+  }
 
   d->snag_input = 0;
   d->descriptor = s;
@@ -260,12 +276,15 @@ enum descriptor_state state;
   d->quota = command_burst_size;
   d->last_time = now;
   strncpy(d->addr, addr, 50);
-  d->address = *a;              /* added 5/3/90 SCG */
+  d->addr[49] = '\0';
+  d->address = *a;
+  
   if (descriptor_list)
     descriptor_list->prev = &d->next;
   d->next = descriptor_list;
   d->prev = &descriptor_list;
   descriptor_list = d;
+  
   get_ident(d->user, s, 3, *a);
   
   tt = now;
@@ -274,7 +293,7 @@ enum descriptor_state state;
     ct[strlen(ct) - 1] = '\0';
   
   log_io(tprintf("|G+USER CONNECT|: concid: %ld host %s@%s time: %s",
-                 d->concid, d->user, addr, ct));
+                 d->concid, d->user, addr, ct ? ct : "unknown"));
    
   if (state == WAITCONNECT)
   { 
@@ -282,75 +301,78 @@ enum descriptor_state state;
     {
       process_output(d);
       shutdownsock(d);
+      return NULL;
     }
   }
  
   if (nologins)
   {
-    log_io(tprintf("Refused connection on concid %ld due to @nologins.",
-                   d->concid));
-    write(d->descriptor, tprintf("%s %s", muse_name, NOLOGINS_MESSAGE), (strlen(NOLOGINS_MESSAGE) + strlen(muse_name) + 1));
+    log_io(tprintf("Refused connection on concid %ld due to @nologins.", d->concid));
+    write(d->descriptor, tprintf("%s %s", muse_name, NOLOGINS_MESSAGE), 
+          (strlen(NOLOGINS_MESSAGE) + strlen(muse_name) + 1));
     process_output(d);
     shutdownsock(d);
-    return 0;
+    return NULL;
   }
+  
   if (d->descriptor >= maxd)
     maxd = d->descriptor + 1;
   return d;
 }
 
-void shutdownsock(d)
-struct descriptor_data *d;
+void shutdownsock(struct descriptor_data *d)
 { 
   int count;
   dbref guest_player;
   struct descriptor_data *sd;
   
-  /* if this is a guest player, save his reference # */
+  if (!d) return;
+  
   guest_player = NOTHING;
-  if (d->state == CONNECTED)
-    if (d->player > 0)
-      if (Guest(d->player))
-        guest_player = d->player;
+  if (d->state == CONNECTED && d->player > 0 && Guest(d->player))
+    guest_player = d->player;
 
-  if (d->state == CONNECTED)
-  {
-    if (d->player > 0)
-    { 
-      time_t tt;
-      char *ct;
+  if (d->state == CONNECTED && d->player > 0)
+  { 
+    time_t tt;
+    char *ct;
 
-      tt = now;
-      ct = ctime(&tt);
-      if (ct && *ct)
-        ct[strlen(ct) - 1] = '\0';
+    tt = now;
+    ct = ctime(&tt);
+    if (ct && *ct)
+      ct[strlen(ct) - 1] = '\0';
 
-      log_io(tprintf("|R+DISCONNECT| concid %ld player %s at %s",
-                     d->concid, unparse_object_a(d->player, d->player), ct));
-      com_send_as_hidden("pub_io",tprintf("|R+DISCONNECT| %s - %s",
-                     unparse_object_a(d->player, d->player), ct), d->player);
+    log_io(tprintf("|R+DISCONNECT| concid %ld player %s at %s",
+                   d->concid, unparse_object_a(d->player, d->player), 
+                   ct ? ct : "unknown"));
+    com_send_as_hidden("pub_io", 
+                       tprintf("|R+DISCONNECT| %s - %s",
+                               unparse_object_a(d->player, d->player), 
+                               ct ? ct : "unknown"), 
+                       d->player);
 
-      announce_disconnect(d->player);
-    }
+    announce_disconnect(d->player);
   }
   else
-    log_io(tprintf("|R+DISCONNECT| concid %ld never connected",
-                   d->concid));
+  {
+    log_io(tprintf("|R+DISCONNECT| concid %ld never connected", d->concid));
+  }
   
   clearstrings(d);
+  
   if (!(d->cstatus & C_REMOTE))
   { 
-    shutdown(d->descriptor, 0);
+    shutdown(d->descriptor, SHUT_RDWR);
     close(d->descriptor);
   }
   else
   {
-    register struct descriptor_data *k;
-
+    struct descriptor_data *k;
     for (k = descriptor_list; k; k = k->next)
       if (k->parent == d)
         k->parent = 0;
   }
+  
   freeqs(d);
   *d->prev = d->next;
   if (d->next)
@@ -360,7 +382,7 @@ struct descriptor_data *d;
   
   FREE(d);
   
-  /* if this is a guest account and the last to disconnect from it, kill it */
+  /* Clean up guest accounts */
   if (guest_player != NOTHING)
   {
     count = 0;
@@ -374,75 +396,74 @@ struct descriptor_data *d;
   }
 }
 
-
-void make_nonblocking(s)
-int s;
+void make_nonblocking(int s)
 { 
-/*  if (fcntl(s, F_SETFL, FNDELAY) == -1) */
-  if (fcntl(s, F_SETFL, O_NONBLOCK) == -1)
+  int flags = fcntl(s, F_GETFL, 0);
+  if (flags == -1) {
+    perror("fcntl F_GETFL failed");
+    return;
+  }
+  
+  if (fcntl(s, F_SETFL, flags | O_NONBLOCK) == -1)
   {
-    perror("make_nonblocking: fcntl");
-    panic("FNDELAY fcntl failed");
+    perror("fcntl F_SETFL O_NONBLOCK failed");
+    panic("O_NONBLOCK fcntl failed");
   }
 }
 
-struct descriptor_data *new_connection(sock)
-int sock;
+struct descriptor_data *new_connection(int sock)
 { 
   int newsock;
   struct sockaddr_in addr;
-  int addr_len;
+  socklen_t addr_len;
+  char buff[INET_ADDRSTRLEN];
   
   addr_len = sizeof(addr);
   newsock = accept(sock, (struct sockaddr *)&addr, &addr_len);
+  
   if (newsock < 0)
   { 
-    if (errno == EALREADY)
-    {                           /* screwy sysv buf. */
+    if (errno == EALREADY || errno == EINTR)
+    {
       static int k = 0;
-
       if (k++ > 50)
       {
-        log_error("Killing EALREADY, restarting socket.");
-        puts("Killing EALREADY, restarting socket.");
+        log_error("Too many EALREADY errors, restarting socket");
         close(sock);
         sock = make_socket(inet_port);
         k = 0;
       }
     }
-    return 0;
+    else if (errno != EWOULDBLOCK && errno != EAGAIN)
+    {
+      log_error(tprintf("accept() failed: %s", strerror(errno)));
+    }
+    return NULL;
+  }
+  
+#ifdef HOST_LOOKUPS
+  struct hostent *hent;
+  hent = gethostbyaddr((char *)&(addr.sin_addr.s_addr),
+                       sizeof(addr.sin_addr.s_addr), AF_INET);
+  if (hent)
+  {
+    strncpy(buff, hent->h_name, sizeof(buff) - 1);
+    buff[sizeof(buff) - 1] = '\0';
+    log_io(tprintf("Connection from: %s", hent->h_name));
   }
   else
-  { 
-    char buff[100];
-#ifdef HOST_LOOKUPS
-/* when the game has a new connection, reverse resolve it's host. */
-    struct hostent *hent;
-
-    hent = gethostbyaddr((char *)&(addr.sin_addr.s_addr),
-                         sizeof(addr.sin_addr.s_addr), AF_INET);
-    if (hent)
-    {
-      strcpy(buff, hent->h_name);
-      log_io(tprintf("h_name: %s  h_addr_list[0]: %ld  h_length: %d", hent->h_name, (long *)hent->h_addr_list[0], hent->h_length));
-    }
-    else
-    {
-#endif /* HOST_LOOKUPS */
-      extern char *inet_ntoa();
-
-      strcpy(buff, inet_ntoa(addr.sin_addr));
-#ifdef HOST_LOOKUPS
-    } 
-#endif /* HOST_LOOKUPS */
-
-    return initializesock(newsock, &addr, buff, WAITCONNECT);
+#endif
+  {
+    inet_ntop(AF_INET, &addr.sin_addr, buff, sizeof(buff));
   }
+
+  return initializesock(newsock, &addr, buff, WAITCONNECT);
 }
 
-void clearstrings(d)
-struct descriptor_data *d;
+void clearstrings(struct descriptor_data *d)
 {
+  if (!d) return;
+  
   if (d->output_prefix)
   {
     FREE(d->output_prefix);
@@ -455,10 +476,11 @@ struct descriptor_data *d;
   }
 }
 
-void freeqs(d)
-struct descriptor_data *d;
+void freeqs(struct descriptor_data *d)
 {
   struct text_block *cur, *next;
+  
+  if (!d) return;
   
   cur = d->output.head;
   while (cur)
@@ -486,15 +508,14 @@ struct descriptor_data *d;
   d->raw_input_at = 0;
 }
 
-int check_lockout(d, file, default_msg)
-struct descriptor_data *d;
-char *file;
-char *default_msg;
+int check_lockout(struct descriptor_data *d, char *file, char *default_msg)
 { 
   FILE *f;
   char *lock_host, *lock_enable, *msg_file, *ptr;
   char buf[1024];
   struct hostent *hent;
+  
+  if (!d) return 1;
   
   close(reserved);
   
@@ -502,149 +523,56 @@ char *default_msg;
   if (!f)
   { 
     queue_string(d, "Error opening lockout file.\n");
+    reserved = open(NullFile, O_RDWR, 0);
     return 1;
   }
+  
   while (fgets(buf, 1024, f))
   { 
-    if (*buf)
-    {
+    if (*buf == '#' || *buf == '\0' || *buf == '\n')
+      continue;
+      
+    if (buf[strlen(buf) - 1] == '\n')
       buf[strlen(buf) - 1] = '\0';
-    }
-    else
-      continue;  /* added else continue to skip checking other stuff, if buf is empty. duh.  wm 05/08/2000 */
+      
     ptr = buf;
-    if (!(*ptr = '#'))
-    {
-      if (!(lock_host = parse_up(&ptr, ' ')))
-        continue;
-      if (!(lock_enable = parse_up(&ptr, ' ')))
-        continue;
-      if (!(msg_file = parse_up(&ptr, ' ')))
-        continue;
-      if (parse_up(&ptr, ' '))
-        continue;
-      hent = gethostbyname(lock_host);
-      if (!hent)
-        continue;
-      log_io(tprintf("h_name: %s  h_addr_list[0]: %ld  h_length: %d", hent->h_name, (long *)hent->h_addr_list[0], hent->h_length));
-      if (*(long *)hent->h_addr_list[0] == d->address.sin_addr.s_addr)
-      { 
-        /* bingo. */
-        fclose(f);
-        connect_message(d, msg_file, 0);
-        return *lock_enable == 'l' || *lock_enable == 'L';
-      }
+    if (!(lock_host = parse_up(&ptr, ' ')))
+      continue;
+    if (!(lock_enable = parse_up(&ptr, ' ')))
+      continue;
+    if (!(msg_file = parse_up(&ptr, ' ')))
+      continue;
+    if (parse_up(&ptr, ' '))
+      continue;
+      
+    hent = gethostbyname(lock_host);
+    if (!hent)
+      continue;
+      
+    if (*(long *)hent->h_addr_list[0] == d->address.sin_addr.s_addr)
+    { 
+      fclose(f);
+      connect_message(d, msg_file, 0);
+      reserved = open(NullFile, O_RDWR, 0);
+      return (*lock_enable == 'l' || *lock_enable == 'L');
     }
   }
+  
   fclose(f);
   connect_message(d, default_msg, 0);
+  reserved = open(NullFile, O_RDWR, 0);
   return 0;
 }
 
 #ifdef RESOCK
-void resock()
+void resock(void)
 { 
   log_io("Resocking...");
   close(sock);
-  sock = make_socket(port);
+  sock = make_socket(inet_port);
   log_io("Resocking done");
 }
 #endif
-
-
-#ifdef USE_OUTGOING
-static struct descriptor_data *open_outbound(player, host, port)
-dbref player;
-char *host;
-int port;
-{
-  struct descriptor_data *d;
-  int sock;
-  struct sockaddr_in addr;
-  struct hostent *hent;
-
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
-    return 0;
-
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
-  if (!(hent = gethostbyname(host)))
-    addr.sin_addr.s_addr = inet_addr(host);
-  else
-    addr.sin_addr.s_addr = *(long *)hent->h_addr_list[0];
-
-  if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-  {
-    close(sock);
-    return 0;
-  }
-  d = initializesock(sock, &addr, host, CONNECTED);
-  d->player = player;
-  d->last_time = d->connected_at = now;
-  db[d->player].flags |= CONNECT;
-  return d;
-}
-
-void do_outgoing(player, arg1, arg2)
-dbref player;
-char *arg1, *arg2;
-{
-  dbref thing1;
-  char host[1024];
-  int port;
-  struct descriptor_data *d;
-
-  if (!power(player, POW_OUTGOING))
-  {
-    notify(player, perm_denied());
-    return;
-  }
-  if ((thing1 = match_controlled(player, arg1, POW_BOOT)) == NOTHING)
-    return;
-  if (!*atr_get(thing1, A_INCOMING))
-  {
-    notify(player, "You need to set your @incoming attribute.");
-    return;
-  }
-  if (!*arg2 || !strchr(arg2, ' '))
-  {
-    notify(player, "You must specify a port number.");
-    return;
-  }
-  strcpy(host, arg2);
-  *strchr(host, ' ') = '\0';
-  port = atoi(strchr(arg2, ' ') + 1);
-  if (port <= 0)
-  {
-    notify(player, "Bad port.");
-    return;
-  }
-  if ((d = open_outbound(thing1, host, port)))
-  {
-    did_it(player, thing1, NULL, NULL, NULL, NULL, A_ACONN);
-    log_io(tprintf("%s opened outbound connection to %s, concid %d, attached to %s", unparse_object_a(root, player), arg2, d->concid, unparse_object_a(root, thing1)));
-  }
-  else
-    notify(player, tprintf("Problems opening connection. errno %d.", errno));
-}
-#endif
-
-
-/*
- * This code was taken from the TinyMAZE project, who took it from the TinyMARE
- * project, and then modified.  Rights go to Byron Stanoszek (Gandalf) 
- */
-
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/wait.h>
-#include <sys/file.h>
-#include <sys/errno.h>
-#include "externs.h"
 
 void get_ident(char *rslt, int sock, int timout, struct sockaddr_in remoteaddr)  
 {
@@ -652,82 +580,90 @@ void get_ident(char *rslt, int sock, int timout, struct sockaddr_in remoteaddr)
   struct timeval timeout;
   fd_set filedes;
   char buf[128], *r, *s;
-  int err, fd, len;
+  int err, fd;
+  socklen_t len;
 
   strcpy(rslt, "???");
 
   len = sizeof(localaddr);
-  if(getsockname(sock, (struct sockaddr *)&localaddr, &len))
+  if (getsockname(sock, (struct sockaddr *)&localaddr, &len))
     return;
 
-/* Open socket connection to remote address */
-  if((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     return;
-  fcntl(fd, F_SETFL, O_NDELAY);
+    
+  fcntl(fd, F_SETFL, O_NONBLOCK);
+  
+  memset(&sin_addr, 0, sizeof(sin_addr));
   sin_addr.sin_family = AF_INET;
   sin_addr.sin_addr = localaddr.sin_addr;
   sin_addr.sin_port = 0;
-  if(bind(fd, (struct sockaddr *)&sin_addr, sizeof(sin_addr)))
+  
+  if (bind(fd, (struct sockaddr *)&sin_addr, sizeof(sin_addr)))
   {
     close(fd);
     return;
   }
 
-/* Attempt to do socket connection in progress, timeout is timout seconds */
   sin_addr.sin_family = AF_INET;
   sin_addr.sin_addr = remoteaddr.sin_addr;
-  sin_addr.sin_port = htons(113); /* identd port */
+  sin_addr.sin_port = htons(113);
   connect(fd, (struct sockaddr *)&sin_addr, sizeof(sin_addr));
 
   FD_ZERO(&filedes);
   FD_SET(fd, &filedes);
   timeout.tv_sec = timout;
   timeout.tv_usec = 0;
-  if(select(fd+1, 0, &filedes, 0, &timeout) < 1)
+  
+  if (select(fd + 1, NULL, &filedes, NULL, &timeout) < 1)
   {
     close(fd);
     return;
   }
+  
   len = sizeof(err);
-  getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&err, &len);
-  if(err)
+  getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len);
+  if (err)
   {
     close(fd);
     return;
   }
 
-/* Send identification request */
   sprintf(buf, "%d,%d\r\n", ntohs(remoteaddr.sin_port),
           ntohs(localaddr.sin_port));
   write(fd, buf, strlen(buf));
 
-/* Wait for return input */
+  FD_ZERO(&filedes);
+  FD_SET(fd, &filedes);
   timeout.tv_sec = 2;
   timeout.tv_usec = 0;
-  if(select(fd+1, &filedes, 0, 0, &timeout) < 1)
+  
+  if (select(fd + 1, &filedes, NULL, NULL, &timeout) < 1)
   {
     close(fd);
     return;
   }
-/* Read input */
+  
   len = read(fd, buf, 127);
   close(fd);
-  if(len <= 2)  /* read error */
+  
+  if (len <= 2)
     return;
+    
   buf[len] = '\0';
 
-/* Parse input string and search for userid */
-  for(r = buf, len = 0;len < 3;len++, r++)
-    if(!(r = strchr(r, ':')))
+  for (r = buf, len = 0; len < 3; len++, r++)
+    if (!(r = strchr(r, ':')))
       return;
 
-  if((s = strchr(r, '\n')))
+  if ((s = strchr(r, '\n')))
     *s = '\0';
-  if((s = strchr(r, '\r')))
+  if ((s = strchr(r, '\r')))
     *s = '\0';
 
-  while(*r && isspace(*r))
+  while (*r && isspace((unsigned char)*r))
     r++;
+    
   strncpy(rslt, r, 31);
-  rslt[31]='\0';
+  rslt[31] = '\0';
 }

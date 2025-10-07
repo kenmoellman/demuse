@@ -14,8 +14,8 @@ char *my_center2(char *, int);
 char *my_string(char *, int);
 char *my_string2(char *, int);
 void my_atr_add(dbref, ATTR *, long);
-int is_connected(NOTHING, dbref);
-int is_connected(dbref, dbref);
+//int is_connected(NOTHING, dbref);
+//int is_connected(dbref, dbref);
 char *poss(dbref);
 char *my_ljust(char *, int);
 char *my_ljust2(char *, int);
@@ -223,10 +223,9 @@ char *poss(thing)
 char *my_ljust(str, field)
   char *str;
   int field;
-
 {
   static char buf[MAX_BUFF_LEN];
-  int i;
+  int i=0;
 
   strcpy(buf, str);
 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <values.h>
+#include <string.h>
 
 #include "db.h"
 #include "config.h"
@@ -13,12 +14,63 @@
 #include "externs.h"
 #include "credits.h"
 
+/* Invalid name prefix checking structure */
+struct invalid_prefix {
+  const char *prefix;
+  int case_sensitive;  /* 1 = case-sensitive, 0 = case-insensitive */
+};
 
-void do_destroy(player, name)
-dbref player;
-char *name;
+static const struct invalid_prefix invalid_name_prefixes[] = {
+  {"HTTP:", 0},  /* Case-insensitive check for HTTP: */
+  {NULL, 0}      /* Sentinel */
+};
+
+/* Helper function for case-insensitive comparison */
+static int strncasecmp_safe(const char *s1, const char *s2, size_t n)
+{
+  if (!s1 || !s2) return -1;
+  
+  while (n > 0 && *s1 && *s2) {
+    char c1 = to_lower(*s1);
+    char c2 = to_lower(*s2);
+    if (c1 != c2) return c1 - c2;
+    s1++;
+    s2++;
+    n--;
+  }
+  if (n == 0) return 0;
+  return *s1 - *s2;
+}
+
+/* Check if name starts with any invalid prefix */
+static int has_invalid_prefix(const char *name)
+{
+  int i;
+  if (!name) return 1;
+  
+  for (i = 0; invalid_name_prefixes[i].prefix != NULL; i++) {
+    size_t prefix_len = strlen(invalid_name_prefixes[i].prefix);
+    int matches;
+    
+    if (invalid_name_prefixes[i].case_sensitive) {
+      matches = (strncmp(name, invalid_name_prefixes[i].prefix, prefix_len) == 0);
+    } else {
+      matches = (strncasecmp_safe(name, invalid_name_prefixes[i].prefix, prefix_len) == 0);
+    }
+    
+    if (matches) return 1;
+  }
+  return 0;
+}
+
+void do_destroy(dbref player, char *name)
 {
   dbref thing;
+
+  if (!name) {
+    notify(player, "Destroy what?");
+    return;
+  }
 
   if (controls(player, db[player].location, POW_MODIFY))
     init_match(player, name, NOTYPE);
@@ -68,66 +120,42 @@ char *name;
   } 
   else  
   {
+    char *k;
 
-/*
-  switch (Typeof(thing))
-  {
-  case TYPE_PLAYER:
-	{ 
-		notify(player, "Destroying players isn't allowed, try a @nuke instead.");
-		return;
-	}
-  case TYPE_CHANNEL:
-    do_channel_destroy(player, name);
-    ;
-  case TYPE_THING:
-  case TYPE_ROOM:
-#ifdef USE_UNIV
-  case TYPE_UNIVERSE:
-#endif
-  case TYPE_EXIT:
-  }
-  */
-    {
-      char *k;
-
-      k = atr_get(thing, A_DOOMSDAY);
-      if (*k)
-	if (db[thing].flags & GOING)
-	{
-	  notify(player, tprintf("It seems it's already gunna go away in %s... if you wanna stop it, use @undestroy", time_format_2(atol(k) - now)));
-	  return;
-	}
-	else
-	{
-	  notify(player, "Sorry, it's protected.");
-	}
-      else if (db[thing].flags & GOING)
+    k = atr_get(thing, A_DOOMSDAY);
+    if (k && *k)
+      if (db[thing].flags & GOING)
       {
-	notify(player, "It seems to already be destroyed.");
-	return;
+        notify(player, tprintf("It seems it's already gunna go away in %s... if you wanna stop it, use @undestroy", time_format_2(atol(k) - now)));
+        return;
       }
       else
       {
-	k = atr_get(player, A_DOOMSDAY);
-	if (*k)
-	{
-	  destroy_obj(thing, atol(k));
-	  notify(player, tprintf("Okay, %s will go away in %s.", unparse_object(player, thing), time_format_2(atol(k))));
-	}
-	else
-	{
-	  destroy_obj(thing, atol(default_doomsday));
-	  notify(player, tprintf("Okay, %s will go away in %s.", unparse_object(player, thing), time_format_2(atol(default_doomsday))));
-	}
+        notify(player, "Sorry, it's protected.");
+      }
+    else if (db[thing].flags & GOING)
+    {
+      notify(player, "It seems to already be destroyed.");
+      return;
+    }
+    else
+    {
+      k = atr_get(player, A_DOOMSDAY);
+      if (k && *k)
+      {
+        destroy_obj(thing, atol(k));
+        notify(player, tprintf("Okay, %s will go away in %s.", unparse_object(player, thing), time_format_2(atol(k))));
+      }
+      else
+      {
+        destroy_obj(thing, atol(default_doomsday));
+        notify(player, tprintf("Okay, %s will go away in %s.", unparse_object(player, thing), time_format_2(atol(default_doomsday))));
       }
     }
   }
 }
 
-void destroy_obj(obj, no_seconds)
-dbref obj;
-int no_seconds;
+void destroy_obj(dbref obj, int no_seconds)
 {
   if (!(db[obj].flags & QUIET))
     do_pose(obj, "shakes and starts to crumble", "", 0);
@@ -137,12 +165,15 @@ int no_seconds;
 }
 
 extern time_t muse_up_time;
-void do_cname(player, name, cname)
-dbref player;
-char *name;
-char *cname;
+
+void do_cname(dbref player, char *name, char *cname)
 {
   dbref thing;
+
+  if (!name || !cname) {
+    notify(player, "Invalid parameters.");
+    return;
+  }
 
   if ((thing = match_controlled(player, name, POW_MODIFY)) != NOTHING)
   {
@@ -151,14 +182,21 @@ char *cname;
       char buf[2048];
       char *visname, *rest;
 
-      strcpy(buf, db[thing].name);
+      /* Safe copy with null termination */
+      if (db[thing].name) {
+        strncpy(buf, db[thing].name, sizeof(buf) - 1);
+        buf[sizeof(buf) - 1] = '\0';
+      } else {
+        buf[0] = '\0';
+      }
+      
       visname = buf;
       rest = strchr(buf, ';');
 
       if (rest && *rest)
 	*rest++ = '\0';
       else
-	strcpy(rest, "");
+	rest = "";
 
       if (strcmp(visname, strip_color(cname)) != 0)
       {
@@ -169,15 +207,15 @@ char *cname;
       {
 	char buf2[2048];
 
-	sprintf(buf2, "%s;%s", cname, rest);
+	snprintf(buf2, sizeof(buf2), "%s;%s", cname, rest);
 	notify(player, tprintf("Okay, %s's colorized name is now %s.",
-			       db[thing].cname, buf2));
+			       db[thing].cname ? db[thing].cname : "it", buf2));
 	SET(db[thing].cname, buf2);
       }
     }
     else
     {
-      if (strcmp(db[thing].name, strip_color(cname)) != 0)
+      if (!db[thing].name || strcmp(db[thing].name, strip_color(cname)) != 0)
       {
 	notify(player, "Hey! Colorized name doesn't match real name!");
 	return;
@@ -186,27 +224,32 @@ char *cname;
       {
 	if (Typeof(thing) == TYPE_PLAYER)
 	  log_important(tprintf("|G+COLOR CHANGE|: %s to %s",
-				db[thing].cname, cname));
+				db[thing].cname ? db[thing].cname : "(null)", cname));
 	notify(player, tprintf("Okay, %s's colorized name is now %s.",
-			       db[thing].cname, cname));
+			       db[thing].cname ? db[thing].cname : "it", cname));
 	SET(db[thing].cname, cname);
       }
     }
   }
 }
 
-void do_name(player, name, cname, is_direct)
-dbref player;
-char *name;
-char *cname;
-int is_direct;
+void do_name(dbref player, char *name, char *cname, int is_direct)
 {
   dbref thing;
   char *password;
   char *newname;
   
+  if (!name || !cname) {
+    notify(player, "Invalid parameters.");
+    return;
+  }
 
   newname = strip_color_nobeep(cname);
+  if (!newname) {
+    notify(player, "Invalid name.");
+    return;
+  }
+  
   if ((password = strrchr(cname, ' ')))
   {
     if (password && *password)
@@ -214,7 +257,8 @@ int is_direct;
       *password++ = '\0';
     }
   }
-  if (strncmp(db[player].name, strip_color_nobeep(cname), strlen(db[player].name)+2) == 0)
+  
+  if (db[player].name && strncmp(db[player].name, strip_color_nobeep(cname), strlen(db[player].name)+2) == 0)
   {
     do_cname(player, name, cname);
     return;
@@ -229,9 +273,10 @@ int is_direct;
       return;
     }
 
-    if (!strncmp("HTTP:", newname, 5))
+    /* Check for invalid prefixes using new system */
+    if (has_invalid_prefix(newname))
     {
-      notify(player, "Names can't start with HTTP:.");
+      notify(player, "That name is not allowed.");
       return;
     }
 
@@ -247,7 +292,7 @@ int is_direct;
       {
 	notify(player, tprintf(
 		   "Sorry, only registered %s users may change their name.",
-				muse_name));
+				muse_name ? muse_name : "MUSE"));
 	return;
       }
 
@@ -269,7 +314,7 @@ int is_direct;
       {
 	notify(player, tprintf(
 			   "Only guests may have names beginning with '%s'",
-				guest_prefix));
+				guest_prefix ? guest_prefix : "Guest"));
 	return;
       }
 
@@ -278,7 +323,7 @@ int is_direct;
       {
 	notify(player, tprintf(
 	     "Only guests may have names beginning with '%s' and a number.",
-				guest_alias_prefix));
+				guest_alias_prefix ? guest_alias_prefix : "Guest"));
 	return;
       }
 
@@ -306,7 +351,9 @@ int is_direct;
 
       log_important(tprintf("|G+NAME CHANGE|: %s to %s",
 			    unparse_object_a(thing, thing), cname));
-      notify_in(db[thing].location, thing, tprintf("%s is now known as %s.", db[thing].name, cname));
+      notify_in(db[thing].location, thing, tprintf("%s is now known as %s.", 
+                                                    db[thing].name ? db[thing].name : "Someone", 
+                                                    cname));
       delete_player(thing);
       SET(db[thing].name, newname);
       add_player(thing);
@@ -325,33 +372,39 @@ int is_direct;
 
     /* everything ok, change the name */
     if (Hearer(thing))
-      notify_in(db[thing].location, thing, tprintf("%s is now known as %s.", db[thing].name, newname));
+      notify_in(db[thing].location, thing, tprintf("%s is now known as %s.", 
+                                                    db[thing].name ? db[thing].name : "Something",
+                                                    newname));
     SET(db[thing].name, newname);
     SET(db[thing].cname, newname);
-/*    check_spoofobj(player, thing); */
     notify(player, "Name set.");
   }
 }
 
-void do_describe(player, name, description)
-dbref player;
-char *name;
-char *description;
+void do_describe(dbref player, char *name, char *description)
 {
   dbref thing;
 
+  if (!name) {
+    notify(player, "Describe what?");
+    return;
+  }
+
   if ((thing = match_controlled(player, name, POW_MODIFY)) != NOTHING)
   {
-    s_Desc(thing, description);
+    s_Desc(thing, description ? description : "");
     notify(player, "Description set.");
   }
 }
 
-void do_unlink(player, name)
-dbref player;
-char *name;
+void do_unlink(dbref player, char *name)
 {
   dbref exit;
+
+  if (!name) {
+    notify(player, "Unlink what?");
+    return;
+  }
 
   init_match(player, name, TYPE_EXIT);
   match_exit();
@@ -394,16 +447,18 @@ char *name;
   }
 }
 
-void do_chown(player, name, newobj)
-dbref player;
-char *name;
-char *newobj;
+void do_chown(dbref player, char *name, char *newobj)
 {
   dbref thing;
   dbref owner;
 
+  if (!name) {
+    notify(player, "Chown what?");
+    return;
+  }
+
   log_important(tprintf("%s attempts: @chown %s=%s",
-			unparse_object_a(player, player), name, newobj));
+			unparse_object_a(player, player), name, newobj ? newobj : ""));
 
   init_match(player, name, TYPE_THING);
   match_possession();
@@ -419,7 +474,7 @@ char *newobj;
     notify(player, "I don't know which you mean!");
     return;
   }
-  if (!*newobj || !string_compare(newobj, "me"))
+  if (!newobj || !*newobj || !string_compare(newobj, "me"))
     owner = def_owner(player);	/* @chown thing or @chown thing=me */
   else if ((owner = lookup_player(newobj)) == NOTHING)
     notify(player, "I couldn't find that player.");
@@ -497,13 +552,15 @@ static struct hearing
 }
  *hearing_list = NULL;
 
-void mark_hearing(obj)
-dbref obj;
+void mark_hearing(dbref obj)
 {
   int i;
   struct hearing *mine;
 
   mine = malloc(sizeof(struct hearing));
+  if (!mine) {
+    return;  /* Memory allocation failed */
+  }
 
   mine->next = hearing_list;
   mine->did_hear = Hearer(obj);
@@ -516,7 +573,7 @@ dbref obj;
   }
 }
 
-void check_hearing()
+void check_hearing(void)
 {
   struct hearing *mine;
   int now_hear;
@@ -532,20 +589,23 @@ void check_hearing()
 
     if (now_hear && !mine->did_hear)
       notify_in(db[obj].location, obj,
-		tprintf("%s grows ears and can now hear.", db[obj].name));
+		tprintf("%s grows ears and can now hear.", db[obj].name ? db[obj].name : "Something"));
     if (mine->did_hear && !now_hear)
       notify_in(db[obj].location, obj,
-		tprintf("%s loses its ears and is now deaf.", db[obj].name));
+		tprintf("%s loses its ears and is now deaf.", db[obj].name ? db[obj].name : "Something"));
     free(mine);
   }
 }
 
-void do_unlock(player, name)
-dbref player;
-char *name;
+void do_unlock(dbref player, char *name)
 {
   dbref thing;
   ATTR *attr = A_LOCK;
+
+  if (!name) {
+    notify(player, "Unlock what?");
+    return;
+  }
 
   if ((thing = match_controlled(player, name, POW_MODIFY)) == NOTHING)
     return;
@@ -558,16 +618,18 @@ char *name;
   notify(player, "Unlocked.");
 }
 
-void do_set(player, name, flag, allow_commands)
-dbref player;
-char *name;
-char *flag;
-int allow_commands;
+void do_set(dbref player, char *name, char *flag, int allow_commands)
 {
   dbref thing;
   char *p, *q;
   object_flag_type f;
   int her;
+  int nice_value;  /* Fix #7: Store atoi result once */
+
+  if (!name || !flag) {
+    notify(player, "Invalid parameters.");
+    return;
+  }
 
   /* find thing */
   if ((thing = match_thing(player, name)) == NOTHING)
@@ -595,12 +657,7 @@ int allow_commands;
       notify(player, "Sorry that isn't a valid attribute.");
       return;
     }
-    /* if ( (attr->flags & AF_WIZARD) && !((attr->obj ==
-       NOTHING)?power(player,
-       POW_WATTR):controls(player,attr->obj,POW_WATTR))) {
-       notify(player,"Sorry only Administrators can change that."); return; } 
-
-     */
+    
     if (!can_set_atr(player, thing, attr))
     {
       notify(player, "You can't set that attribute.");
@@ -613,19 +670,22 @@ int allow_commands;
     }
     if (attr == A_ALIAS && (!ok_player_name(thing, db[thing].name, p)))
     {
-      notify(player, tprintf("You can't set %s's alias to that.", db[thing].name));
+      notify(player, tprintf("You can't set %s's alias to that.", 
+                             db[thing].name ? db[thing].name : "that player"));
       return;
     }
 
     if (attr == A_NICE)
     {
-/*      notify(player, tprintf("atoi(p) = %d", atoi(p))); */
-      if ((atoi(p) > 20) || (atoi(p) < -20))
+      /* Fix #7: Evaluate atoi() once and store result */
+      nice_value = atoi(p);
+      
+      if ((nice_value > 20) || (nice_value < -20))
       {
         notify(player, "@nice: Bad value (must be between -20 and 20).");
         return;
       } 
-      if ((atoi(p) < 0) && !power(player, POW_SECURITY) )
+      if ((nice_value < 0) && !power(player, POW_SECURITY))
       {
         notify(player, "@nice: Sorry, You lack the power.");
         return;
@@ -660,9 +720,10 @@ int allow_commands;
       char *x;
 
       x = stack_em(strlen(p) + 2);
-      strcpy(x, "_");
-      strcat(x, p);
-      p = x;
+      if (x) {
+        snprintf(x, strlen(p) + 2, "_%s", p);
+        p = x;
+      }
     }
     db[thing].mod_time = now;
     atr_add(thing, attr, p);
@@ -671,7 +732,7 @@ int allow_commands;
       add_player(thing);
 
     if (!(db[player].flags & QUIET))
-      notify(player, tprintf("%s - Set.", db[thing].cname));
+      notify(player, tprintf("%s - Set.", db[thing].cname ? db[thing].cname : "Object"));
     check_hearing();
     return;
   }
@@ -697,15 +758,10 @@ int allow_commands;
       f = THING_DEST_OK;
     if (string_prefix("LIGHT", p))
       f = THING_LIGHT;
-    /* if ( string_prefix("ROBOT",p) ) f=THING_ROBOT; */
     if (string_prefix("X_OK", p))
       f = THING_SACROK;
     break;
   case TYPE_PLAYER:
-/* get rid of newbie flag, it's stupid
-    if (string_prefix("NEWBIE", p) || string_prefix("NOVICE", p))
-      f = PLAYER_NEWBIE;
-*/
     if (string_prefix("SLAVE", p))
       f = PLAYER_SLAVE;
     if (string_prefix("TERSE", p))
@@ -718,14 +774,10 @@ int allow_commands;
       f = PLAYER_ANSI;
     if (string_prefix("NOBEEP", p))
       f = PLAYER_NOBEEP;
-/*  replaced with @prefix / @suffix
-    if (string_prefix("WHEN", p))
-      f = PLAYER_WHEN;
-*/
     if (string_prefix("FREEZE", p))
       f = PLAYER_FREEZE;
     if (string_prefix("SUSPECT", p))
-      if (db[player].pows[0] == CLASS_DIR)
+      if (db[player].pows && db[player].pows[0] == CLASS_DIR)
         f = PLAYER_SUSPECT;
     break;
   case TYPE_ROOM:
@@ -820,20 +872,6 @@ int allow_commands;
       }
     }
   }
-  /* check for restricted flag */
-/* new spoof protection installed.
-  if (f == HAVEN && *flag == NOT_TOKEN)
-  {
-    dbref p;
-
-    p = starts_with_player(db[thing].name);
-    if (p != NOTHING && !controls(player, p, POW_SPOOF))
-    {
-      notify(player, "Sorry, a player holds that name.");
-      return;
-    }
-  }
-*/
 
   if (Typeof(thing) == TYPE_PLAYER && f == PLAYER_SLAVE)
   {
@@ -881,7 +919,7 @@ int allow_commands;
     notify(player, "Flag reset.");
     if ((f == PUPPET) && her && !Hearer(thing))
       notify_in(db[thing].location, thing, tprintf
-		("%s loses its ears and becomes deaf.", db[thing].name));
+		("%s loses its ears and becomes deaf.", db[thing].name ? db[thing].name : "Something"));
   }
   else
   {
@@ -892,7 +930,7 @@ int allow_commands;
       char *buff;
 
       buff = tprintf("%s grows ears and can now hear.",
-		     db[thing].name);
+		     db[thing].name ? db[thing].name : "Something");
       notify_in(db[thing].location, thing, buff);
     }
     notify(player, "Flag set.");
@@ -900,19 +938,15 @@ int allow_commands;
 }
 
 /* check for abbreviated set command */
-int test_set(player, command, arg1, arg2, is_direct)
-dbref player;
-char *command;
-char *arg1;
-char *arg2;
-int is_direct;
+int test_set(dbref player, char *command, char *arg1, char *arg2, int is_direct)
 {
-  extern ATTR *builtin_atr_str P((char *));
+  extern ATTR *builtin_atr_str(char *);
   ATTR *a;
   char buff[2000];
 
-  if (command[0] != '@')
+  if (!command || command[0] != '@')
     return (0);
+    
   if (!(a = builtin_atr_str(command + 1)))
   {
     init_match(player, arg1, NOTYPE);
@@ -922,7 +956,7 @@ int is_direct;
       a = atr_str(player, match_result(), command + 1);
       if (a)
       {
-	sprintf(buff, "%s:%s", command + 1, arg2);
+	snprintf(buff, sizeof(buff), "%s:%s", command + 1, arg2 ? arg2 : "");
 	do_set(player, arg1, buff, is_direct);
 	return (1);
       }
@@ -930,24 +964,22 @@ int is_direct;
   }
   else if (!(a->flags & AF_NOMOD))
   {
-    sprintf(buff, "%s:%s", command + 1, arg2);
+    snprintf(buff, sizeof(buff), "%s:%s", command + 1, arg2 ? arg2 : "");
     do_set(player, arg1, buff, is_direct);
     return 1;
   }
   return (0);
 }
 
-int parse_attrib(player, s, thing, atr, withpow)
-dbref player;
-char *s;
-dbref *thing;
-ATTR **atr;
-int withpow;
+int parse_attrib(dbref player, char *s, dbref *thing, ATTR **atr, int withpow)
 {
   char buff[1024];
 
-  strncpy(buff, s, 1023);
-  buff[1023] = '\0';
+  if (!s) return 0;
+
+  strncpy(buff, s, sizeof(buff) - 1);
+  buff[sizeof(buff) - 1] = '\0';
+  
   /* get name up to / */
   for (s = buff; *s && (*s != '/'); s++) ;
   if (!*s)
@@ -976,16 +1008,18 @@ int withpow;
   return (1);
 }
 
-void do_edit(player, it, argv)
-dbref player;
-char *it;
-char *argv[];
+void do_edit(dbref player, char *it, char *argv[])
 {
   dbref thing;
   int d, len;
   char *r, *s, *val;
-  char dest[1024];
+  char dest[2048];  /* Fix #3: Increased to 2048 to match check */
   ATTR *attr;
+
+  if (!it) {
+    notify(player, "Edit what?");
+    return;
+  }
 
   if (!parse_attrib(player, it, &thing, &attr, POW_MODIFY))
   {
@@ -1019,24 +1053,41 @@ char *argv[];
   }
   val = argv[1];
   r = (argv[2]) ? argv[2] : "";
+  
   /* replace all occurances of val with r */
   s = atr_get(thing, attr);
+  if (!s) s = "";
+  
   len = strlen(val);
-  for (d = 0; (d < 1000) && *s;)
+  
+  /* Fix #3: Use consistent bounds checking with buffer size */
+  for (d = 0; (d < (int)(sizeof(dest) - 1)) && *s;)
+  {
     if (strncmp(val, s, len) == 0)
     {
-      if ((d + strlen(r)) < 1000)
+      /* Check if replacement will fit */
+      if ((d + strlen(r)) < (sizeof(dest) - 1))
       {
-	strcpy(dest + d, r);
-	d += strlen(r);
-	s += len;
+        /* Safe to copy replacement string */
+        size_t r_len = strlen(r);
+        strncpy(dest + d, r, sizeof(dest) - d - 1);
+        d += r_len;
+        s += len;
       }
       else
-	dest[d++] = *s++;
+      {
+        /* Would overflow, copy what we can and break */
+        if (d < (int)(sizeof(dest) - 1))
+          dest[d++] = *s++;
+        else
+          break;
+      }
     }
     else
       dest[d++] = *s++;
-  dest[d++] = 0;
+  }
+  dest[d] = '\0';
+  
   if (db[db[thing].owner].i_flags & I_QUOTAFULL && strlen(dest) > strlen(atr_get(thing, attr)))
   {
     notify(player, "Your quota has run out.");
@@ -1050,8 +1101,7 @@ char *argv[];
   }
 }
 
-void do_hide(player)
-dbref player;
+void do_hide(dbref player)
 {
   atr_add((Typeof(player) == TYPE_PLAYER) ? player : db[player].owner, A_LHIDE, "me&!me");
   if (Typeof(player) == TYPE_PLAYER)
@@ -1061,8 +1111,7 @@ dbref player;
   return;
 }
 
-void do_unhide(play)
-dbref play;
+void do_unhide(dbref play)
 {
   atr_add((Typeof(play) == TYPE_PLAYER) ? play : db[play].owner, A_LHIDE, "");
   if (Typeof(play) == TYPE_PLAYER)
@@ -1072,16 +1121,19 @@ dbref play;
   return;
 }
 
-void do_haven(player, haven)
-dbref player;
-char *haven;
+void do_haven(dbref player, char *haven)
 {
+  if (!haven) {
+    notify(player, "Haven what?");
+    return;
+  }
+
   if (*haven == '?')
   {
-    if (*atr_get(player, A_HAVEN))
+    char *current_haven = atr_get(player, A_HAVEN);
+    if (current_haven && *current_haven)
     {
-      notify(player, tprintf("Your Haven message is: %s",
-			     atr_get(player, A_HAVEN)));
+      notify(player, tprintf("Your Haven message is: %s", current_haven));
       return;
     }
     else
@@ -1102,13 +1154,17 @@ char *haven;
   notify(player, tprintf("Haven message set as: %s", haven));
 }
 
-void do_idle(player, idle)
-dbref player;
-char *idle;
+void do_idle(dbref player, char *idle)
 {
+  if (!idle) {
+    notify(player, "Idle what?");
+    return;
+  }
+
   if (*idle == '?')
   {
-    if (*Idle(player))
+    char *current_idle = Idle(player);
+    if (current_idle && *current_idle)
     {
       notify(player, tprintf("Your Idle message is: %s",
 			     atr_get(player, A_IDLE)));
@@ -1133,13 +1189,17 @@ char *idle;
 
 }
 
-void do_away(player, away)
-dbref player;
-char *away;
+void do_away(dbref player, char *away)
 {
+  if (!away) {
+    notify(player, "Away what?");
+    return;
+  }
+
   if (*away == '?')
   {
-    if (*Away(player))
+    char *current_away = Away(player);
+    if (current_away && *current_away)
     {
       notify(player, tprintf("Your Away message is: %s",
 			     atr_get(player, A_AWAY)));
@@ -1186,64 +1246,93 @@ void set_idle_command(dbref player, char *arg1, char *arg2)
   }
 }
 
-void set_idle(player, cause, time, msg)
-dbref player;
-dbref cause;
-time_t time;
-char *msg;
+void set_idle(dbref player, dbref cause, time_t time, char *msg)
 {
-  char buf[4096];  /* big, in case someone's a retard. */
+  char buf[8192];  /* Fix #1: Increased size and using snprintf */
   char *buf2;
+  size_t buf_remaining;
+  int result;
 
+  /* Fix #6: Add null checks */
+  if (player < 0 || player >= db_top || !db[player].name) {
+    return;
+  }
 
-  if(is_pasting(player))
+  if (is_pasting(player))
   {
     add_more_paste(player, "@pasteabort");
   }
 
-  sprintf(buf,"%s idled ",db[player].name);
-
+  /* Fix #1: Use snprintf for safe string building */
+  result = snprintf(buf, sizeof(buf), "%s idled ", db[player].name);
+  if (result < 0 || result >= (int)sizeof(buf)) {
+    notify(player, "Error setting idle status.");
+    return;
+  }
+  buf_remaining = sizeof(buf) - result;
 
   if (cause == -1)
   {
-    strcat(buf,tprintf("after %ld minutes inactivity",time));
-    if(strlen(atr_get(player, A_IDLE)) > 0)
+    char *temp = tprintf("after %ld minutes inactivity", time);
+    result = snprintf(buf + strlen(buf), buf_remaining, "%s", temp);
+    if (result < 0 || result >= (int)buf_remaining) {
+      notify(player, "Error setting idle status.");
+      return;
+    }
+    
+    if (strlen(atr_get(player, A_IDLE)) > 0)
       atr_add(player, A_IDLE_CUR, atr_get(player, A_IDLE));
     else
       atr_add(player, A_IDLE_CUR, "inactivity idle - no default idle message.");
   }
-  else if ( cause != player && (!controls(cause, player, POW_MODIFY) && !power(cause, POW_MODIFY)))
+  else if (cause != player && (!controls(cause, player, POW_MODIFY) && !power(cause, POW_MODIFY)))
   {
     notify(cause, perm_denied());
     return;
   }
   else if (cause == player)
   {
-    strcat(buf,"manually");
+    result = snprintf(buf + strlen(buf), buf_remaining, "manually");
+    if (result < 0) return;
   }
   else
   {
-    if(atr_get(player, A_IDLE))
+    if (atr_get(player, A_IDLE))
     {
-      strcat(buf,tprintf("- set by %s",db[cause].name));
+      char *temp = tprintf("- set by %s", db[cause].name ? db[cause].name : "someone");
+      result = snprintf(buf + strlen(buf), buf_remaining, "%s", temp);
+      if (result < 0) return;
     }
   }
 
   if (msg && *msg)
   {
-    if(msg && *msg && (strlen(msg) > 512))
+    /* Truncate message if too long */
+    char truncated_msg[513];
+    if (strlen(msg) > 512)
     {
-      msg[512] = '\0';
-      notify(player,"Idle message truncated.");
+      strncpy(truncated_msg, msg, 512);
+      truncated_msg[512] = '\0';
+      msg = truncated_msg;
+      notify(player, "Idle message truncated.");
     }
-    strcat(buf,tprintf(" (%s)",msg));
+    
+    char *temp = tprintf(" (%s)", msg);
+    buf_remaining = sizeof(buf) - strlen(buf);
+    result = snprintf(buf + strlen(buf), buf_remaining, "%s", temp);
+    if (result < 0 || result >= (int)buf_remaining) {
+      /* Message too long, truncate */
+      buf[sizeof(buf) - 1] = '\0';
+    }
     atr_add(player, A_IDLE_CUR, msg);
   }
   else
-    if(strlen(atr_get(player, A_IDLE)) > 0)
+  {
+    if (strlen(atr_get(player, A_IDLE)) > 0)
       atr_add(player, A_IDLE_CUR, atr_get(player, A_IDLE));
     else
       atr_add(player, A_IDLE_CUR, "");
+  }
 
   if ((strlen(atr_get(player, A_BLACKLIST))) || (strlen(atr_get(player, A_LHIDE))))
   {
@@ -1251,42 +1340,44 @@ char *msg;
   }
   else
   {
-    buf2 = tprintf("%s",buf);
+    buf2 = tprintf("%s", buf);
   }
 
   log_io(buf2);
-  com_send_as_hidden("pub_io",buf2,player);
+  com_send_as_hidden("pub_io", buf2, player);
   db[player].flags |= PLAYER_IDLE;
   did_it(player, player, NULL, 0, NULL, 0, A_AIDLE);
   return;
 }
 
 
-void set_unidle(player,lasttime)
-dbref player;
-time_t lasttime;
+void set_unidle(dbref player, time_t lasttime)
 {
-
   long unidle_time;
+  static int in_unidle = 0;  /* Fix #5: Recursion prevention flag */
 
-  check_newday();
-
-  if(player <= 0 || player > db_top)
-  {
-    log_io(tprintf("problem with set_unidle -- player = %d lasttime = %ld",(int)player, lasttime));
+  /* Fix #5: Prevent recursion */
+  if (in_unidle) {
     return;
   }
 
-/* if lasttime is MAXINT, we supress the message. */
-  if(lasttime != MAXINT)
+  check_newday();
+
+  /* Fix #6: Add bounds checking */
+  if (player <= 0 || player >= db_top)
+  {
+    log_io(tprintf("problem with set_unidle -- player = %d lasttime = %ld", (int)player, lasttime));
+    return;
+  }
+
+  /* if lasttime is MAXINT, we suppress the message. */
+  if (lasttime != MAXINT)
   {
     char *buf, *buf2;
     unidle_time = now - lasttime;
     db[player].flags &= ~PLAYER_IDLE;
 
-    
-
-    if(unidle_time)
+    if (unidle_time)
       buf = tprintf("%s unidled after %s.", unparse_object(player, player), time_format_4(unidle_time));
     else
       buf = tprintf("%s unidled immediately. duh.", unparse_object(player, player));
@@ -1301,38 +1392,18 @@ time_t lasttime;
     }
 
     log_io(buf2);
-    com_send_as_hidden("pub_io",buf2,player);
-
+    com_send_as_hidden("pub_io", buf2, player);
   }
 
-  /* check to see if "idle" is a command in the A_UNIDLE. */
+  /* Fix #5: Set flag before executing A_AUNIDLE to prevent recursion */
+  in_unidle = 1;
+  did_it_now(player, player, NULL, 0, NULL, 0, A_AUNIDLE);
+  in_unidle = 0;
 
-  {
-    char *aunidle;
-    size_t x;
-
-    aunidle = tprintf("%s", atr_get(player, A_AUNIDLE));
-
-    for (x=0; x < strlen(aunidle); x++)
-    {
-      aunidle[x] = to_lower(aunidle[x]);
-    }
-
-    if (!strstr(aunidle, "idle"))
-    {
-      did_it_now(player, player, NULL, 0, NULL, 0, A_AUNIDLE);
-    }
-    else
-    {
-      notify(player, "idle found in AUNIDLE string. AUNIDLE ignored.");
-    }
-  } 
-
-  if(lasttime != MAXINT)
+  if (lasttime != MAXINT)
   {
     if ((check_mail_internal(player, "")) > 0)
       check_mail(player, "");
   }
   return;
 }
-

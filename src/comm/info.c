@@ -1,207 +1,209 @@
-#include "config.h"
-#include "externs.h"
-#include "db.h"
+/* info.c - System information display commands
+ * Located in comm/ directory
+ * 
+ * This file contains commands for displaying various system information
+ * including configuration, database stats, function lists, memory usage, etc.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
-/* #include <config.c> */
 
+#include "config.h"
+#include "db.h"
+#include "interface.h"
+#include "externs.h"
+
+/* For mallinfo on systems that support it */
+#ifdef __GLIBC__
 #include <malloc.h>
+#endif
 
-/* static struct mdb_entry *mdb; */
-struct mdb_entry *mdb;
+/* ===================================================================
+ * Forward Declarations
+ * =================================================================== */
 
-/* static long mdb_top; */
-long mdb_top; 
-//static long mdb_first_free;
-long mdb_first_free;
+static void info_cpu(dbref player);
+static void info_mem(dbref player);
 
-static void info_cpu P((dbref));
-static void info_mail P((dbref));
+/* ===================================================================
+ * Main Info Command
+ * =================================================================== */
 
-void info_mem(dbref);
-
-void do_info(player, arg1)
-dbref player;
-char *arg1;
+/**
+ * INFO command - display various system information
+ * @param player Player requesting info
+ * @param arg1 Type of info to display
+ */
+void do_info(dbref player, char *arg1)
 {
-
-  if (!string_compare(arg1, "config"))
-  {
-    info_config(player);
-  }
-  else if (!string_compare(arg1, "db"))
-  {
-    info_db(player);
-  }
-  else if (!string_compare(arg1, "funcs"))
-  {
-    info_funcs(player);
-  }
-  else if (!string_compare(arg1, "memory")) 
-  {
-    info_mem(player);
-  }
-  else if(!string_compare(arg1, "mail"))
-    info_mail(player);
+    if (!arg1 || !*arg1) {
+        notify(player, "Usage: @info <type>");
+        notify(player, "Available types: config, db, funcs, memory, mail"
 #ifdef USE_PROC
-  else if (!string_compare(arg1, "pid"))
-  {
-    info_pid(player);
-  }
-  else if(!string_compare(arg1, "cpu"))
-    info_cpu(player);
+               ", pid, cpu"
 #endif
-  else
-  {
-    char temp[1024];
+        );
+        return;
+    }
 
-    sprintf(temp,"Usage: @info config|db|funcs|memory|mail");
+    if (!string_compare(arg1, "config")) {
+        info_config(player);
+    }
+    else if (!string_compare(arg1, "db")) {
+        info_db(player);
+    }
+    else if (!string_compare(arg1, "funcs")) {
+        info_funcs(player);
+    }
+    else if (!string_compare(arg1, "memory")) {
+        info_mem(player);
+    }
+    else if (!string_compare(arg1, "mail")) {
+        info_mail(player);
+    }
 #ifdef USE_PROC
-    strcat(temp, "|pid|cpu");
+    else if (!string_compare(arg1, "pid")) {
+        info_pid(player);
+    }
+    else if (!string_compare(arg1, "cpu")) {
+        info_cpu(player);
+    }
 #endif
-    notify(player, temp);
-  }
+    else {
+        notify(player, tprintf("Unknown info type: %s", arg1));
+        notify(player, "Try: @info (with no arguments) for a list of types.");
+    }
 }
 
-#ifdef USE_PROC
-void info_pid(player)
-dbref player;
-{
-#define PIDBUF 1024
-  char filename[256];
-  char buf[PIDBUF];
-  FILE *fp;
-  char *p;
+/* ===================================================================
+ * Memory Information
+ * =================================================================== */
 
-  sprintf(filename, "/proc/%d/status", getpid());
-  if ((fp = fopen(filename, "r")) == NULL)
-  {
+/**
+ * Display memory usage statistics
+ * @param player Player to send info to
+ */
+static void info_mem(dbref player)
+{
+    notify(player, "=== Memory Statistics ===");
+    
+    /* Stack information */
+    notify(player, tprintf("Stack Size/Blocks: %zu/%zu", 
+                          stack_size, number_stack_blocks));
+    
+    /* Text block information */
+    notify(player, tprintf("Text Block Size/Count: %zu/%zu",
+                          text_block_size, text_block_num));
+    
+#ifdef __GLIBC__
+    /* Use mallinfo2 on newer glibc, mallinfo on older */
+    #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 33)
+    struct mallinfo2 m_info = mallinfo2();
+    notify(player, tprintf("Total Allocated Memory: %zu bytes", m_info.arena));
+    notify(player, tprintf("Free Allocated Memory: %zu bytes", m_info.fordblks));
+    notify(player, tprintf("Free Chunks: %zu", m_info.ordblks));
+    notify(player, tprintf("Used Memory: %zu bytes", m_info.uordblks));
+    #else
+    struct mallinfo m_info = mallinfo();
+    notify(player, tprintf("Total Allocated Memory: %d bytes", m_info.arena));
+    notify(player, tprintf("Free Allocated Memory: %d bytes", m_info.fordblks));
+    notify(player, tprintf("Free Chunks: %d", m_info.ordblks));
+    notify(player, tprintf("Used Memory: %d bytes", m_info.uordblks));
+    #endif
+#else
+    notify(player, "Detailed memory statistics not available on this platform.");
+#endif
+}
+
+
+/* ===================================================================
+ * Process Information (Linux /proc filesystem)
+ * =================================================================== */
+
+#ifdef USE_PROC
+
+/**
+ * Display process ID and memory information from /proc
+ * @param player Player to send info to
+ */
+void info_pid(dbref player)
+{
+    char filename[256];
+    char buf[1024];
+    FILE *fp;
+    char *p;
+    
+    /* Build /proc path */
+    snprintf(filename, sizeof(filename), "/proc/%d/status", getpid());
+    
+    /* Try to open /proc file */
+    fp = fopen(filename, "r");
+    if (!fp) {
+        notify(player, tprintf("Couldn't open \"%s\" for reading!", filename));
+        notify(player, "Process information not available on this system.");
+        return;
+    }
+    
+    /* Search for VmSize line */
+    while (fgets(buf, sizeof(buf), fp)) {
+        if (!strncmp(buf, "VmSize", 6)) {
+            break;
+        }
+    }
+    
+    if (feof(fp)) {
+        fclose(fp);
+        notify(player, tprintf("Error reading \"%s\"!", filename));
+        return;
+    }
+    
     fclose(fp);
-    notify(player,
-	   tprintf("Couldn't open \"%s\" for reading!", filename));
-    return;
-  }
-  while (!feof(fp))
-  {
-    fgets(buf, PIDBUF, fp);
-    if (!strncmp(buf, "VmSize", 6))
-      break;
-  }
-  if (feof(fp))
-  {
-    fclose(fp);
-    notify(player,
-	   tprintf("Error reading \"%s\"!", filename));
-    return;
-  }
-  fclose(fp);
-  *(buf + strlen(buf) - 1) = '\0';
-  for (p = buf; *p && !isspace(*p); p++) ;
-  while (isspace(*p))
-    p++;
-  notify(player, tprintf("%s (deMUSE) Process ID info:",muse_name));
-  notify(player, tprintf("  PID : %d", getpid()));
-  notify(player, tprintf("  Size: %s", p));
-}
-#endif
-
-void info_cpu(player)
-  dbref player;
-{ 
-#define CPUBUF 80
-  FILE *fp;
-  char buf[CPUBUF];
-  
-  if((fp = fopen("/proc/cpuinfo", "r")) == NULL)
-    return;
-  
-  while(!feof(fp))
-  {
-    fgets(buf, CPUBUF, fp);
-    if(feof(fp))
-      break;
-    buf[strlen(buf)-1] = '\0';
-    notify(player, buf);
-  }
-  fclose(fp);
+    
+    /* Parse the VmSize value */
+    /* Remove trailing newline */
+    buf[strcspn(buf, "\n")] = '\0';
+    
+    /* Skip to the value */
+    p = buf;
+    while (*p && !isspace(*p)) {
+        p++;
+    }
+    while (isspace(*p)) {
+        p++;
+    }
+    
+    /* Display results */
+    notify(player, tprintf("=== %s Process Information ===", muse_name));
+    notify(player, tprintf("PID: %d", getpid()));
+    notify(player, tprintf("Virtual Memory Size: %s", p));
 }
 
-void info_mem(dbref player)
+/**
+ * Display CPU information from /proc/cpuinfo
+ * @param player Player to send info to
+ */
+static void info_cpu(dbref player)
 {
-        struct mallinfo2 m_info;
-        m_info = mallinfo2();
-
-	notify(player, tprintf("\tStack Size / Blocks....: %d/%d", stack_size, number_stack_blocks));
-	notify(player, tprintf("\tText Block Size/Blocks.: %d/%d", text_block_size, text_block_num));
-        notify(player, tprintf("\tTotal Allocated Memory.: %zu", m_info.arena));
-        notify(player, tprintf("\tFree Allocated Memory..: %zu", m_info.fordblks));
-        notify(player, tprintf("\tFree Chunks of Memory..: %zu", m_info.ordblks));
-        notify(player, tprintf("\tTotal Used Memory......: %zu", m_info.uordblks));
+    FILE *fp;
+    char buf[256];
+    
+    fp = fopen("/proc/cpuinfo", "r");
+    if (!fp) {
+        notify(player, "CPU information not available on this system.");
+        return;
+    }
+    
+    notify(player, "=== CPU Information ===");
+    
+    while (fgets(buf, sizeof(buf), fp)) {
+        /* Remove trailing newline */
+        buf[strcspn(buf, "\n")] = '\0';
+        notify(player, buf);
+    }
+    
+    fclose(fp);
 }
 
-
-void info_mail(player)
-  dbref player;
-{ 
-  long i;
-  long new, deleted, read, unread;
-  long total, total_size;
-  long oldest, newest;
-  
-  new = deleted = read = unread = total = total_size = 0;
-  
-  oldest = now;
-  newest = (long)0;
-  
-  for(i = 0;i < mdb_top;++i)
-  {
-/* First thing, see if the message exists */
-/* If not then it's a free spot           */
-
-    total_size = total_size + (long)(15);
-
-    if(!mdb[i].message)
-      continue;
-  
-    if(mdb[i].flags & MF_DELETED)
-      deleted++;
-    else if(mdb[i].flags & MF_READ)
-      read++;
-    else if(mdb[i].flags & MF_NEW)
-      new++;
-    else
-      unread++;
-  
-    if(mdb[i].date < oldest)
-      oldest = mdb[i].date;
-    else if(mdb[i].date > newest)
-      newest = mdb[i].date;
-
-    total++;
-    total_size = total_size + (long)((strlen(mdb[i].message)));
-
-  }
-  
-  notify(player, tprintf("|B!+maildb_top   ||W!+: ||C!+#%ld|", mdb_top));
-  notify(player, tprintf("|B!+first_free   ||W!+: ||C!+#%ld|",
-    (mdb_first_free == -1)?mdb_top:mdb_first_free));
-  notify(player, tprintf("|B!+maildb size  ||W!+: ||C!+%s|",
-    comma(tprintf("%ld",total_size))));
-  
-  notify(player, tprintf("\n|B!+Oldest Message||W!+: ||C!+%s|",
-    mktm(oldest, "D|", player)));
-  notify(player, tprintf("|B!+Newest Message||W!+: ||C!+%s|",
-    mktm(newest, "D|", player)));
-  
-  notify(player, tprintf("\n|B!+Total Messages       ||W!+: ||C!+%s|",
-    comma(tprintf("%ld", total))));
-  notify(player, tprintf("|B!+Deleted Messages     ||W!+: ||C!+%s|",
-    comma(tprintf("%ld", deleted))));
-  notify(player, tprintf("|B!+Read Messages        ||W!+: ||C!+%s|",
-    comma(tprintf("%ld", read))));
-  notify(player, tprintf("|B!+Unread Messages      ||W!+: ||C!+%s|",
-    comma(tprintf("%ld", unread))));
-  notify(player, tprintf("|B!+New Messages         ||W!+: ||C!+%s|",
-    comma(tprintf("%ld", new))));
-}
-
-
+#endif /* USE_PROC */

@@ -8,7 +8,7 @@ CFLAGS = -Wall -Wextra -pedantic -ansi -std=c99 -g -O2 \
          -D_POSIX_C_SOURCE=200809L \
          -D_DEFAULT_SOURCE
 LDFLAGS = 
-LIBS = -lcrypt
+LIBS = -lcrypt 
 
 # Get curl flags dynamically
 CURL_CFLAGS := $(shell pkg-config --cflags libcurl 2>/dev/null)
@@ -23,7 +23,7 @@ TOPDIR = ../..
 
 # Source files
 SRCS = broadcast.c color.c com.c create.c datetime.c dbtop.c email.c emit.c help.c info.c \
-       look.c lstats.c page.c paste.c pcmds.c player.c pueblo.c rob.c set.c speech.c
+       look.c lstats.c messaging.c page.c paste.c pcmds.c player.c rob.c set.c speech.c
 
 
 # Object files

@@ -734,19 +734,19 @@ char *name;
 }
 
 int ok_thing_name(name)
-char *name;
+const char *name;
 {
   return ok_name(name) && !strchr(name, ';');
 }
 
 int ok_exit_name(name)
-char *name;
+const char *name;
 {
   return ok_name(name);
 }
 
 int ok_room_name(name)
-char *name;
+const char *name;
 {
   return ok_name(name) && !strchr(name, ';');
 }

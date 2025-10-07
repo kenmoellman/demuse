@@ -25,11 +25,11 @@
 
 /*  MULTIHOMING SECTION  */
 /* decide whether machine is multihomed or not. */
-#define MULTIHOME 
+#undef MULTIHOME 
 #ifdef MULTIHOME
 
 /* name of your game server's host */
-#define HOSTNAME "master.mu-net.org"
+#define HOSTNAME "kmserver.mgmt.moellman.com"
 
 /* if you turn this option on, you will have to reboot the game with a new
 sourcecode version any time you change IP addresses.  THat's pretty bothersome,
@@ -63,7 +63,7 @@ multi-homing either.) -wm 05/08/2000 */
 #define ALLOW_COM_NP
 
 /* define Pueblo client support. defined = ON */
-/* #define PUEBLO_CLIENT */
+/* #define PUEBLO_CLIENT  */
 
 /* message configuration */
 
@@ -105,8 +105,8 @@ multi-homing either.) -wm 05/08/2000 */
 /* It's REALLY stupid and a big security risk to enable EXEC.  */
 #ifdef ALLOW_EXEC
 #define exec_config   "../config/ext_commands"
-#define exec_shell    "/bin/rsh5"
-#define exec_shellav0 "rsh"
+#define exec_shell    "/bin/bash"
+#define exec_shellav0 "bash"
 #endif /* ALLOW_EXEC */
 
 /* should be the email address of someone who looks over crash
@@ -236,6 +236,13 @@ multi-homing either.) -wm 05/08/2000 */
 
 #define MAX_BUFF_LEN 4096
 
+/* Login Stats variables */
+#define LOGINSTATS_FILE "db/loginstatsdb"
+#define LOGINSTATS_BUF 256
+#define LOGINSTATS_MAX_BACKUPS 3
+
+/* for info.c, allow use of /proc data */
+#define USE_PROC
 
 
 /* email config - Customize these settings for your SMTP server */

@@ -17,6 +17,8 @@ extern int exit_status;
 extern int ndescriptors;
 extern int nologins;
 extern int maxd;
+extern int sock;
+
 
 
 extern time_t muse_up_time;

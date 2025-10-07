@@ -12,10 +12,6 @@
 
 char *who_format P((char *, int, dbref));
 
-char motd[2048];
-char motd_who[11]; /* we'd better never get to 10 digit dbrefs! */
-
-
 #define  WHO_BUF_SIZ	500
 #define  DEF_SCR_COLS	78	/* must be less than WHO_BUF_SIZ */
 #define  MIN_SEC_SPC	2
@@ -559,7 +555,7 @@ struct descriptor_data *k;	/* if non-zero, use k instead of w */
 
     notify(w, tprintf("|C+%s|", longline));
     notify(w, buf);
-    if ( (motd && *motd)
+    if ( (strlen(motd))
 #ifdef USE_BLACKLIST
       && ( ((!strlen(atr_get(real_owner(messenger), A_BLACKLIST))) && (!strlen(atr_get(real_owner(w), A_BLACKLIST)))) ||
              (!((could_doit(real_owner(w), real_owner(messenger), A_BLACKLIST)) && (could_doit(real_owner(messenger), real_owner(w), A_BLACKLIST)))) )  

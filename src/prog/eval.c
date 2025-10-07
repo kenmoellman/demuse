@@ -15,7 +15,7 @@
 
 dbref match_thing(player, name)
 dbref player;
-char *name;
+const char *name;
 {
   init_match(player, name, NOTYPE);
   match_everything();

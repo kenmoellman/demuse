@@ -10,13 +10,32 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <limits.h>
 
 #include "config.h"
 #include "db.h"
 #include "interface.h"
 #include "externs.h"
-#include "player.h"     /* For player utility functions */
-#include "datetime.h"   /* For time formatting */
+
+/* Maximum page message length */
+#ifndef MAX_PAGE_LEN
+#define MAX_PAGE_LEN 4096
+#endif
+
+/* Maximum targets for a single page */
+#ifndef MAX_PAGE_TARGETS
+#define MAX_PAGE_TARGETS 100
+#endif
+
+void do_page_lock(dbref, const char *);
+int page_check(dbref, dbref);
+void page_notify(dbref, dbref, const char *);
+void record_last_pager(dbref, dbref);
+dbref get_last_pager(dbref);
+void do_page_last(dbref, const char *);
+
+/* External wildcard pointer array */
+extern char *wptr[10];
 
 /* ===================================================================
  * Page System Implementation
@@ -33,6 +52,12 @@ static void send_idle_notification(dbref pager, dbref target)
     const char *idle_msg;
     const char *idle_cur;
     time_t idle_time;
+    int iterations = 0;
+    
+    /* Validate parameters */
+    if (!GoodObject(pager) || !GoodObject(target)) {
+        return;
+    }
     
     /* Check if target has idle messages */
     idle_msg = Idle(target);
@@ -42,12 +67,13 @@ static void send_idle_notification(dbref pager, dbref target)
         return;  /* No idle messages configured */
     }
     
-    /* Find target's descriptor to get idle time */
-    for (d = descriptor_list; d && (d->player != target); d = d->next)
+    /* Find target's descriptor to get idle time - with loop protection */
+    for (d = descriptor_list; d && (d->player != target) && (iterations < 1000); 
+         d = d->next, iterations++)
         ;
     
-    if (!d) {
-        return;  /* Not connected? */
+    if (!d || iterations >= 1000) {
+        return;  /* Not connected or list corrupted */
     }
     
     /* Only send if player is actually idle */
@@ -87,6 +113,11 @@ static int can_page(dbref pager, dbref target)
 {
     const char *away_msg;
     const char *haven_msg;
+    
+    /* Validate parameters */
+    if (!GoodObject(pager) || !GoodObject(target)) {
+        return 0;
+    }
     
     /* Check if target is connected (or a puppet that hears) */
     if ((db[target].owner == target) ? 
@@ -141,7 +172,23 @@ static int can_page(dbref pager, dbref target)
 static void send_page_message(dbref pager, dbref target, 
                              const char *message, const char *hidden)
 {
-    char *pager_title = title(pager);
+    char *pager_title;
+    
+    /* Validate parameters */
+    if (!GoodObject(pager) || !GoodObject(target)) {
+        return;
+    }
+    
+    if (!hidden) {
+        hidden = " ";  /* Safety default */
+    }
+    
+    /* Get pager title - verify it returns allocated memory */
+    pager_title = title(pager);
+    if (!pager_title) {
+        log_error("title() returned NULL in send_page_message");
+        return;
+    }
     
     if (!message || !*message) {
         /* Location page */
@@ -212,6 +259,9 @@ static void send_page_message(dbref pager, dbref target,
     
     /* Free allocated title string */
     free(pager_title);
+    
+    /* Record last pager for "page last" functionality */
+    record_last_pager(target, pager);
 }
 
 /**
@@ -228,15 +278,55 @@ void do_page(dbref player, char *arg1, char *arg2)
     const char *hidden;
     const char *lhide;
     const char *blacklist;
+    long total_cost;
+    
+    /* Validate parameters */
+    if (!GoodObject(player)) {
+        return;
+    }
+    
+    if (!arg1) {
+        arg1 = "";
+    }
+    if (!arg2) {
+        arg2 = "";
+    }
+    
+    /* Check message length */
+    if (strlen(arg2) > MAX_PAGE_LEN) {
+        notify(player, tprintf("Page message too long (max %d characters).", 
+                              MAX_PAGE_LEN));
+        return;
+    }
     
     /* Look up target players */
     targets = lookup_players(player, arg1);
-    if (targets[0] == 0) {
+    if (!targets || targets[0] == 0) {
         return;  /* No valid targets found */
     }
     
+    /* Validate target count */
+    if (targets[0] > MAX_PAGE_TARGETS) {
+        notify(player, tprintf("Too many targets (max %d).", MAX_PAGE_TARGETS));
+        return;
+    }
+    
+    /* Check for cost overflow before charging */
+    if (targets[0] > 0 && page_cost > 0) {
+        /* Check if multiplication would overflow */
+        if (targets[0] > (LONG_MAX / page_cost)) {
+            notify(player, "Too many targets - cost overflow.");
+            log_error(tprintf("Page cost overflow: player #%d, targets %d", 
+                            player, targets[0]));
+            return;
+        }
+        total_cost = page_cost * targets[0];
+    } else {
+        total_cost = 0;
+    }
+    
     /* Check payment for multiple pages */
-    if (!payfor(player, page_cost * targets[0])) {
+    if (total_cost > 0 && !payfor(player, total_cost)) {
         notify(player, "You don't have enough Credits.");
         return;
     }
@@ -253,6 +343,12 @@ void do_page(dbref player, char *arg1, char *arg2)
     
     /* Send page to each target */
     for (k = 1; k <= targets[0]; k++) {
+        /* Validate target dbref */
+        if (!GoodObject(targets[k])) {
+            notify(player, tprintf("Invalid target #%d.", targets[k]));
+            continue;
+        }
+        
         /* Check if page can be sent */
         if (!can_page(player, targets[k])) {
             continue;  /* Skip this target */
@@ -277,6 +373,10 @@ void do_page(dbref player, char *arg1, char *arg2)
  */
 void do_page_lock(dbref player, const char *lock)
 {
+    if (!GoodObject(player)) {
+        return;
+    }
+    
     if (lock && *lock) {
         /* Set page lock */
         atr_add(player, A_LPAGE, tprintf("%s", lock));
@@ -296,6 +396,11 @@ void do_page_lock(dbref player, const char *lock)
  */
 int page_check(dbref receiver, dbref sender)
 {
+    /* Validate parameters */
+    if (!GoodObject(receiver) || !GoodObject(sender)) {
+        return 0;
+    }
+    
     /* Check basic page lock */
     if (!could_doit(sender, receiver, A_LPAGE)) {
         return 0;
@@ -306,8 +411,13 @@ int page_check(dbref receiver, dbref sender)
         return 0;
     }
     
-    /* Check blacklist */
-    /* TODO: Implement blacklist checking */
+#ifdef USE_BLACKLIST
+    /* Check blacklist if enabled */
+    if (!could_doit(real_owner(sender), real_owner(receiver), A_BLACKLIST) ||
+        !could_doit(real_owner(receiver), real_owner(sender), A_BLACKLIST)) {
+        return 0;
+    }
+#endif
     
     return 1;
 }
@@ -320,6 +430,22 @@ int page_check(dbref receiver, dbref sender)
  */
 void page_notify(dbref from, dbref to, const char *message)
 {
+    /* Validate parameters */
+    if (!GoodObject(from) || !GoodObject(to)) {
+        return;
+    }
+    
+    if (!message) {
+        message = "";
+    }
+    
+    /* Check message length */
+    if (strlen(message) > MAX_PAGE_LEN) {
+        log_error(tprintf("page_notify: message too long from #%d to #%d", 
+                         from, to));
+        return;
+    }
+    
     if (!is_connected(from, to)) {
         return;
     }
@@ -338,17 +464,24 @@ void page_notify(dbref from, dbref to, const char *message)
 
 /**
  * Record last person who paged a player
- * This would be called from send_page_message
  * @param target Player who received page
  * @param pager Player who sent page
  */
 void record_last_pager(dbref target, dbref pager)
 {
+    time_t now_time;
+    
+    /* Validate parameters */
+    if (!GoodObject(target) || !GoodObject(pager)) {
+        return;
+    }
+    
     /* Store in attribute for "page last" functionality */
     atr_add(target, A_LASTPAGE, tprintf("#%d", pager));
     
     /* Update timestamp */
-    atr_add(target, A_LASTPTIME, tprintf("%ld", (long)time(NULL)));
+    now_time = time(NULL);
+    atr_add(target, A_LASTPTIME, tprintf("%ld", (long)now_time));
 }
 
 /**
@@ -358,10 +491,20 @@ void record_last_pager(dbref target, dbref pager)
  */
 dbref get_last_pager(dbref player)
 {
-    const char *lastpage = atr_get(player, A_LASTPAGE);
+    const char *lastpage;
+    dbref result;
+    
+    if (!GoodObject(player)) {
+        return NOTHING;
+    }
+    
+    lastpage = atr_get(player, A_LASTPAGE);
     
     if (lastpage && *lastpage == '#') {
-        return atoi(lastpage + 1);
+        result = atoi(lastpage + 1);
+        if (GoodObject(result)) {
+            return result;
+        }
     }
     
     return NOTHING;
@@ -374,7 +517,13 @@ dbref get_last_pager(dbref player)
  */
 void do_page_last(dbref player, const char *message)
 {
-    dbref last_pager = get_last_pager(player);
+    dbref last_pager;
+    
+    if (!GoodObject(player)) {
+        return;
+    }
+    
+    last_pager = get_last_pager(player);
     
     if (last_pager == NOTHING) {
         notify(player, "No one has paged you yet.");

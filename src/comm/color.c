@@ -1,758 +1,664 @@
-/* color.c --  Ken C. Moellman, Jr.
+/* color.c - ANSI and Pueblo color code support
  *
- *  A large portion of this code was from the TinyMUSE 97 sourcecode, and has 
- *  been modified to support the pueblo client.  It was originally ansi.c 
- *  under the tm97 release.
+ * Originally from TinyMUSE 97, modified for deMUSE to support both
+ * ANSI terminal colors and Pueblo HTML client colors.
  *
+ * This file handles color markup in the format:
+ *   |<codes>+<text>|
+ * Example: |RB+Hello World!| (red text, blue background)
  */
-
 
 #include <stdio.h>
 #include <string.h>
-#include "externs.h"
-#include "db.h"
-
-#ifdef PUEBLO_CLIENT
-
 #include <ctype.h>
-#include <varargs.h>
-#include <stdio.h>
+#include <stdarg.h>
+
+#include "config.h"
+#include "db.h"
+#include "externs.h"
 #include "interface.h"
 
-char *make_font_string(char *, char *, int);
-static void set_ca(int *, int);
-char *color_pueblo(const char *);
-/* char *normal = "\e[0m"; */
-char *normal_pueb = "<font fgcolor=\"FFFFFF\" \"bgcolor=000000\">";
-char *puebloize2(const char *);
-char *strip_beep(char *);
-char *scanchar(char);
+/* ===================================================================
+ * Color Attribute Flags
+ * =================================================================== */
 
-#endif PUEBLO_CLIENT
-
-
-#define CA_BRIGHT	1
-#define CA_REVERSE	2
-#define CA_UNDERLINE	4
+#define CA_BRIGHT    1
+#define CA_REVERSE   2
+#define CA_UNDERLINE 4
 #ifdef BLINK
-#define CA_BLINK	8
+#define CA_BLINK     8
 #endif
 
+/* ===================================================================
+ * ANSI Color Strings
+ * =================================================================== */
 
-static int color2num(char); 
-static int is_foreground(int);
-static int is_background(int);
-char *make_num_string(int, int, int);
-static void set_ca(int *, int);
-char *color_escape(const char *);
-char *normal_ansi = "\e[0m";
-char *colorize(const char *, int, int);
-char *strip_beep(char *);
+/* Use \033 instead of \e for ISO C compliance */
+static const char *normal_ansi = "\033[0m";
 
-char *colorize(str, strip, pueblo)
-const char *str;
-int strip;
-int pueblo;
+#ifdef PUEBLO_CLIENT
+static const char *normal_pueblo = "<font fgcolor=\"FFFFFF\" bgcolor=\"000000\">";
+#endif
+
+/* ===================================================================
+ * Forward Declarations
+ * =================================================================== */
+
+static int color2num(char c);
+static int is_foreground(int num);
+static int is_background(int num);
+static void set_ca(int *attribs, int num);
+static char *make_num_string(int fore, int back, int ca);
+static char *color_escape(const char *s);
+
+#ifdef PUEBLO_CLIENT
+static char *make_font_string(const char *fore, const char *back, int ca);
+static char *color_pueblo(const char *s);
+static const char *pueblo_color(int num);
+#endif
+
+/* ===================================================================
+ * Utility Functions
+ * =================================================================== */
+
+/**
+ * Convert color code character to ANSI number
+ * @param c Color code character
+ * @return ANSI color code number, or -1 if invalid
+ */
+static int color2num(char c)
 {
-  char *s, *colorend, *colorstr, *escape, *html;
-  char buf[65535];
-
-  strcpy(buf, str);
-
-  for (s = buf; *s; s++)
-  {
-    if (*s == '|')
-    {
-      colorstr = strpbrk(s + 1, "+|");	/* Look and see if it's color. If it
-					   is, colorstr points to the plus
-					   before the string to be colorized. 
-
-					 */
-      if (colorstr && *colorstr == '|')		/* If it's not, keep going. */
-	continue;
-      else if (colorstr)
-      {
-	if (*(colorstr + 1) == '{')
-	{			/* If the colorstr begins and ends with */
-	  char *end_curl;
-
-	  end_curl = strchr(colorstr + 1, '}');		/* curlies, ignore
-							   any bars  */
-	  if (end_curl && *(end_curl + 1) == '|')
-	  {			/* within. */
-	    *end_curl++ = '\0';
-	    *colorstr++ = '\0';
-	    colorend = end_curl;
-	  }
-	  else
-	    colorend = strchr(colorstr + 1, '|');
-	}
-	else
-	  colorend = strchr(colorstr + 1, '|');		/* Find the end of
-							   the color. */
-	if (colorend && *colorend)
-	{			/* If it has an end, parse it. */
-	  char buf2[65535];
-
-	  *s++ = '\0';
-	  *colorstr++ = '\0';
-	  *colorend++ = '\0';
-
-	  strncpy(buf2, buf, 65535);
-
-	  if (!strip)
-	  {
-#ifdef PUEBLO_CLIENT
-            if(!pueblo)  /* if it's not pueblo, it's ansi. */
-            {
+    switch (c) {
+        case '!': return 1;  /* Bright */
+        case 'u': return 4;  /* Underline */
+#ifdef BLINK
+        case 'b': return 5;  /* Blink */
 #endif
-	      escape = color_escape(s);
-	      s += strlen(escape) + strlen(colorstr) + strlen(normal_ansi) - 2;
-	      strcat(buf2, escape);
-	      strcat(buf2, colorstr);
-	      strcat(buf2, normal_ansi);
-#ifdef PUEBLO_CLIENT
+        case 'r': return 7;  /* Reverse */
+        case 'N': return 30; /* Black foreground */
+        case 'R': return 31; /* Red foreground */
+        case 'G': return 32; /* Green foreground */
+        case 'Y': return 33; /* Yellow foreground */
+        case 'B': return 34; /* Blue foreground */
+        case 'M': return 35; /* Magenta foreground */
+        case 'C': return 36; /* Cyan foreground */
+        case 'W': return 37; /* White foreground */
+        case '0': return 40; /* Black background */
+        case '1': return 41; /* Red background */
+        case '2': return 42; /* Green background */
+        case '3': return 43; /* Yellow background */
+        case '4': return 44; /* Blue background */
+        case '5': return 45; /* Magenta background */
+        case '6': return 46; /* Cyan background */
+        case '7': return 47; /* White background */
+        default:  return -1;
+    }
+}
+
+/**
+ * Check if number is a foreground color code
+ */
+static int is_foreground(int num)
+{
+    return (num >= 30 && num <= 37);
+}
+
+/**
+ * Check if number is a background color code
+ */
+static int is_background(int num)
+{
+    return (num >= 40 && num <= 47);
+}
+
+/**
+ * Set color attribute flags based on ANSI code
+ */
+static void set_ca(int *attribs, int num)
+{
+    switch (num) {
+        case 1: *attribs |= CA_BRIGHT; break;
+        case 7: *attribs |= CA_REVERSE; break;
+        case 4: *attribs |= CA_UNDERLINE; break;
+#ifdef BLINK
+        case 5: *attribs |= CA_BLINK; break;
+#endif
+        default:
+            log_error("Invalid attribute number in set_ca");
+            break;
+    }
+}
+
+/**
+ * Build ANSI escape code string from color values
+ * @param fore Foreground color code (or 0 for none)
+ * @param back Background color code (or 0 for none)
+ * @param ca Color attributes bitmap
+ * @return Allocated string with semicolon-separated codes
+ */
+static char *make_num_string(int fore, int back, int ca)
+{
+    char buff[256];
+    size_t pos = 0;
+
+    buff[0] = '\0';
+
+    if (fore > 0) {
+        pos += snprintf(buff + pos, sizeof(buff) - pos, "%d;", fore);
+    }
+
+    if (back > 0) {
+        pos += snprintf(buff + pos, sizeof(buff) - pos, "%d;", back);
+    }
+
+    if (ca > 0) {
+        if (ca & CA_BRIGHT)
+            pos += snprintf(buff + pos, sizeof(buff) - pos, "1;");
+        if (ca & CA_REVERSE)
+            pos += snprintf(buff + pos, sizeof(buff) - pos, "7;");
+        if (ca & CA_UNDERLINE)
+            pos += snprintf(buff + pos, sizeof(buff) - pos, "4;");
+#ifdef BLINK
+        if (ca & CA_BLINK)
+            pos += snprintf(buff + pos, sizeof(buff) - pos, "5;");
+#endif
+    }
+
+    /* Remove trailing semicolon */
+    if (pos > 0 && buff[pos - 1] == ';') {
+        buff[pos - 1] = '\0';
+    }
+
+    return stralloc(buff);
+}
+
+/**
+ * Convert color code string to ANSI escape sequence
+ * @param s String of color codes (e.g., "RB" for red on blue)
+ * @return Allocated ANSI escape string
+ */
+static char *color_escape(const char *s)
+{
+    char escape[256];
+    int foreground = 37; /* Default to white */
+    int background = 40; /* Default to black */
+    int attribs = 0;
+    int valid = 0;
+
+    for (; *s; s++) {
+        int num = color2num(*s);
+        if (num > 0) {
+            valid = 1;
+            if (is_foreground(num)) {
+                foreground = num;
+            } else if (is_background(num)) {
+                background = num;
+            } else {
+                set_ca(&attribs, num);
             }
-            else  /* it's pueblo! */
-            {
-	      html = html_string(s);
-	      s += strlen(html) + strlen(colorstr) + strlen(normal_html) - 2;
-	      strcat(buf2, html);
-	      strcat(buf2, colorstr);
-	      strcat(buf2, normal_html);
+        }
+    }
+
+    if (valid) {
+        /* Prevent same color for foreground and background */
+        if (foreground == (background - 10)) {
+            if (foreground == 30 && !(attribs & CA_BRIGHT)) {
+                background = 47; /* White background */
+            } else {
+                background = 40; /* Black background */
             }
-#endif
-	  }
-	  else
-	  {
-	    s += strlen(colorstr) - 2;
-	    strcat(buf2, colorstr);
-	  }
+        }
 
-	  strcat(buf2, colorend);
-	  strcpy(buf, buf2);
-	}
-      }
+        char *num_str = make_num_string(foreground, background, attribs);
+        snprintf(escape, sizeof(escape), "\033[%sm", num_str);
+        free(num_str);
+    } else {
+        escape[0] = '\0';
     }
-  }
-  return stralloc(buf);
+
+    return stralloc(escape);
 }
 
-static int color2num(c)
-char c;
+/**
+ * Remove beep characters from string
+ * @param str Input string
+ * @return Allocated string without beeps
+ */
+char *strip_beep(char *str)
 {
-  switch (c)
-  {
-  case '!':
-    return 1;
-    break;
-  case 'u':
-    return 4;
-    break;
-#ifdef BLINK
-  case 'b':
-    return 5;
-    break;
-#endif
-  case 'r':
-    return 7;
-    break;
-  case 'N':
-    return 30;
-    break;
-  case 'R':
-    return 31;
-    break;
-  case 'G':
-    return 32;
-    break;
-  case 'Y':
-    return 33;
-    break;
-  case 'B':
-    return 34;
-    break;
-  case 'M':
-    return 35;
-    break;
-  case 'C':
-    return 36;
-    break;
-  case 'W':
-    return 37;
-    break;
-  case '0':
-    return 40;
-    break;
-  case '1':
-    return 41;
-    break;
-  case '2':
-    return 42;
-    break;
-  case '3':
-    return 43;
-    break;
-  case '4':
-    return 44;
-    break;
-  case '5':
-    return 45;
-    break;
-  case '6':
-    return 46;
-    break;
-  case '7':
-    return 47;
-    break;
-  default:
-    return -1;
-  }
-}
+    char buf[BUFFER_LEN];
+    char *p = buf;
+    const char *s = str;
 
-static int is_foreground(num)
-int num;
-{
-  return (num >= 30 && num <= 37);
-}
-
-static int is_background(num)
-int num;
-{
-  return (num >= 40 && num <= 47);
-}
-
-char *make_num_string(fore, back, ca)
-int fore, back, ca;
-{
-  char buff[2048];
-
-  strcpy(buff, "");
-
-  if (fore > 0)
-    sprintf(buff, "%s%d;", buff, fore);
-
-  if (back > 0)
-    sprintf(buff, "%s%d;", buff, back);
-
-  if (ca > 0)
-  {
-    if (ca & CA_BRIGHT)
-      strcat(buff, "1;");
-    if (ca & CA_REVERSE)
-      strcat(buff, "7;");
-    if (ca & CA_UNDERLINE)
-      strcat(buff, "4;");
-#ifdef BLINK
-    if (ca & CA_BLINK)
-      strcat(buff, "5;");
-#endif
-  }
-
-  *strrchr(buff, ';') = '\0';
-
-  return stralloc(buff);
-}
-
-static void set_ca(attribs, num)
-int *attribs, num;
-{
-  if (num == 1)
-    *attribs |= CA_BRIGHT;
-  else if (num == 7)
-    *attribs |= CA_REVERSE;
-  else if (num == 4)
-    *attribs |= CA_UNDERLINE;
-#ifdef BLINK
-  else if (num == 5)
-    *attribs |= CA_BLINK;
-#endif
-  else
-    log_error("Eeek! Something evil happened in set_ca!");
-}
-
-char *color_escape(s)
-const char *s;
-{
-  char escape[2048];
-  int foreground = 37;
-  int background = 40;
-  int attribs = 0;
-  int num, valid;
-
-  for (valid = 0; *s; s++)
-  {
-    num = color2num(*s);
-    if (num > 0)
-    {
-      valid = 1;
-      if (is_foreground(num))
-	foreground = num;
-      else if (is_background(num))
-	background = num;
-      else
-	set_ca(&attribs, num);
+    while (*s && (p - buf) < (BUFFER_LEN - 1)) {
+        if (*s != '\a') {
+            *p++ = *s;
+        }
+        s++;
     }
-  }
+    *p = '\0';
 
-  if (valid)
-  {
-    if (foreground == (background - 10))
-      if (foreground == 30 && !(attribs & CA_BRIGHT))
-	background = 47;
-      else
-	background = 40;
-
-    sprintf(escape, "\e[%sm", make_num_string(foreground, background, attribs));
-  }
-  else
-    strcpy(escape, "");
-
-  return stralloc(escape);
+    return stralloc(buf);
 }
 
-char *strip_color(str)
-const char *str;
+/* ===================================================================
+ * Main Color Processing Functions
+ * =================================================================== */
+
+/**
+ * Process color markup in string
+ * @param str Input string with |code+text| markup
+ * @param strip 1 to strip colors, 0 to convert to ANSI/Pueblo
+ * @param pueblo 1 for Pueblo HTML output, 0 for ANSI
+ * @return Allocated string with colors processed
+ */
+char *colorize(const char *str, int strip, int pueblo)
 {
-  return colorize(str, 1, 0);
-}
+    char buf[65535];
+    char *s, *colorend, *colorstr;
+    size_t pos = 0;
 
-char *strip_color_nobeep(str)
-char *str;
-{
-  return colorize(strip_beep(str), 1, 0);
-}
-
-char *parse_color(str, pueblo)
-const char *str;
-{
-  return colorize(str, 0, pueblo);
-}
-
-char *parse_color_nobeep(str, pueblo)
-char *str;
-{
-  return colorize(strip_beep(str), 0, pueblo);
-}
-
-char *strip_beep(str)
-char *str;
-{
-  char buf[2048];
-  char *s, *p;
-
-  for (p = buf, s = str; *s; s++)
-    if (*s != '\a')
-      *p++ = *s;
-
-  *p = '\0';
-
-  return stralloc(buf);
-}
-
-char *truncate_color(str, num)
-char *str;
-int num;
-{
-  char buf[2048];
-  char *s;
-  int count = 0;
-
-  strcpy(buf, str);
-
-  for (s = buf; *s && count < num; s++)
-  {
-    if (*s == '|')
-    {
-      char *color;
-
-      color = strchr(s, '+');
-      if (color && *(color + 1) == '{')
-      {
-	char *end_curl;
-
-	end_curl = strchr(color + 2, '}');
-	if (end_curl && *(end_curl + 1) == '|')
-	{
-	  for (s = color + 2; *s != '}' && count < num; s++, count++) ;
-	  if (count >= num)
-	  {
-	    *s++ = '}';
-	    *s = '|';
-	  }
-	  else
-	    s++;
-	}
-	else if (strchr(color + 1, '|'))
-	{
-	  for (s = color + 1; *s != '|' && count < num; s++, count++) ;
-	  if (count >= num)
-	    *s = '|';
-	}
-      }
-      else if (color && strchr(color + 1, '|'))
-      {
-	for (s = color + 1; *s != '|' && count < num; s++, count++) ;
-	if (count >= num)
-	  *s = '|';
-      }
+    if (!str || pos >= sizeof(buf) - 1) {
+        return stralloc("");
     }
-    else
-      count++;
-  }
 
-  *s = '\0';
+    strncpy(buf, str, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
 
-  return stralloc(buf);
-}
+    for (s = buf; *s && pos < sizeof(buf) - 1; s++) {
+        if (*s != '|') {
+            continue;
+        }
 
+        /* Look for color markup: |codes+text| */
+        colorstr = strpbrk(s + 1, "+|");
+        if (!colorstr || *colorstr == '|') {
+            continue;
+        }
 
+        /* Handle curly braces: |codes+{text with | bars}| */
+        if (*(colorstr + 1) == '{') {
+            char *end_curl = strchr(colorstr + 2, '}');
+            if (end_curl && *(end_curl + 1) == '|') {
+                colorend = end_curl + 1;
+            } else {
+                colorend = strchr(colorstr + 1, '|');
+            }
+        } else {
+            colorend = strchr(colorstr + 1, '|');
+        }
+
+        if (!colorend || !*colorend) {
+            continue;
+        }
+
+        /* Split the markup into pieces */
+        char buf2[65535];
+        *s++ = '\0';
+        *colorstr++ = '\0';
+        *colorend++ = '\0';
+
+        /* Copy everything before the color code */
+        strncpy(buf2, buf, sizeof(buf2) - 1);
+        buf2[sizeof(buf2) - 1] = '\0';
+
+        if (!strip) {
 #ifdef PUEBLO_CLIENT
+            char *markup;
+            if (!pueblo) {
+                markup = color_escape(s);
+            } else {
+                markup = color_pueblo(s);
+            }
+            strncat(buf2, markup, sizeof(buf2) - strlen(buf2) - 1);
+            free(markup);
+            
+            strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
+            
+            if (!pueblo) {
+                strncat(buf2, normal_ansi, sizeof(buf2) - strlen(buf2) - 1);
+            } else {
+                strncat(buf2, normal_pueblo, sizeof(buf2) - strlen(buf2) - 1);
+            }
+#else
+            char *escape = color_escape(s);
+            strncat(buf2, escape, sizeof(buf2) - strlen(buf2) - 1);
+            free(escape);
+            strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
+            strncat(buf2, normal_ansi, sizeof(buf2) - strlen(buf2) - 1);
+#endif
+        } else {
+            /* Just append the text without color codes */
+            strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
+        }
 
-char *html_exit(player, exit_name)
-	dbref player;
-	char *exit_name;
-{
-  char newname[1024];
-  char name[1024];
-  char alias[1024];
-  int i, flag=0;
-
-  strcpy(name, "");
-  strcpy(alias, "");
-
-  for(i=0;i<strlen(exit_name);i++) {
-    if(flag == 0 && exit_name[i] != ';')
-      strcat(name, tprintf("%c", exit_name[i]));
-    else if(exit_name[i] == ';')
-      flag++;
-   else if(flag == 1 && exit_name[i] == ';')
-      flag = 2;
-    else if(flag == 1 && exit_name[i] != ';')
-      strcat(alias, tprintf("%c", exit_name[i]));
-    }
-
-  if(*alias)
-    strcpy(newname, tprintf("<a xch_cmd=\"%s\">%s</a>", alias, 
-      html_conversion(player, name)));
-  else
-    strcpy(newname, tprintf("%s", html_conversion(player, name)));
+        strncat(buf2, colorend, sizeof(buf2) - strlen(buf2) - 1);
+        strncpy(buf, buf2, sizeof(buf) - 1);
+        buf[sizeof(buf) - 1] = '\0';
         
-  return tprintf("%s", newname);  
-}
-
-char *html_remove(player, msg)
-	dbref player;
-	char *msg;
-{
-  int i, flag = 0;
-  char buildmsg[1024];
-
-  strcpy(buildmsg, "");
-  if(d->pueblo != 0)
-    strcpy(buildmsg, tprintf("%s", msg));
-  else {
-    for(i=0;i<strlen(msg);i++) {
-      if(flag == 0 && msg[i] != '<' && msg[i] != '>') 
-        strcat(buildmsg, tprintf("%c", msg[i]));
-      else if(msg[i] == '<')
-        flag = 1;
-      else if(msg[i] == '>' && flag == 1)
-        flag = 0;      
+        /* Adjust pointer position */
+        s = buf + strlen(buf2) - strlen(colorend) - 1;
     }
-  }
-  return tprintf("%s", buildmsg);
+
+    return stralloc(buf);
 }
 
-char *html_conversion(player, oldmsg)
-	dbref player;
-	char *oldmsg;
+/**
+ * Truncate string to specific length, preserving color codes
+ * @param str Input string with color codes
+ * @param num Maximum visible characters (not counting codes)
+ * @return Allocated truncated string
+ */
+char *truncate_color(char *str, int num)
 {
-  char buildmsg[1024];
-  int i;
+    char buf[BUFFER_LEN];
+    char *s;
+    int count = 0;
 
-  strcpy(buildmsg, "");
-
-  if(d->pueblo != 0) 
-  {
-    for(i=0;i<strlen(oldmsg);i++) 
-    {
-      if(oldmsg[i] == '"')
-        strcat(buildmsg, "&quot;");   
-      else if(oldmsg[i] == '&')
-        strcat(buildmsg, "&amp;");
-      else if(oldmsg[i] == '<')
-        strcat(buildmsg, "&lt;");
-      else if(oldmsg[i] == '>')
-        strcat(buildmsg, "&gt;");
-      else
-        strcat(buildmsg, tprintf("%c", oldmsg[i]));
+    if (!str) {
+        return stralloc("");
     }
-  } else 
-    strcpy(buildmsg, tprintf("%s", oldmsg));
-  
-  return tprintf("%s", buildmsg);
-}
 
-char *puebloize(char *inp)
-{
-  int x;
-  char *p, *q, *newchar;
-  char oldstring[65535];
-  char newstring[65535];
-  char *s, *colorend, *colorstr, *escape;
-  char buf[2048];
+    strncpy(buf, str, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
 
-/* search through string, replace ansi and crap, and put in HTML instead. */
-  x=0;
-  strncpy(oldstring, inp, 65530);
-  q = newstring;
-  for (;(oldstring[x]!=0);)
-  {
-   /* this might be a bit buggy here. especially the moving q along newstring. */
-    newchar = scanchar(oldstring[x]);
-    x++;
-    strcpy(q, newchar);
-    q=q+strlen(newchar);
-  }
-  *q++='\0';
+    for (s = buf; *s && count < num; s++) {
+        if (*s == '|') {
+            char *color = strchr(s, '+');
+            if (!color) {
+                continue;
+            }
 
-  strcpy(buf, newstring);
-
-  for (s = buf; *s; s++)
-  {
-    if (*s == '|')
-    {
-      colorstr = strpbrk(s + 1, "+|");	/* Look and see if it's color. If it
-					   is, colorstr points to the plus
-					   before the string to be colorized. 
-
-					 */
-      if (colorstr && *colorstr == '|')		/* If it's not, keep going. */
-	continue;
-      else if (colorstr)
-      {
-	if (*(colorstr + 1) == '{')
-	{			/* If the colorstr begins and ends with */
-	  char *end_curl;
-
-	  end_curl = strchr(colorstr + 1, '}');		/* curlies, ignore
-							   any bars  */
-	  if (end_curl && *(end_curl + 1) == '|')
-	  {			/* within. */
-	    *end_curl++ = '\0';
-	    *colorstr++ = '\0';
-	    colorend = end_curl;
-	  }
-	  else
-	    colorend = strchr(colorstr + 1, '|');
-	}
-	else
-	  colorend = strchr(colorstr + 1, '|');		/* Find the end of
-							   the color. */
-	if (colorend && *colorend)
-	{			/* If it has an end, parse it. */
-	  char buf2[2048];
-
-	  *s++ = '\0';
-	  *colorstr++ = '\0';
-	  *colorend++ = '\0';
-
-	  strcpy(buf2, buf);
-
-	  if (!strip)
-	  {
-	    escape = color_pueblo(s);
-	    s += strlen(escape) + strlen(colorstr) + strlen(normal) - 2;
-	    strcat(buf2, escape);
-	    strcat(buf2, colorstr);
-	    strcat(buf2, normal);
-	  }
-	  else
-	  {
-	    s += strlen(colorstr) - 2;
-	    strcat(buf2, colorstr);
-	  }
-
-	  strcat(buf2, colorend);
-	  strcpy(buf, buf2);
-	}
-      }
+            if (*(color + 1) == '{') {
+                char *end_curl = strchr(color + 2, '}');
+                if (end_curl && *(end_curl + 1) == '|') {
+                    /* Count characters inside braces */
+                    for (s = color + 2; *s != '}' && count < num; s++, count++)
+                        ;
+                    if (count >= num) {
+                        *s++ = '}';
+                        *s = '|';
+                    } else {
+                        s++;
+                    }
+                } else if (strchr(color + 1, '|')) {
+                    for (s = color + 1; *s != '|' && count < num; s++, count++)
+                        ;
+                    if (count >= num) {
+                        *s = '|';
+                    }
+                }
+            } else if (strchr(color + 1, '|')) {
+                for (s = color + 1; *s != '|' && count < num; s++, count++)
+                    ;
+                if (count >= num) {
+                    *s = '|';
+                }
+            }
+        } else {
+            count++;
+        }
     }
-  }
-  return stralloc(buf);
+
+    *s = '\0';
+    return stralloc(buf);
 }
 
-char *scanchar(char inp)
+/* ===================================================================
+ * Public API Functions
+ * =================================================================== */
+
+/**
+ * Strip all color codes from string
+ */
+char *strip_color(const char *str)
 {
-  char retval[6];
-  switch(inp)
-  {
-    case '&':
-      strcpy(retval, "&amp;");
-      break;
-    case '<':
-      strcpy(retval, "&lt;");
-      break;
-    case '>':
-      strcpy(retval, "&gt;");
-      break;
-    case '"':
-      strcpy(retval, "&quot;");
-      break;
-    default:
-      strcpy(retval, tprintf("%c", inp));
-  }
-
-  return(stralloc(retval));
-
+    return colorize(str, 1, 0);
 }
 
-
-
-char *make_font_string(char *fore, char *back, int ca)
+/**
+ * Strip color codes and beep characters
+ */
+char *strip_color_nobeep(char *str)
 {
-  char buff[2048];
-  char fgcolor[6];
-  char bgcolor[6];
-  char *retval;
+    char *temp = strip_beep(str);
+    char *result = colorize(temp, 1, 0);
+    free(temp);
+    return result;
+}
 
+/**
+ * Parse color codes for display
+ * @param str Input string
+ * @param pueblo 1 for Pueblo/HTML, 0 for ANSI
+ */
+char *parse_color(const char *str, int pueblo)
+{
+    return colorize(str, 0, pueblo);
+}
 
-  strcpy(fgcolor, "");
-  strcpy(bgcolor, "");
-  strcpy(buff, "");
+/**
+ * Parse color codes with beep stripping
+ */
+char *parse_color_nobeep(char *str, int pueblo)
+{
+    char *temp = strip_beep(str);
+    char *result = colorize(temp, 0, pueblo);
+    free(temp);
+    return result;
+}
 
+/* ===================================================================
+ * Pueblo Client Support
+ * =================================================================== */
 
+#ifdef PUEBLO_CLIENT
 
-  if (fore)
-    strncpy(fgcolor, "fgcolor=%s ", buff, fore);
+/**
+ * Convert HTML special characters for Pueblo
+ */
+char *html_conversion(dbref player, char *oldmsg)
+{
+    char buildmsg[BUFFER_LEN];
+    size_t pos = 0;
+    
+    /* Suppress unused parameter warning - kept for API compatibility */
+    (void)player;
+    
+    buildmsg[0] = '\0';
 
-  if (back)
-    sprintf(bgcolor, "bgcolor=%s ", buff, back);
+    /* Check if player has Pueblo enabled - would need descriptor lookup */
+    /* For now, always convert */
+    for (size_t i = 0; oldmsg[i] && pos < sizeof(buildmsg) - 6; i++) {
+        switch (oldmsg[i]) {
+            case '"':
+                pos += snprintf(buildmsg + pos, sizeof(buildmsg) - pos, "&quot;");
+                break;
+            case '&':
+                pos += snprintf(buildmsg + pos, sizeof(buildmsg) - pos, "&amp;");
+                break;
+            case '<':
+                pos += snprintf(buildmsg + pos, sizeof(buildmsg) - pos, "&lt;");
+                break;
+            case '>':
+                pos += snprintf(buildmsg + pos, sizeof(buildmsg) - pos, "&gt;");
+                break;
+            default:
+                buildmsg[pos++] = oldmsg[i];
+                buildmsg[pos] = '\0';
+                break;
+        }
+    }
 
-  if (ca > 0)
-  {
-    if (ca & CA_BRIGHT)
-      strcat(buff, "1;");
-    if (ca & CA_REVERSE)
-      strcat(buff, "7;");
-    if (ca & CA_UNDERLINE)
-      strcat(buff, "4;");
+    return stralloc(buildmsg);
+}
+
+/**
+ * Convert exit name to clickable Pueblo link
+ */
+char *html_exit(dbref player, char *exit_name)
+{
+    char newname[BUFFER_LEN];
+    char name[BUFFER_LEN];
+    char alias[BUFFER_LEN];
+    int flag = 0;
+
+    name[0] = '\0';
+    alias[0] = '\0';
+
+    /* Parse exit name and aliases separated by semicolons */
+    for (size_t i = 0; exit_name[i]; i++) {
+        if (flag == 0 && exit_name[i] != ';') {
+            size_t len = strlen(name);
+            if (len < sizeof(name) - 1) {
+                name[len] = exit_name[i];
+                name[len + 1] = '\0';
+            }
+        } else if (exit_name[i] == ';') {
+            flag = (flag == 1) ? 2 : 1;
+        } else if (flag == 1) {
+            size_t len = strlen(alias);
+            if (len < sizeof(alias) - 1) {
+                alias[len] = exit_name[i];
+                alias[len + 1] = '\0';
+            }
+        }
+    }
+
+    if (*alias) {
+        char *converted = html_conversion(player, name);
+        snprintf(newname, sizeof(newname), 
+                "<a xch_cmd=\"%s\">%s</a>", alias, converted);
+        free(converted);
+    } else {
+        char *converted = html_conversion(player, name);
+        snprintf(newname, sizeof(newname), "%s", converted);
+        free(converted);
+    }
+
+    return stralloc(newname);
+}
+
+/**
+ * Remove HTML tags from message
+ */
+char *html_remove(dbref player, char *msg)
+{
+    char buildmsg[BUFFER_LEN];
+    int flag = 0;
+    size_t pos = 0;
+
+    /* Suppress unused parameter warning - kept for API compatibility */
+    (void)player;
+
+    buildmsg[0] = '\0';
+
+    /* Check if Pueblo is enabled - for now assume we need to filter */
+    for (size_t i = 0; msg[i] && pos < sizeof(buildmsg) - 1; i++) {
+        if (flag == 0 && msg[i] != '<' && msg[i] != '>') {
+            buildmsg[pos++] = msg[i];
+            buildmsg[pos] = '\0';
+        } else if (msg[i] == '<') {
+            flag = 1;
+        } else if (msg[i] == '>' && flag == 1) {
+            flag = 0;
+        }
+    }
+
+    return stralloc(buildmsg);
+}
+
+/**
+ * Convert color code to Pueblo color name
+ */
+static const char *pueblo_color(int num)
+{
+    switch (num) {
+        case 4:  return "underline";
 #ifdef BLINK
-    if (ca & CA_BLINK)
-      strcat(buff, "5;");
+        case 5:  return "blink";
 #endif
-  }
-
-  *strrchr(buff, ';') = '\0';
-
-  return stralloc(buff);
-}
-
-static void set_ca(attribs, num)
-int *attribs, num;
-{
-  if (num == 1)
-    *attribs |= CA_BRIGHT;
-  else if (num == 7)
-    *attribs |= CA_REVERSE;
-  else if (num == 4)
-    *attribs |= CA_UNDERLINE;
-#ifdef BLINK
-  else if (num == 5)
-    *attribs |= CA_BLINK;
-#endif
-  else
-    log_error("Eeek! Something evil happened in set_ca!");
-}
-
-char *color_pueblo(s)
-const char *s;
-{
-  char escape[2048];
-  char *foreground = "FFFFFF";
-  char *background = "000000";
-  int attribs = 0;
-  int num, valid;
-
-  for (valid = 0; *s; s++)
-  {
-    num = color2num(*s);
-    if (num > 0)
-    {
-      valid = 1;
-      if (is_foreground(num))
-	foreground = pueblo_color(num);
-      else if (is_background(num))
-	background = pueblo_color(num);
-      else
-	set_ca(&attribs, num);
+        case 30:
+        case 40: return "black";
+        case 31:
+        case 41: return "red";
+        case 32:
+        case 42: return "green";
+        case 33:
+        case 43: return "yellow";
+        case 34:
+        case 44: return "blue";
+        case 35:
+        case 45: return "magenta";
+        case 36:
+        case 46: return "cyan";
+        case 37:
+        case 47: return "white";
+        default: return NULL;
     }
-  }
-
-  if (valid)
-  {
-    if (foreground == (background - 10))
-      if (foreground == 30 && !(attribs & CA_BRIGHT))
-	background = 47;
-      else
-	background = 40;
-    sprintf(escape, "%s", make_font_string(foreground, background, attribs));
-  }
-  else
-    strcpy(escape, "");
-
-  return stralloc(escape);
 }
 
-char *pueblo_color(int num)
+/**
+ * Build Pueblo font tag string
+ */
+static char *make_font_string(const char *fore, const char *back, int ca)
 {
-  switch (num)
-  {
-  case 4:
-    return "under";
-    break;
-#ifdef BLINK
-  case 5:
-    return "blink";
-    break;
-#endif
-  case 30:
-  case 40:
-    return "black";
-    break;
-  case 31:
-  case 41:
-    return "red";
-    break;
-  case 32:
-  case 42:
-    return "green";
-    break;
-  case 33:
-  case 43:
-    return "yellow";
-    break;
-  case 34:
-  case 44:
-    return "blue";
-    break;
-  case 35:
-  case 45:
-    return "magenta";
-    break;
-  case 36:
-  case 76:
-    return "cyan";
-    break;
-  case 37:
-  case 47:
-    return "white";
-    break;
-  default:
-    return -1;
-  }
+    char buff[512];
+    size_t pos = 0;
+
+    buff[0] = '\0';
+
+    if (fore) {
+        pos += snprintf(buff + pos, sizeof(buff) - pos, "fgcolor=\"%s\" ", fore);
+    }
+
+    if (back) {
+        pos += snprintf(buff + pos, sizeof(buff) - pos, "bgcolor=\"%s\" ", back);
+    }
+
+    if (ca > 0) {
+        if (ca & CA_UNDERLINE) {
+            pos += snprintf(buff + pos, sizeof(buff) - pos, "style=\"text-decoration:underline\" ");
+        }
+    }
+
+    return stralloc(buff);
 }
 
+/**
+ * Convert color codes to Pueblo HTML tags
+ */
+static char *color_pueblo(const char *s)
+{
+    char escape[512];
+    const char *foreground = "FFFFFF";
+    const char *background = "000000";
+    int attribs = 0;
+    int valid = 0;
+
+    for (; *s; s++) {
+        int num = color2num(*s);
+        if (num > 0) {
+            valid = 1;
+            if (is_foreground(num)) {
+                foreground = pueblo_color(num);
+            } else if (is_background(num)) {
+                background = pueblo_color(num);
+            } else {
+                set_ca(&attribs, num);
+            }
+        }
+    }
+
+    if (valid) {
+        char *font_str = make_font_string(foreground, background, attribs);
+        snprintf(escape, sizeof(escape), "<font %s>", font_str);
+        free(font_str);
+    } else {
+        escape[0] = '\0';
+    }
+
+    return stralloc(escape);
+}
 
 #endif /* PUEBLO_CLIENT */

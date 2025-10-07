@@ -122,7 +122,7 @@ void clear_stack(void)
     }
 }
 
-char *stralloc(char *string)
+char *stralloc(const char *string)
 {
    return stralloc_int(string, 0);
 }
