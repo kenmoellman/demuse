@@ -187,11 +187,11 @@ struct alist {
 #define AL_DISPOSE(alist) ((alist)->AL_type=0)
 
 /* special dbref's */
-#define NOTHING (-1)		/* null dbref */
-#define AMBIGUOUS (-2)		/* multiple possibilities, for matchers */
-#define HOME (-3)		/* virtual room, represents mover's home */
-#define PASSWORD (-4)		/* incorrect password when one is required */
-#define BACK (-5) 
+#define NOTHING -1		/* null dbref */
+#define AMBIGUOUS -2		/* multiple possibilities, for matchers */
+#define HOME -3			/* virtual room, represents mover's home */
+#define PASSWORD -4		/* incorrect password when one is required */
+#define BACK -5 
 typedef char ptype;
 
 typedef struct atrdef ATRDEF;
@@ -253,26 +253,25 @@ struct object {
 };
 
 
-/* begin +mail information */
-#define MF_DELETED 1
-#define MF_READ 2
-#define MF_NEW 4
-
-extern long mdb_alloc;
-extern long mdb_top;
-extern long mdb_first_free;
-
-typedef long mdbref;
-extern struct mdb_entry
-{ 
-  dbref from;
-  long date;
-  int flags;                    /* see the following. */
-  char *message;                /* null if unused entry */
-  mdbref next;                  /* next garbage, or next message. */
-}
- *mdb;
-/*  end +mail information  */
+///* begin +mail information */
+//#define MF_DELETED 1
+//#define MF_READ 2
+//#define MF_NEW 4
+//
+//extern long mdb_alloc;
+//extern long mdb_first_free;
+//
+//typedef long mdbref;
+//extern struct mdb_entry
+//{ 
+//  dbref from;
+//  long date;
+//  int flags;                    /* see the following. */
+//  char *message;                /* null if unused entry */
+//  mdbref next;                  /* next garbage, or next message. */
+//}
+// *mdb;
+///*  end +mail information  */
 
 
 
@@ -321,34 +320,34 @@ struct all_atr_list {
 #define unref_atr(foo) do { if((foo)) if(0==--(foo)->refcount) { if((foo)->name) free((foo)->name); free((foo)); } } while(0)
 #define ref_atr(foo) do { ((foo)->refcount++); } while(0)
 
-struct num_logins
-{ 
-  int highest_day;      /* Most logins in one day                       */
-  int highest_week;     /* Most logins in one week                      */
-  int highest_atonce;   /* Most players logged in at one time           */
-  char date_day[10];    /* Date of the day with the most logins         */
-  char date_week[10];   /* Date of the day that broke the week record   */
-  char date_atonce[10]; /* Date of the day that broke the atonce record */
-  int day;    /* day of week on last dump */
-  time_t time; /* time in secs of last dump */
-  long total;
-  int today;
-  int a_sun;
-  int a_mon;
-  int a_tue;
-  int a_wed;
-  int a_thu;
-  int a_fri;
-  int a_sat;
-  int b_sun;
-  int b_mon;
-  int b_tue;
-  int b_wed;
-  int b_thu;
-  int b_fri;
-  int b_sat;
-  int new_week_flag;
-} nl;
+//extern struct num_logins
+//{ 
+//  int highest_day;      /* Most logins in one day                       */
+//  int highest_week;     /* Most logins in one week                      */
+//  int highest_atonce;   /* Most players logged in at one time           */
+//  char date_day[10];    /* Date of the day with the most logins         */
+//  char date_week[10];   /* Date of the day that broke the week record   */
+//  char date_atonce[10]; /* Date of the day that broke the atonce record */
+//  int day;    /* day of week on last dump */
+//  time_t time; /* time in secs of last dump */
+//  long total;
+//  int today;
+//  int a_sun;
+//  int a_mon;
+//  int a_tue;
+//  int a_wed;
+//  int a_thu;
+//  int a_fri;
+//  int a_sat;
+//  int b_sun;
+//  int b_mon;
+//  int b_tue;
+//  int b_wed;
+//  int b_thu;
+//  int b_fri;
+//  int b_sat;
+//  int new_week_flag;
+//} nl;
 
 #define LOGINDBBUF 1024
 #endif /* __DB_H */

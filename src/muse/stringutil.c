@@ -10,8 +10,8 @@
 
 #define DOWNCASE(x) to_lower(x)
 int string_compare(s1, s2)
-char *s1;
-char *s2;
+const char *s1;
+const char *s2;
 {
   while ((s1 && *s1) && (s2 && *s2) && (DOWNCASE(*s1) == DOWNCASE(*s2)))
   {
@@ -37,7 +37,7 @@ char *s2;
 }
 
 int string_prefix(string, prefix)
-char *string;
+const char *string;
 char *prefix;
 {
   while (*string && *prefix && DOWNCASE(*string) == DOWNCASE(*prefix))

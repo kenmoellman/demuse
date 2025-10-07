@@ -9,8 +9,8 @@ all:  libdb.a
 
 install: all
 
-libdb.a: boolexp.o db.o destroy.o inherit.o warnings.o mail.o board.o
+libdb.a: boolexp.o db.o destroy.o inherit.o warnings.o 
 	rm -f libdb.a
-	ar qcv libdb.a boolexp.o db.o destroy.o inherit.o warnings.o mail.o board.o
+	ar qcv libdb.a boolexp.o db.o destroy.o inherit.o warnings.o 
 	-ranlib libdb.a
 

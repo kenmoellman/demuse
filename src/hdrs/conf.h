@@ -63,7 +63,6 @@ DO_NUM("enable_lockout",enable_lockout)
 DO_REF("root",root)
 DO_NUM("thing_cost",thing_cost)
 DO_NUM("exit_cost",exit_cost)
-/*DO_NUM("channel_cost",channel_cost)*/
 DO_NUM("room_cost",room_cost)
 DO_NUM("robot_cost",robot_cost)
 DO_NUM("univ_cost",univ_cost)

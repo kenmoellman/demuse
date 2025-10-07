@@ -1,7 +1,7 @@
 /* emit.c - Emit and spoof commands
  * Located in comm/ directory
  * 
- * This file contains all emit-related commands extracted from speech.c.
+ * This file contains all emit-related commands.
  * Emits allow players to create arbitrary messages in rooms.
  * Anti-spoofing checks prevent impersonation.
  */
@@ -16,9 +16,17 @@
 #include "interface.h"
 #include "match.h"
 #include "externs.h"
-#include "player.h"  /* For player utilities */
 
-/* Function prototypes */
+/* ===================================================================
+ * Constants
+ * =================================================================== */
+
+#define MAX_ZONE_DEPTH 10  /* Maximum recursion depth for zone operations */
+
+/* ===================================================================
+ * Forward Declarations
+ * =================================================================== */
+
 static int can_emit_msg(dbref player, dbref loc, const char *msg);
 static void notify_in_zone(dbref zone, const char *msg);
 static int check_auditorium_permission(dbref player, dbref loc);
@@ -55,41 +63,49 @@ static int check_auditorium_permission(dbref player, dbref loc)
  */
 static int can_emit_msg(dbref player, dbref loc, const char *msg)
 {
-    char mybuf[BUFFER_LEN];
-    char *s;
-    dbref thing, save_loc;
+    char first_word[BUFFER_LEN];
+    const char *p;
+    size_t word_len;
+    dbref thing;
+    dbref save_loc;
     
     /* Skip leading spaces */
-    while (*msg == ' ') {
+    while (*msg && isspace((unsigned char)*msg)) {
         msg++;
     }
     
-    /* Copy first word */
-    snprintf(mybuf, sizeof(mybuf), "%s", msg);
-    
-    /* Find end of first word */
-    s = mybuf;
-    while (*s && (*s != ' ')) {
-        s++;
+    if (!*msg) {
+        return 1;  /* Empty message is fine */
     }
-    if (*s) {
-        *s = '\0';
+    
+    /* Extract first word */
+    p = msg;
+    word_len = 0;
+    while (*p && !isspace((unsigned char)*p) && word_len < sizeof(first_word) - 1) {
+        first_word[word_len++] = *p++;
+    }
+    first_word[word_len] = '\0';
+    
+    if (word_len == 0) {
+        return 1;  /* No word to check */
     }
     
     /* Check if first word is a player name they can't spoof */
-    thing = lookup_player(mybuf);
-    if (thing != NOTHING && !string_compare(db[thing].name, mybuf)) {
+    thing = lookup_player(first_word);
+    if (thing != NOTHING && !string_compare(db[thing].name, first_word)) {
         if (!controls(player, thing, POW_REMOTE)) {
             return 0;  /* Can't spoof this player */
         }
     }
     
     /* Check for possessive form (name's) */
-    if ((s - mybuf) > 2 && !strcmp(s - 2, "'s")) {
-        *(s - 2) = '\0';
+    if (word_len >= 2 && first_word[word_len - 2] == '\'' && 
+        first_word[word_len - 1] == 's') {
+        /* Remove 's and check again */
+        first_word[word_len - 2] = '\0';
         
-        thing = lookup_player(mybuf);
-        if (thing != NOTHING && !string_compare(db[thing].name, mybuf)) {
+        thing = lookup_player(first_word);
+        if (thing != NOTHING && !string_compare(db[thing].name, first_word)) {
             if (!controls(player, thing, POW_REMOTE)) {
                 return 0;  /* Can't spoof this player's possessive */
             }
@@ -97,23 +113,25 @@ static int can_emit_msg(dbref player, dbref loc, const char *msg)
     }
     
     /* Check if it matches an object in the location */
-    save_loc = db[player].location;
-    db[player].location = loc;
-    init_match(player, mybuf, NOTYPE);
-    match_perfect();
-    db[player].location = save_loc;
-    thing = match_result();
-    
-    /* Can't spoof objects in the room */
-    if (thing != NOTHING) {
-        return 0;
+    if (loc != NOTHING && loc >= 0 && loc < db_top) {
+        save_loc = db[player].location;
+        db[player].location = loc;
+        init_match(player, first_word, NOTYPE);
+        match_perfect();
+        thing = match_result();
+        db[player].location = save_loc;
+        
+        /* Can't spoof objects in the room */
+        if (thing != NOTHING && thing != AMBIGUOUS) {
+            return 0;
+        }
     }
     
     return 1;
 }
 
 /**
- * Notify all objects in a zone (recursive)
+ * Notify all objects in a zone (recursive with depth limit)
  * @param zone Zone to notify
  * @param msg Message to send
  */
@@ -121,10 +139,14 @@ static void notify_in_zone(dbref zone, const char *msg)
 {
     dbref thing;
     static int depth = 0;
-    char msgcpy[strlen(msg)+1];
     
     /* Prevent infinite recursion */
-    if (depth > 10) {
+    if (depth >= MAX_ZONE_DEPTH) {
+        return;
+    }
+    
+    /* Prevent stack overflow from huge messages */
+    if (!msg || strlen(msg) > BUFFER_LEN) {
         return;
     }
     
@@ -135,9 +157,14 @@ static void notify_in_zone(dbref zone, const char *msg)
         if (db[thing].zone == zone) {
             /* Recursively notify sub-zones */
             notify_in_zone(thing, msg);
-            /* Notify objects in this zone */
-	    strcpy(msgcpy, msg);
-            notify_in(thing, NOTHING, msgcpy);
+            
+            /* Notify objects in this zone - make a safe copy */
+            if (Typeof(thing) == TYPE_ROOM) {
+                char msg_copy[BUFFER_LEN];
+                strncpy(msg_copy, msg, sizeof(msg_copy) - 1);
+                msg_copy[sizeof(msg_copy) - 1] = '\0';
+                notify_in(thing, NOTHING, msg_copy);
+            }
         }
     }
     
@@ -158,11 +185,12 @@ static void notify_in_zone(dbref zone, const char *msg)
 void do_emit(dbref player, char *arg1, char *arg2, int type)
 {
     dbref loc;
-    char *message;
+    char *message = NULL;
     char buf[BUFFER_LEN];
-    char *bf = buf;
+    char *bf;
     
-    if ((loc = getloc(player)) == NOTHING) {
+    loc = getloc(player);
+    if (loc == NOTHING) {
         return;
     }
     
@@ -173,15 +201,23 @@ void do_emit(dbref player, char *arg1, char *arg2, int type)
     
     /* Reconstruct message */
     message = reconstruct_message(arg1, arg2);
+    if (!message) {
+        notify(player, "Invalid message.");
+        return;
+    }
     
     /* Handle pronoun substitution based on type */
     if (type == 0) {
         pronoun_substitute(buf, player, message, player);
         bf = buf + strlen(db[player].name) + 1;
-    } else if (type == 1) {
-        snprintf(buf, sizeof(buf), "%s", message);
+    } else {
+        strncpy(buf, message, sizeof(buf) - 1);
+        buf[sizeof(buf) - 1] = '\0';
         bf = buf;
     }
+    
+    /* Free allocated message */
+    free(message);
     
     /* Wizards can always emit */
     if (power(player, POW_REMOTE)) {
@@ -211,23 +247,33 @@ void do_emit(dbref player, char *arg1, char *arg2, int type)
 void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
 {
     dbref who;
+    char *message = NULL;
     char buf[BUFFER_LEN];
-    char *bf = buf;
+    char *bf;
+    int needs_spoof_check = 1;
     
-    /* Handle message formatting based on emit type */
-    if (emittype != 4) {
-        pronoun_substitute(buf, player, arg2, player);
-        bf = buf + strlen(db[player].name) + 1;
-    } else {
-        /* Special handling for type 4 - find the = separator */
-        bf = arg2;
-        while (*bf && !(bf[0] == '=')) {
-            bf++;
-        }
-        if (*bf) {
-            bf++;
+    /* Reconstruct and process message */
+    if (emittype == 4) {
+        /* Special handling - find the = separator */
+        char *eq = strchr(arg2, '=');
+        if (eq) {
+            bf = eq + 1;
+        } else {
+            bf = arg2;
         }
         emittype = 0;  /* Treat as pemit after special parsing */
+        needs_spoof_check = 0;  /* Already in arg2, no reconstruction needed */
+    } else {
+        message = reconstruct_message(arg1, arg2);
+        if (!message) {
+            notify(player, "Invalid message.");
+            return;
+        }
+        
+        pronoun_substitute(buf, player, message, player);
+        bf = buf + strlen(db[player].name) + 1;
+        free(message);
+        message = NULL;
     }
     
     /* Match the target */
@@ -260,7 +306,7 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
     /* Handle different emit types */
     switch (emittype) {
         case 0: /* pemit - to a specific player/object */
-            if (can_emit_msg(player, db[who].location, bf) ||
+            if ((needs_spoof_check && can_emit_msg(player, db[who].location, bf)) ||
                 controls(player, who, POW_REMOTE)) {
                 notify(who, bf);
                 did_it(player, who, NULL, 0, NULL, 0, A_APEMIT);
@@ -275,7 +321,8 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
             
         case 1: /* remit - to a room */
             if (controls(player, who, POW_REMOTE) ||
-                ((db[player].location == who) && can_emit_msg(player, who, bf))) {
+                ((db[player].location == who) && 
+                 (needs_spoof_check && can_emit_msg(player, who, bf)))) {
                 notify_in(who, NOTHING, bf);
                 if (!(db[player].flags & QUIET)) {
                     notify(player, tprintf("Everything in %s saw \"%s\".",
@@ -287,7 +334,7 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
             break;
             
         case 2: /* oemit - to everyone except target */
-            if (can_emit_msg(player, db[who].location, bf)) {
+            if (needs_spoof_check && can_emit_msg(player, db[who].location, bf)) {
                 notify_in(db[who].location, who, bf);
                 if (!(db[player].flags & QUIET)) {
                     notify(player, tprintf("Everyone except %s saw \"%s\".",
@@ -301,7 +348,7 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
         case 3: /* zemit - to entire zone */
             if (controls(player, who, POW_REMOTE) &&
                 controls(player, who, POW_MODIFY) &&
-                can_emit_msg(player, (dbref)-1, bf)) {
+                (needs_spoof_check && can_emit_msg(player, (dbref)-1, bf))) {
                 
                 if (db[who].zone == NOTHING && !(db[player].flags & QUIET)) {
                     notify(player, tprintf("%s might not be a zone... but I'll do it anyway.",
@@ -335,8 +382,10 @@ void do_cemit(dbref player, char *arg1, char *arg2)
 {
     struct descriptor_data *d;
     long target;
+    char *message = NULL;
     char buf[BUFFER_LEN];
     char *bf;
+    char *endptr;
     
     /* Check permission */
     if (!power(player, POW_REMOTE)) {
@@ -344,13 +393,17 @@ void do_cemit(dbref player, char *arg1, char *arg2)
         return;
     }
     
-    /* Parse connection ID */
-    if (!isdigit(*arg1)) {
-        notify(player, "That's not a number.");
+    /* Validate and parse connection ID */
+    if (!arg1 || !*arg1 || !isdigit((unsigned char)*arg1)) {
+        notify(player, "That's not a valid connection number.");
         return;
     }
     
-    target = atol(arg1);
+    target = strtol(arg1, &endptr, 10);
+    if (*endptr != '\0' || target < 0) {
+        notify(player, "That's not a valid connection number.");
+        return;
+    }
     
     /* Find the descriptor */
     for (d = descriptor_list; d && d->concid != target; d = d->next)
@@ -362,8 +415,15 @@ void do_cemit(dbref player, char *arg1, char *arg2)
     }
     
     /* Process message */
-    pronoun_substitute(buf, player, arg2, player);
+    message = reconstruct_message(arg1, arg2);
+    if (!message) {
+        notify(player, "Invalid message.");
+        return;
+    }
+    
+    pronoun_substitute(buf, player, message, player);
     bf = buf + strlen(db[player].name) + 1;
+    free(message);
     
     /* Send feedback to emitter */
     if (!(db[player].flags & QUIET)) {
@@ -390,7 +450,7 @@ void do_cemit(dbref player, char *arg1, char *arg2)
 void do_wemit(dbref player, char *arg1, char *arg2)
 {
     struct descriptor_data *d;
-    char *message;
+    char *message = NULL;
     char buf[BUFFER_LEN];
     char *bf;
     
@@ -402,8 +462,14 @@ void do_wemit(dbref player, char *arg1, char *arg2)
     
     /* Process message */
     message = reconstruct_message(arg1, arg2);
+    if (!message) {
+        notify(player, "Invalid message.");
+        return;
+    }
+    
     pronoun_substitute(buf, player, message, player);
     bf = buf + strlen(db[player].name) + 1;
+    free(message);
     
     /* Send to all connected players */
     for (d = descriptor_list; d; d = d->next) {

@@ -98,7 +98,7 @@ dbref player;
 }
 
 dbref lookup_player(name)
-char *name;
+const char *name;
 {
   struct pl_elt *e;
   dbref a;

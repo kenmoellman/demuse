@@ -10,10 +10,6 @@ static signal_type do_sig_shutdown P((int));
 static signal_type bailout P((int));
 
 
-int exit_status;
-int shutdown_flag;
-
-
 
 
 #ifdef SIGEMT

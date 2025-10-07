@@ -8,7 +8,6 @@
 typedef long dbref;
 #endif
 
-
 #ifndef _EXTERNS_H_ 
 #define _EXTERNS_H_
 
@@ -76,6 +75,7 @@ typedef long dbref;
 #include "universe.h"
 #endif
 
+
 /* and all the definitions */
 /* From admin.c */
 extern void do_su P((dbref, char *, char *, dbref));
@@ -112,8 +112,6 @@ extern char *strip_color P((const char *));
 extern char *strip_color_nobeep P((char *));
 extern char *truncate_color P((char *, int));
 
-/* from board.c */
-extern void do_board P((dbref, char *, char *));
 
 /* From boolexp.c */
 extern int eval_boolexp P((dbref, dbref, char *, dbref));
@@ -144,13 +142,6 @@ extern int process_output P((struct descriptor_data *));
 extern char *add_pre_suf P((dbref, int, char *, int));
 extern void shutdown_stack P((void));
 
-/* From paste.c */
-extern char is_pasting P((dbref));
-extern void remove_paste P((dbref));
-extern void do_paste P((dbref, char *, char *));
-extern void do_pastecode P((dbref, char *, char *));
-extern void add_more_paste P((dbref, char *));
-extern void do_pastestats P((dbref, char *));
 
 /* From com.c */
 extern void com_send P((char *,char *));
@@ -161,15 +152,14 @@ extern void do_channel P((dbref, char *, char *));
 extern void do_ban P((dbref, char *, char *));
 extern void do_unban P((dbref, char *, char *));
 extern void make_default_channel P((dbref,char *));
-extern int is_on_channel P((dbref, char *));
-extern char *is_channel_alias P((dbref, char *));
+extern int is_on_channel P((dbref, const char *));
 extern char *add_stamp P((char *));
 extern void com_send_int P((char *, char *, dbref, int));
 extern void do_channel_destroy(dbref, char *);
 extern void add_channel P((dbref));
 extern void clear_channels P((void));
 extern void delete_channel P((dbref));
-extern dbref lookup_channel P((char *));
+extern dbref lookup_channel P((const char *));
 extern void channel_talk P((dbref, char *, char *, char *));
 extern int ok_channel_name P((char *));
 
@@ -224,6 +214,7 @@ extern void do_open P((dbref, char *, char *, dbref));
 extern void do_robot P((dbref, char *, char *));
 
 /* From db.c */
+
 extern void atr_fputs P((char *, FILE *));
 extern char *atr_fgets P((char *, int, FILE *));
 extern void update_bytes P((void));
@@ -275,7 +266,7 @@ extern void info_funcs P((dbref));
 extern char *wptr[10];
 extern void museexec P((char **, char *, dbref, dbref, int));
 extern void func_zerolev P((void));
-extern dbref match_thing P((dbref, char *));
+extern dbref match_thing P((dbref, const char *));
 extern char *parse_up P((char **, int));
 extern int mem_usage P((dbref));
 
@@ -290,7 +281,7 @@ extern int Hearer P((dbref));
 extern void dump_database P((void));
 extern void fork_and_dump P((void));
 extern int init_game P((char *, char *));
-extern void notify P((dbref, char *));
+extern void notify P((dbref, const char *));
 extern void notify_all P((char *, dbref, int));
 extern void notify_noc P((dbref, char *));
 extern void panic P((char *));
@@ -320,6 +311,25 @@ extern void do_delparent P((dbref, char *, char *));
 extern void put_atrdefs P((FILE *, ATRDEF *));
 extern ATRDEF *get_atrdefs P((FILE *, ATRDEF *));
 
+/* from io_globals.c */
+extern int sock;
+extern int reserved;
+extern int maxd;
+extern int ndescriptors;
+extern int shutdown_flag;
+extern int exit_status;
+extern int sig_caught;
+extern int nologins;
+extern int restrict_connect_class;
+extern time_t muse_up_time;
+extern time_t muse_reboot_time;
+extern time_t now;
+extern char motd[2048];
+extern char motd_who[11];
+extern char ccom[1024];
+extern dbref cplr;
+void init_io_globals P((void));
+
 /* From look.c */
 extern char *flag_description P((dbref));
 extern struct all_atr_list *all_attributes P((dbref));
@@ -340,31 +350,14 @@ extern void write_loginstats P((long));
 extern void read_loginstats P((void));
 extern void do_loginstats P((dbref));
 extern void add_login P((dbref));
-extern void check_newday P((void));
-
-
-/* From mail.c */
-extern void check_mail P((dbref,char *));
-extern long  check_mail_internal P((dbref,char *));
-extern void do_mail P((dbref, char *, char *));
-extern void init_mail P((void));
-extern void free_mail P((void));
-extern void write_mail P((FILE *));
-extern void read_mail P((FILE *));
-extern void del_msg P((dbref ,char *, char *));
-extern long  delete_msg P((dbref ,dbref ,mdbref ,mdbref ,char *));
-extern void purge_mail P((dbref ,char *, char *));
-extern void listing_mail P((dbref ,char *, char *));
-extern void sending_mail P((dbref ,char *, char *));
-extern void reading_msg P((dbref ,char *, char *));
-extern long mail_size P((dbref));
-#ifdef SHRINK_DB
-extern void remove_all_mail P((void));
-#endif
-
+extern void give_allowances P((void));
 
 /* From match.c */
-extern void init_match P((dbref, char *, int));
+extern dbref exact_match;    /* holds result of exact match */
+extern char *match_name;       /* name to match */
+extern dbref it;               /* the *IT*! */
+
+extern void init_match P((dbref, const char *, int));
 extern void init_match_check_keys P((dbref, char *, int));
 extern dbref last_match_result P((void));
 extern void match_absolute P((void));
@@ -386,6 +379,21 @@ extern char *comma P((char *));
 #define name(x) db[x].cname
 #define Wizard(x) (*db[x].pows == CLASS_DIR)
 
+/* from messaging.c */
+extern void check_mail P((dbref,char *));
+extern long check_mail_internal P((dbref,char *));
+extern void do_board P((dbref, char *, char *));
+extern void do_mail P((dbref, char *, char *));
+extern long dt_mail P((dbref obj));  /* Defined in mail.c */
+extern void info_mail(dbref player);
+extern long mail_size P((dbref));
+extern void read_mail P((FILE *));
+extern void write_mail P((FILE *));
+#ifdef SHRINK_DB
+extern void remove_all_mail P((void));
+#endif
+
+
 /* From move.c */
 extern int can_move P((dbref, char *));
 extern void do_drop P((dbref, char *));
@@ -403,15 +411,26 @@ extern void moveit P((dbref, dbref));
 extern void *stack_em_fun P((size_t));
 extern void *stack_em P((size_t));
 extern void clear_stack P((void));
-extern char *stralloc P((char *));
+extern char *stralloc P((const char *));
 extern char *stralloc_p P((char *));
 extern void strfree_p P((char *));
 extern char *funalloc P((char *));
 
+/* From page.c */
+extern void do_page P((dbref, char *, char *));
+
+/* From paste.c */
+extern char is_pasting P((dbref));
+extern void remove_paste P((dbref));
+extern void do_paste P((dbref, char *, char *));
+extern void do_pastecode P((dbref, char *, char *));
+extern void add_more_paste P((dbref, char *));
+extern void do_pastestats P((dbref, char *));
+
 /* From pcmds.c */
-extern void do_at P((dbref, char *, char *));
-extern void do_as P((dbref, char *, char *));
-extern void do_exec P((dbref, char *, char *));
+extern void do_at P((dbref, const char *, const char *));
+extern void do_as P((dbref, const char *, const char *));
+extern void do_exec P((dbref, const char *, const char *));
 extern void do_version P((dbref));
 extern void do_uptime P((dbref));
 extern void do_cmdav P((dbref));
@@ -419,26 +438,28 @@ extern void inc_pcmdc P((void));
 extern void inc_qcmdc P((void));
 
 /* From player.c */
-extern dbref *match_things P((dbref, char *));
-extern ptype name_to_pow P((char *));
-extern void do_powers P((dbref, char *));
-extern void do_misc P((dbref, char *, char *));
-extern void do_empower P((dbref, char *, char *));
-extern dbref connect_player P((char *, char *));
-extern dbref create_guest P((char *, char *, char *));
-extern dbref create_player P((char *, char *, int, dbref));
+extern dbref *match_things P((dbref, const char *));
+extern ptype name_to_pow P((const char *));
+extern void do_powers P((dbref, const char *));
+extern void do_misc P((dbref, const char *, const char *));
+extern void do_empower P((dbref, const char *, const char *));
+extern dbref connect_player P((const char *, const char *));
+extern dbref create_guest P((const char *, const char *, const char *));
+extern dbref create_player P((const char *, const char *, int, dbref));
 extern void destroy_guest P((dbref));
-extern void do_class P((dbref, char *, char *));
-extern void do_nopow_class P((dbref, char *, char *));
-extern void do_money P((dbref, char *, char *));
-extern void do_nuke P((dbref, char *));
-extern void do_password P((dbref, char *, char *));
-extern void do_pcreate P((dbref, char *, char *));
-extern void do_quota P((dbref, char *, char *));
+extern void do_class P((dbref, const char *, const char *));
+extern void do_nopow_class P((dbref, const char *, const char *));
+extern void do_money P((dbref, const char *, const char *));
+extern void do_nuke P((dbref, const char *));
+extern void do_password P((dbref, const char *, const char *));
+extern void do_pcreate P((dbref, const char *, const char *));
+extern void do_quota P((dbref, const char *, const char *));
 extern char *get_class P((dbref));
-extern dbref *lookup_players P((dbref, char *));
+extern dbref *lookup_players P((dbref, const char *));
 extern char *title P((dbref player));
-extern int is_connected(dbref viewer, dbref target);
+extern char *pow_to_name P((ptype pow));
+extern int old_to_new_class P((int lev));
+extern int is_connected P((dbref viewer, dbref target));
 #define IS_CONNECTED(player) is_connected(NOTHING, (player))  /* For old single-argument calls */
 #define CAN_SEE_CONNECTED(viewer, target) is_connected((viewer), (target))   /* For checking if viewer can see target is connected */
 #define IS_CONNECTED_RAW(player) is_connected(NOTHING, (player))   /* For raw connection check */
@@ -447,7 +468,7 @@ extern int is_connected(dbref viewer, dbref target);
 extern void add_player P((dbref));
 extern void clear_players P((void));
 extern void delete_player P((dbref));
-extern dbref lookup_player P((char *));
+extern dbref lookup_player P((const char *));
 
 /* From predicates.c */
 extern dbref check_zone P((dbref, dbref, dbref, int));
@@ -478,9 +499,9 @@ extern void did_it_now P((dbref, dbref, ATTR *, char *, ATTR *, char *, ATTR *))
 extern void giveto P((dbref, int));
 extern int ok_attribute_name P((char *));
 extern int ok_object_name P((dbref, char *));
-extern int ok_room_name P((char *));
-extern int ok_exit_name P((char *));
-extern int ok_thing_name P((char *));
+extern int ok_room_name P((const char *));
+extern int ok_exit_name P((const char *));
+extern int ok_thing_name P((const char *));
 extern int ok_player_name P((dbref, char *, char *));
 extern int ok_password P((char *));
 extern int pay_quota P((dbref, int));
@@ -573,7 +594,6 @@ extern void do_wemit P((dbref, char *, char *));
 extern void do_echo P((dbref, char *, char *, int));
 extern void do_gripe P((dbref, char *, char *));
 extern void do_pray P((dbref, char *, char *));
-extern void do_page P((dbref, char *, char *));
 extern void do_general_emit P((dbref, char *, char *, int));
 extern void do_pose P((dbref, char *, char *, int));
 extern void do_say P((dbref, char *, char *));
@@ -587,9 +607,9 @@ extern char *reconstruct_message P((char *, char *));
 
 /* From stringutil.c */
 extern char *str_index P((char *, int));
-extern int string_compare P((char *, char *));
+extern int string_compare P((const char *, const char *));
 extern char *string_match P((char *, char *));
-extern int string_prefix P((char *, char *));
+extern int string_prefix P((const char *, char *));
 extern char to_lower P((int));
 extern char to_upper P((int));
 
@@ -667,6 +687,4 @@ extern void do_killid P((struct descriptor_data *, long));
 #endif
 
 
-/* from pueblo.c */
-char *puebloize P((char *inp));
 #endif /* _EXTERNS_H_ */

@@ -29,7 +29,6 @@ int ndisrooms;
 /* declarations */
 char dumpfile[200];
 long epoch = 0;
-int reserved;
 int depth = 0;			/* excessive recursion prevention */
 extern dbref cplr;
 int unsafe = 0;
@@ -216,7 +215,7 @@ void notify_all(arg, exception, nowall)
 
 void notify(player, msg)
 dbref player;
-char *msg;
+const char *msg;
 {
   notify_internal(player, msg, 1);
 }

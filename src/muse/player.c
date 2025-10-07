@@ -21,12 +21,15 @@
 #include "externs.h"
 #include "match.h"
 
+#define MAX_PLAYER_MATCHES 10
+
+
 static int is_connected_raw(dbref who);  /* Forward declaration for raw check */
 
-extern dbref it;
-extern dbref matcher;
-extern char *match_name;
-extern dbref exact_match;
+//extern dbref it;
+//extern dbref matcher;
+//extern char *match_name;
+//extern dbref exact_match;
 
 /* ===================================================================
  * Name and Title Functions (moved from speech.c)
@@ -560,7 +563,7 @@ dbref match_player(dbref player, const char *name)
     if (player == NOTHING && name == NULL) {
         /* Use global matching state variables */
         extern dbref it;           /* From match.c globals */
-        extern dbref matcher;      /* The player doing the match */
+        dbref matcher;      /* The player doing the match */
         extern char *match_name;   /* The name being matched */
         extern dbref exact_match;  /* Where to store the result */
         

@@ -124,17 +124,60 @@ void do_pclear(dbref player, char *name)
  * @param player Requesting admin
  * @param name Target to examine
  */
-void do_stats(dbref player, char *name)
+void do_stats(player, name)
+dbref player;
+char *name;
 {
-    dbref target;
-    
-    if (!Wizard(player)) {
-        notify(player, "Permission denied.");
-        return;
+  extern char *type_to_name();
+  dbref owner;
+  long i, total;
+  long obj[NUM_OBJ_TYPES];
+  long pla[NUM_CLASSES];
+
+  if (*name == '\0')
+    owner = ANY_OWNER;
+  else if (*name == '#')
+  {
+    owner = atol(&name[1]);
+    if (owner < 0 || db_top <= owner)
+      owner = NOTHING;
+    else if (Typeof(owner) != TYPE_PLAYER)
+      owner = NOTHING;
+  }
+  else if (strcmp(name, "me") == 0)
+    owner = player;
+  else
+    owner = lookup_player(name);
+  if (owner == NOTHING)
+  {
+    notify(player, tprintf("%s: No such player", name));
+    return;
+  }
+  if (!controls(player, owner, POW_STATS))
+    if (owner != ANY_OWNER && owner != player)
+    {
+      notify(player, "You need a search warrant to do that!");
+      return;
     }
-    
-    /* TODO: Implementation */
-    notify(player, "Statistics command not yet implemented.");
+
+  calc_stats(owner, &total, obj, pla);
+  if (owner == ANY_OWNER)
+    notify(player, tprintf("%s Database Breakdown:", muse_name));
+  else
+    notify(player, tprintf("%s database breakdown for %s:", muse_name, unparse_object(player, owner)));
+  notify(player, tprintf("%9ld Total Objects", total));
+  for (i = 0; i < NUM_OBJ_TYPES; i++)
+    if (type_to_name(i) && *type_to_name(i) != ' ')
+      notify(player, tprintf("%9ld %ss", obj[i], type_to_name(i)));
+  notify(player, tprintf("%9ld %ss",
+			 pla[CLASS_CITIZEN], class_to_name(CLASS_CITIZEN)));
+#ifdef TEST_MALLOC
+  if (power(player, TYPE_HONWIZ))
+  {
+    /* sprintf(buf, "Malloc count = %d.", malloc_count); */
+    notify(player, tprintf("Malloc count = %d.", malloc_count));
+  }
+#endif /* TEST_MALLOC */
 }
 
 /**
@@ -1481,61 +1524,6 @@ char *command;
     return (0);
 }
 
-void do_stats(player, name)
-dbref player;
-char *name;
-{
-  extern char *type_to_name();
-  dbref owner;
-  long i, total;
-  long obj[NUM_OBJ_TYPES];
-  long pla[NUM_CLASSES];
-
-  if (*name == '\0')
-    owner = ANY_OWNER;
-  else if (*name == '#')
-  {
-    owner = atol(&name[1]);
-    if (owner < 0 || db_top <= owner)
-      owner = NOTHING;
-    else if (Typeof(owner) != TYPE_PLAYER)
-      owner = NOTHING;
-  }
-  else if (strcmp(name, "me") == 0)
-    owner = player;
-  else
-    owner = lookup_player(name);
-  if (owner == NOTHING)
-  {
-    notify(player, tprintf("%s: No such player", name));
-    return;
-  }
-  if (!controls(player, owner, POW_STATS))
-    if (owner != ANY_OWNER && owner != player)
-    {
-      notify(player, "You need a search warrant to do that!");
-      return;
-    }
-
-  calc_stats(owner, &total, obj, pla);
-  if (owner == ANY_OWNER)
-    notify(player, tprintf("%s Database Breakdown:", muse_name));
-  else
-    notify(player, tprintf("%s database breakdown for %s:", muse_name, unparse_object(player, owner)));
-  notify(player, tprintf("%9ld Total Objects", total));
-  for (i = 0; i < NUM_OBJ_TYPES; i++)
-    if (type_to_name(i) && *type_to_name(i) != ' ')
-      notify(player, tprintf("%9ld %ss", obj[i], type_to_name(i)));
-  notify(player, tprintf("%9ld %ss",
-			 pla[CLASS_CITIZEN], class_to_name(CLASS_CITIZEN)));
-#ifdef TEST_MALLOC
-  if (power(player, TYPE_HONWIZ))
-  {
-    /* sprintf(buf, "Malloc count = %d.", malloc_count); */
-    notify(player, tprintf("Malloc count = %d.", malloc_count));
-  }
-#endif /* TEST_MALLOC */
-}
 /* Ansi: void do_pstats(dbref player, char *name); */
 void do_pstats(player, name)
 dbref player;
