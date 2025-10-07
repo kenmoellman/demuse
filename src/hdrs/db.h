@@ -12,7 +12,7 @@
 #include <time.h>
 
 /* Warning: some comments maybe out of date. read with caution. :) */
-
+#include <string.h>
 #include <stdio.h>
 
 extern int depth;
@@ -30,6 +30,12 @@ extern dbref first_free;	/* pointer to free list */
 #define FIX fix_free_list()
 typedef long object_flag_type;
 
+/* Macro for checking valid dbrefs - add to db.h eventually */
+#ifndef GoodObject
+#define GoodObject(x) ((x) >= 0 && (x) < db_top && \
+                      (Typeof(x) != NOTYPE) && \
+                      !(db[x].flags & GOING))
+#endif
 
 /* flag definitions */
 
@@ -216,7 +222,9 @@ struct object {
   char **ua_string;		/* Universe string variables */
   int *ua_int;			/* Universe integer variables */
   float *ua_float;		/* Universe floating point variables */
+#ifdef USE_COMBAT
   long skills[MAX_SKILLS];	/* List of skill settings */
+#endif
 
 
   char **paste;
@@ -233,7 +241,9 @@ struct object {
   struct atrdef *atrdefs;
   dbref *parents;
   dbref *children;
+#ifdef USE_COMBAT
   struct main_spell_struct *spells;
+#endif
   struct bank_acnt_struct *bank_acnts;
   long bitmap;
   unsigned long item_bitmap;
@@ -248,9 +258,9 @@ struct object {
 #define MF_READ 2
 #define MF_NEW 4
 
-//extern long mdb_alloc;
+extern long mdb_alloc;
 extern long mdb_top;
-static long mdb_first_free;
+extern long mdb_first_free;
 
 typedef long mdbref;
 extern struct mdb_entry

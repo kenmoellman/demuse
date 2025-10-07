@@ -661,7 +661,7 @@ dbref owner;
   match_neighbor();
   match_absolute();
   match_possession();
-  match_player();
+  match_player(NOTHING, NULL);
   thing = match_result();
 
   if (thing == NOTHING || thing == AMBIGUOUS)
@@ -718,7 +718,7 @@ dbref player;
 
   init_match(player, args[0], TYPE_PLAYER);
   match_me();
-  match_player();
+  match_player(NOTHING, NULL);
   match_neighbor();
   match_absolute();
   if ((who = match_result()) == NOTHING)
@@ -745,7 +745,7 @@ dbref player;
 
   init_match(player, args[0], TYPE_PLAYER);
   match_me();
-  match_player();
+  match_player(NOTHING, NULL);
   match_neighbor();
   match_absolute();
   if ((who = match_result()) == NOTHING)
@@ -772,7 +772,7 @@ dbref player;
 
   init_match(player, args[0], TYPE_PLAYER);
   match_me();
-  match_player();
+  match_player(NOTHING, NULL);
   match_neighbor();
   match_absolute();
   if ((who = match_result()) == NOTHING)

@@ -326,7 +326,7 @@ char *arg1;
     if (power(player, POW_REMOTE))
     {
       match_absolute();
-      match_player();
+      match_player(NOTHING, NULL);
     }
     match_here();
     match_me();
@@ -590,7 +590,7 @@ char *arg2;
     match_absolute();
     /* only Wizards can examine other players */
     if (has_pow(player, NOTHING, POW_EXAMINE) || has_pow(player, NOTHING, POW_REMOTE))
-      match_player();
+      match_player(NOTHING, NULL);
     /* if(db[thing].flags & UNIVERSAL) match_absolute(); */
     match_here();
     match_me();
@@ -1039,7 +1039,7 @@ char *name;
     return;
   }
   /* 
-     init_match(player, name, TYPE_PLAYER); match_player(); match_exit();
+     init_match(player, name, TYPE_PLAYER); match_player(NOTHING, NULL); match_exit();
      match_neighbor(); match_possession(); match_absolute(); match_me(); */
 
   if (db[thing].flags & DARK)

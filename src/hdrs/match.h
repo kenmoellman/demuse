@@ -13,8 +13,6 @@
 extern void init_match();
 extern void init_match_check_keys();
 
-/* match (LOOKUP_TOKEN)player */
-extern void match_player();
 
 /* match (NUMBER_TOKEN)number */
 extern void match_absolute();

@@ -40,6 +40,7 @@ char *remove_from_ch_attr(dbref, int);
 static dbref hash_chan_function(char *);
 int channel_onoff_chk(dbref, dbref);
 void channel_onoff_set(dbref, char *, char *);
+void do_chemit(dbref player, char *channel, char *message);
 
 /* begin code taken from players.c */
 #define CHANNEL_LIST_SIZE (1 << 12)	/* must be a power of 2 */
@@ -739,7 +740,7 @@ void do_channel_ban(dbref player, char *arg2)
   match_here();
   if (power(player, POW_REMOTE))
   {
-    match_player();
+    match_player(NOTHING, NULL);
     match_absolute();
   }
 
@@ -862,7 +863,7 @@ void do_channel_unban(dbref player, char *arg2)
   match_here();
   if (power(player, POW_REMOTE))
   {
-    match_player();
+    match_player(NOTHING, NULL);
     match_absolute();
   }
 
@@ -2328,3 +2329,35 @@ void channel_onoff_set(dbref player, char *arg1, char *arg2)
     com_send_as_hidden(db[channel].name, tprintf("|Y!+*| %s |G!+has turned this channel ON.|", db[player].cname, arg2), player);
 }
   
+
+void do_chemit(dbref player, char *channel, char *message)
+{
+  if (!*channel)
+  {
+    notify(player, "What channel?");
+    return;
+  }
+
+  if (strchr(channel, ' '))
+  {
+    notify(player, "You're spacey.");
+    return;
+  }
+
+  if (!message)
+  {
+    notify(player, "No message");
+    return;
+  }
+
+/* removing pow_spoof - no longer needed with PUPPET flag
+  if (!power(player, POW_SPOOF))
+  {
+    notify(player, perm_denied());
+    return;
+  }
+*/
+
+  com_send_int(channel, message, player, 0);
+}
+

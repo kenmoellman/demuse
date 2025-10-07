@@ -27,6 +27,8 @@ typedef long dbref;
 #include <string.h>
 /* for struct timeval */
 #include <sys/time.h>
+/* for the time_t type */
+#include <time.h>
 /* for struct sockaddr */
 /* for struct stat */
 #ifndef S_IFMT
@@ -184,7 +186,7 @@ extern void do_config P((dbref, char *, char *));
     is throwing a fit over using dbref, wanting to make it an 
     int instead of a long.  So I'll force it. *sigh*           
 #define DO_REF(nam,var) extern dbref var;  */
-#define DO_REF(nam,var) DO_LNG(nam,var);
+#define DO_REF(nam,var) DO_LNG(nam,var)
 #define DO_LNG(nam,var) extern long var;
 #include "conf.h"
 #undef DO_NUM
@@ -372,7 +374,7 @@ extern void match_here P((void));
 extern void match_me P((void));
 extern void match_neighbor P((void));
 extern void match_perfect P((void));
-extern void match_player P((void));
+extern dbref match_player P((dbref player, const char *name));
 extern void match_channel P((void));
 extern void match_possession P((void));
 extern dbref match_result P((void));
@@ -435,6 +437,11 @@ extern void do_pcreate P((dbref, char *, char *));
 extern void do_quota P((dbref, char *, char *));
 extern char *get_class P((dbref));
 extern dbref *lookup_players P((dbref, char *));
+extern char *title P((dbref player));
+extern int is_connected(dbref viewer, dbref target);
+#define IS_CONNECTED(player) is_connected(NOTHING, (player))  /* For old single-argument calls */
+#define CAN_SEE_CONNECTED(viewer, target) is_connected((viewer), (target))   /* For checking if viewer can see target is connected */
+#define IS_CONNECTED_RAW(player) is_connected(NOTHING, (player))   /* For raw connection check */
 
 /* From player_list.c */
 extern void add_player P((dbref));

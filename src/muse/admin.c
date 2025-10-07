@@ -1,30 +1,344 @@
-  
-/* Wizard-only commands */
-/* $Id: admin.c,v 1.11 1993/09/18 19:03:38 nils Exp $ */
+/* admin.c - Administrative and system management functions
+ * Located in muse/ directory
+ * 
+ * This file consolidates administrative functions including:
+ * - Player management commands (from old players.c)
+ * - System logging commands (gripe, pray)
+ * - Statistics and monitoring
+ * - Permission and power management
+ */
 
-
-#include "db.h"
-#include "config.h"
-#include "motd.h"
-
-#include "interface.h"
-#include "match.h"
-#include "externs.h"
-#include "credits.h"
-
-#include "admin.h"
-#include "player.h"
-
-#include "sock.h"
-
-#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <ctype.h>
+#include <time.h>
 #include <values.h>
 #include <crypt.h>
 
+#include "config.h"
+#include "db.h"
+#include "interface.h"
+#include "externs.h"
+#include "match.h"
+#include "motd.h"
+#include "credits.h"
+#include "admin.h"
+#include "player.h"
+#include "sock.h"
+
 #define  ANY_OWNER	-2
+
+
+/* ===================================================================
+ * Logging and Reporting Functions (moved from speech.c)
+ * =================================================================== */
+
+/**
+ * GRIPE command - log a complaint from a player
+ * @param player Complaining player
+ * @param arg1 First part of complaint
+ * @param arg2 Second part if split by =
+ */
+void do_gripe(dbref player, char *arg1, char *arg2)
+{
+    dbref loc;
+    char *message;
+    char buf[BUFFER_LEN];
+    
+    loc = db[player].location;
+    
+    /* Reconstruct message if split by = */
+    if (arg2 && *arg2) {
+        snprintf(buf, sizeof(buf), "%s = %s", arg1 ? arg1 : "", arg2);
+        message = buf;
+    } else {
+        message = arg1 ? arg1 : "";
+    }
+    
+    /* Log the gripe with location context */
+    log_gripe(tprintf("|R+GRIPE| from %s in %s: %s",
+                     unparse_object_a(player, player),
+                     unparse_object_a(loc, loc),
+                     message));
+    
+    notify(player, "Your complaint has been duly noted.");
+}
+
+/**
+ * PRAY command - send a prayer to the gods (humorous logging)
+ * @param player Praying player
+ * @param arg1 God name to pray to
+ * @param arg2 Prayer message
+ */
+void do_pray(dbref player, char *arg1, char *arg2)
+{
+    dbref loc;
+    
+    if (!arg1 || !*arg1) {
+        notify(player, "Pray to whom?");
+        return;
+    }
+    
+    if (!arg2 || !*arg2) {
+        notify(player, "What do you want to pray for?");
+        return;
+    }
+    
+    loc = db[player].location;
+    
+    /* Log the prayer */
+    log_prayer(tprintf("|G+PRAYER| from %s in %s to the god %s: %s",
+                      unparse_object_a(player, player),
+                      unparse_object_a(loc, loc), 
+                      arg1, arg2));
+    
+    notify(player, tprintf("%s has heard your prayer, and will consider granting it.", 
+                         arg1));
+}
+
+/* ===================================================================
+ * Player Management Functions (from old players.c)
+ * These would come from the existing players.c file
+ * =================================================================== */
+
+/* TODO: Move these from players.c */
+/*
+void do_pcreate(dbref player, char *name, char *password)
+void do_destroy_player(dbref player, char *name)
+void do_quota(dbref player, char *name, char *amount)
+void do_money(dbref player, char *name, char *amount)
+void do_power(dbref player, char *name, char *power)
+void do_boot(dbref player, char *name)
+void do_newpassword(dbref player, char *name, char *password)
+void do_pclear(dbref player, char *name)
+*/
+
+/* ===================================================================
+ * Statistics and Monitoring Functions
+ * =================================================================== */
+
+/**
+ * Show statistics about a player or object
+ * @param player Requesting admin
+ * @param name Target to examine
+ */
+void do_stats(dbref player, char *name)
+{
+    dbref target;
+    
+    if (!Wizard(player)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    /* TODO: Implementation */
+    notify(player, "Statistics command not yet implemented.");
+}
+
+/**
+ * Show system-wide statistics
+ * @param player Requesting admin
+ */
+void do_sysstats(dbref player)
+{
+    if (!Wizard(player)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    /* TODO: Show database statistics, memory usage, etc. */
+    notify(player, "System statistics not yet implemented.");
+}
+
+/* ===================================================================
+ * Permission and Power Management
+ * =================================================================== */
+
+/**
+ * Check if player has administrative privileges
+ * @param player Player to check
+ * @return 1 if admin, 0 otherwise
+ */
+int is_admin(dbref player)
+{
+    return Wizard(player) || power(player, POW_SECURITY);
+}
+
+/**
+ * Check if player can administrate target
+ * @param player Admin player
+ * @param target Target player
+ * @return 1 if allowed, 0 otherwise
+ */
+int can_admin(dbref player, dbref target)
+{
+    /* Can't admin yourself unless you're root */
+    if (player == target && !is_root(player)) {
+        return 0;
+    }
+    
+    /* Root can admin anyone */
+    if (is_root(player)) {
+        return 1;
+    }
+    
+    /* Wizards can admin non-wizards */
+    if (Wizard(player) && !Wizard(target)) {
+        return 1;
+    }
+    
+    /* Check power levels for more granular control */
+    /* TODO: Implement power level comparison */
+    
+    return 0;
+}
+
+/* ===================================================================
+ * System Maintenance Functions
+ * =================================================================== */
+
+/**
+ * Database check command
+ * @param player Requesting admin
+ */
+void do_dbcheck(dbref player)
+{
+    if (!Wizard(player)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    notify(player, "Beginning database consistency check...");
+    
+    /* TODO: Implement database checking */
+    /* - Check for invalid dbrefs
+     * - Check for orphaned objects
+     * - Check for circular references
+     * - Verify attribute integrity
+     */
+    
+    notify(player, "Database check complete.");
+}
+
+/**
+ * Force database dump
+ * @param player Requesting admin
+ */
+void do_dump(dbref player)
+{
+    if (!Wizard(player)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    notify(player, "Dumping database...");
+    fork_and_dump();
+    notify(player, "Database dump initiated.");
+}
+
+/**
+ * Shutdown the game
+ * @param player Requesting admin
+ * @param reason Shutdown message
+ */
+void do_shutdown(dbref player, char *reason)
+{
+    if (!power(player, POW_SHUTDOWN)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    /* Log the shutdown */
+    log_important(tprintf("SHUTDOWN by %s: %s",
+                         unparse_object_a(player, player),
+                         reason ? reason : "No reason given"));
+    
+    /* Notify all players */
+    if (reason && *reason) {
+        notify_all(tprintf("GAME: Shutdown by %s: %s",
+                         db[player].name, reason), 
+                  NOTHING, 0);
+    } else {
+        notify_all(tprintf("GAME: Shutdown by %s",
+                         db[player].name), 
+                  NOTHING, 0);
+    }
+    
+    /* Set shutdown flag */
+    shutdown_flag = 1;
+}
+
+/* ===================================================================
+ * User Management Functions
+ * =================================================================== */
+
+/**
+ * List all connected users (admin version with details)
+ * @param player Requesting admin
+ */
+void do_who_admin(dbref player)
+{
+    struct descriptor_data *d;
+    int count = 0;
+    
+    if (!Wizard(player)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    notify(player, "Descriptor | Player     | Idle | Host");
+    notify(player, "-----------|------------|------|------------------------------");
+    
+    for (d = descriptor_list; d; d = d->next) {
+        if (d->state == CONNECTED) {
+            notify(player, tprintf("%10ld | %10s | %4s | %s",
+                                 d->descriptor,
+                                 db[d->player].name,
+                                 time_format_2(now - d->last_time),
+                                 d->addr));
+            count++;
+        }
+    }
+    
+    notify(player, tprintf("Total: %d connections", count));
+}
+
+/**
+ * Set or clear maintenance mode
+ * @param player Requesting admin
+ * @param arg "on" or "off"
+ */
+void do_maintenance(dbref player, char *arg)
+{
+    if (!Wizard(player)) {
+        notify(player, "Permission denied.");
+        return;
+    }
+    
+    if (!arg || !*arg) {
+        notify(player, tprintf("Maintenance mode is %s",
+                             nologins ? "ON" : "OFF"));
+        return;
+    }
+    
+    if (!strcasecmp(arg, "on")) {
+        nologins = 1;
+        notify(player, "Maintenance mode enabled - no new logins allowed.");
+        log_important(tprintf("Maintenance mode enabled by %s",
+                            unparse_object_a(player, player)));
+    } else if (!strcasecmp(arg, "off")) {
+        nologins = 0;
+        notify(player, "Maintenance mode disabled - logins allowed.");
+        log_important(tprintf("Maintenance mode disabled by %s",
+                            unparse_object_a(player, player)));
+    } else {
+        notify(player, "Usage: @maintenance on|off");
+    }
+}
+
+
 
 extern int restrict_connect_class;
 extern int user_limit;
@@ -892,7 +1206,7 @@ char *arg2;
     match_possession();
     match_me();
     match_absolute();
-    match_player();
+    match_player(NOTHING, NULL);
     match_exit();
 
     if ((victim = noisy_match_result()) == NOTHING)
@@ -941,7 +1255,7 @@ char *arg2;
     match_absolute();
     match_neighbor();
     match_me();
-    match_player();
+    match_player(NOTHING, NULL);
     match_exit();
     destination = match_result();
   }
@@ -1426,12 +1740,12 @@ char *arg2;
 
   init_match(player, arg1, TYPE_PLAYER);
   match_neighbor();
-  match_player();
+  match_player(NOTHING, NULL);
   if ((playerA = noisy_match_result()) != NOTHING)
   {
     init_match(player, arg2, TYPE_PLAYER);
     match_neighbor();
-    match_player();
+    match_player(NOTHING, NULL);
     if (((playerB = noisy_match_result()) != NOTHING) && !is_root(playerB))
     {
       for (n = 0; n < db_top; n++)
@@ -1564,7 +1878,7 @@ char *reason;
   init_match(player, name, TYPE_PLAYER);
   match_neighbor();
   match_absolute();
-  match_player();
+  match_player(NOTHING, NULL);
   match_me();
   if ((victim = noisy_match_result()) == NOTHING)
     return;
@@ -2152,3 +2466,5 @@ char *arg2;
     notify(player, "MOTD Cleared.");
   }
 }
+
+

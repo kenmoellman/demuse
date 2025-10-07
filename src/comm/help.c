@@ -49,7 +49,7 @@ ATTR *trigthis;
   help_indx entry;
   FILE *fp;
   char *p, line[LINE_SIZE + 1];
-  char tempy[82];
+  char tempy[90];
   int tempx;
 
   if (*arg1 == '\0')

@@ -75,7 +75,7 @@ DOATTR(A_TZ,		  "TZ",		     INH,			57)
 DOATTR(A_DOOMSDAY,	  "Doomsday",	     WIZARD,			58)
 DOATTR(A_ATIME,           "ATime",           INH, 			59)
 
-DOATTR(A_RACE,		  "Race",	     INH|WIZARD|OSEE,		99)
+DOATTR(A_OLDRACE,	  "OldRace",	     INH|WIZARD|OSEE,		99)
 #ifndef DECLARE_ATTR
 DOATTR(A_V[0],		  "Va",		     INH,			100+0)
 DOATTR(A_V[1],		  "Vb",		     INH,			100+1)
@@ -104,7 +104,7 @@ DOATTR(A_V[23],		  "Vx",		     INH,			100+23)
 DOATTR(A_V[24],		  "Vy",		     INH,			100+24)
 DOATTR(A_V[25],		  "Vz",		     INH,			100+25)
 #else /* declare_attr */
-DOATTR(A_V[26],		  "v attributes",    -1,			   -1);
+DOATTR(A_V[26],		  "v attributes",    -1,			   -1)
 #endif /* declare_attr */
 DOATTR(A_MOVE,		  "Move",	     INH,			126)
 DOATTR(A_OMOVE,		  "Omove",	     INH,			127)
@@ -190,7 +190,6 @@ DOATTR(A_CTITLE,          "CTitle",          INH,                       302)
 
 /* this used to be MOTD but it was dumb to put the motd in the db and have 
    empty attrs on everyone.  So I reused the attrs. -wm */
-DOATTR(A_IDLE_CUR,	  "Idle_cur",	     SDARK|NOMOD|UNIMP|WIZARD|NOMEM,1023)
 DOATTR(A_IDLETIME,	  "Idletime",	     INH,			1015)
 DOATTR(A_BANNED,	  "Banned",	     WIZARD,			1016)
 DOATTR(A_TITLE,		  "Title",	     INH|WIZARD,		1017)
@@ -199,6 +198,10 @@ DOATTR(A_EXPIRE,	  "Expire",	     WIZARD,			1019)
 DOATTR(A_PREVTIME,	  "PrevTime",	     WIZARD|SDARK|NOMEM|TIME,	1020) 
 DOATTR(A_AGE,		  "Age",	     AF_BUILTIN|TIME|OSEE,	1021) 
 DOATTR(A_LASTSITE,	  "Lastsite",	     SDARK|WIZARD|NOMOD|NOMEM,	1022) 
+DOATTR(A_IDLE_CUR,	  "Idle_cur",	     SDARK|NOMOD|UNIMP|WIZARD|NOMEM,1023)
+DOATTR(A_EMAIL,           "Email",	     AF_BUILTIN|TIME|OSEE,    	1024) 
+DOATTR(A_LASTPAGE,        "Last_Page",	     AF_BUILTIN|TIME|OSEE,    	1024) 
+DOATTR(A_LASTPTIME,       "Last_Page_Time",  AF_BUILTIN|TIME|OSEE,    	1024) 
 
 /* this is all combat stuff.*
  * dont use 1015 - 1024 -- someone decided it'd be fun to reserve this range

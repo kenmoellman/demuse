@@ -50,6 +50,8 @@ int number_guests = 30;
 char *guest_prefix = "Guest";
 char *guest_alias_prefix = "G";
 char *guest_description = "You see a guest.";
+int announce_guests = 0;     /* Announce guest connections */
+int announce_connects = 0;   /* Broadcast all connections */
 
 
 long int max_pennies = 1000000;
