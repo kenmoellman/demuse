@@ -16,9 +16,9 @@
 #include "db.h"
 #include "mail.h"
 
-static long mdb_alloc;
+long mdb_alloc;
 //static long mdb_first_free;
-extern long mdb_first_free;
+long mdb_first_free;
 
 
 #ifdef __GNUC__

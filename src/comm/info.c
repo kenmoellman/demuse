@@ -12,7 +12,7 @@ struct mdb_entry *mdb;
 /* static long mdb_top; */
 long mdb_top; 
 //static long mdb_first_free;
-extern long mdb_first_free;
+long mdb_first_free;
 
 static void info_cpu P((dbref));
 static void info_mail P((dbref));
@@ -127,16 +127,15 @@ void info_cpu(player)
 
 void info_mem(dbref player)
 {
-        struct mallinfo M_MEMINF;
-  
-        M_MEMINF = mallinfo();
+        struct mallinfo2 m_info;
+        m_info = mallinfo2();
 
 	notify(player, tprintf("\tStack Size / Blocks....: %d/%d", stack_size, number_stack_blocks));
 	notify(player, tprintf("\tText Block Size/Blocks.: %d/%d", text_block_size, text_block_num));
-        notify(player, tprintf("\tTotal Allocated Memory.: %d", M_MEMINF.arena));
-        notify(player, tprintf("\tFree Allocated Memory..: %d", M_MEMINF.fordblks));
-        notify(player, tprintf("\tFree Chunks of Memory..: %d", M_MEMINF.ordblks));
-        notify(player, tprintf("\tTotal Used Memory......: %d", M_MEMINF.uordblks));
+        notify(player, tprintf("\tTotal Allocated Memory.: %zu", m_info.arena));
+        notify(player, tprintf("\tFree Allocated Memory..: %zu", m_info.fordblks));
+        notify(player, tprintf("\tFree Chunks of Memory..: %zu", m_info.ordblks));
+        notify(player, tprintf("\tTotal Used Memory......: %zu", m_info.uordblks));
 }
 
 

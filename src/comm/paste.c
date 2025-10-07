@@ -192,7 +192,7 @@ void do_paste_int(dbref player, char *arg1, char *arg2, int code)
         match_possession();
         match_exit();
         match_absolute();
-        match_player();
+        match_player(NOTHING, NULL);
   
         if ((who = noisy_match_result()) == NOTHING)
         {
@@ -250,7 +250,7 @@ void do_paste_int(dbref player, char *arg1, char *arg2, int code)
       match_possession();
       match_exit();
       match_absolute();
-      match_player();
+      match_player(NOTHING, NULL);
 
       if ((who = noisy_match_result()) == NOTHING)
       {

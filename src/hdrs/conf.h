@@ -79,3 +79,6 @@ DO_NUM("max_queue",max_queue)
 DO_NUM("channel_name_limit",channel_name_limit)
 DO_NUM("player_name_limit",player_name_limit)
 DO_NUM("player_reference_limit",player_reference_limit)
+DO_NUM("announce_guests", announce_guests)     /* 1 to announce guest connections */
+DO_NUM("announce_connects", announce_connects) /* 1 to broadcast all connections */
+

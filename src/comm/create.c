@@ -235,7 +235,7 @@ char *room_name;
       match_me();
       match_here();
       match_absolute();
-      match_player();
+      match_player(NOTHING, NULL);
       if ((room = noisy_match_result()) < 0)
       {
 	/* notify(player,"No match."); noisy_match_result talks bout it */

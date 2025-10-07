@@ -54,10 +54,16 @@ char *password;
   /* make sure that old guest id's don't hang around! */
   player = lookup_player(name);
   if (player != NOTHING)
+  {
     if (db[player].pows && Guest(player))
+    {
       destroy_player(player);
+    }
     else
+    {
       return NOTHING;
+    }
+  }
 
   /* make new player */
   player = new_object();
@@ -310,7 +316,7 @@ char *name;
   init_match(player, name, TYPE_PLAYER);
   match_neighbor();
   match_absolute();
-  match_player();
+  match_player(NOTHING, NULL);
   if ((victim = noisy_match_result()) == NOTHING)
     return;
 
@@ -391,7 +397,7 @@ char *class;
   {
     init_match(player, arg1, TYPE_PLAYER);
     match_me();
-    match_player();
+    match_player(NOTHING, NULL);
     match_neighbor();
     match_absolute();
     if ((who = noisy_match_result()) == NOTHING)
@@ -479,7 +485,7 @@ char *class;
   {
     init_match(player, arg1, TYPE_PLAYER);
     match_me();
-    match_player();
+    match_player(NOTHING, NULL);
     match_neighbor();
     match_absolute();
     if ((who = noisy_match_result()) == NOTHING)
@@ -611,7 +617,9 @@ char *whostr, *powstr;
     return;
   }
   for (k = 0; k < NUM_POWS; k++)
+  {
     if (powers[k].num == pow)
+    {
       if (powers[k].max[class_to_list_pos(*db[db[who].owner].pows)] >= powval)
       {
 	set_pow(who, pow, powval);
@@ -645,6 +653,8 @@ char *whostr, *powstr;
 	notify(player, "Sorry, that is beyond the maximum for that level.");
 	return;
       }
+    }
+  }
   notify(player, "Internal error. Help.");
 }
 void do_powers(player, whostr)
@@ -743,7 +753,7 @@ char *arg1, *arg2;
   {
     init_match(player, arg1, TYPE_PLAYER);
     match_me();
-    match_player();
+    match_player(NOTHING, NULL);
     match_neighbor();
     match_absolute();
     if ((who = noisy_match_result()) == NOTHING)

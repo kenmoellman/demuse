@@ -24,7 +24,7 @@ char *amnt;
     return;
   }
   init_match(player, who, TYPE_PLAYER);
-  match_player();
+  match_player(NOTHING, NULL);
   match_absolute();
   match_neighbor();
   recipt = noisy_match_result();
@@ -69,7 +69,7 @@ char *amnt;
   match_me();
   if (power(player, POW_REMOTE))
   {
-    match_player();
+    match_player(NOTHING, NULL);
     match_absolute();
   }
 

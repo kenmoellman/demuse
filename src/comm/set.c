@@ -803,7 +803,9 @@ int allow_commands;
     int i;
 
     for (i = 0; db[thing].children && db[thing].children[i] != NOTHING; i++)
+    {
       if (db[db[thing].children[i]].owner != db[player].owner)
+      {
 	if (!controls(player, db[thing].children[i], POW_MODIFY))
 	{
 	  notify(player,
@@ -815,6 +817,8 @@ int allow_commands;
 	  notify(player,
 		 tprintf("Warning: you are locking in %s as a child.",
 			 unparse_object(player, db[thing].children[i])));
+      }
+    }
   }
   /* check for restricted flag */
 /* new spoof protection installed.
@@ -1305,7 +1309,7 @@ time_t lasttime;
 
   {
     char *aunidle;
-    int x;
+    size_t x;
 
     aunidle = tprintf("%s", atr_get(player, A_AUNIDLE));
 

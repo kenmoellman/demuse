@@ -138,25 +138,6 @@ dbref thing2;
   return (random() % 2) ? thing1 : thing2;
 }
 
-void match_player()
-{
-  dbref match;
-  char *p;
-
-  if (it != NOTHING && Typeof(it) == TYPE_PLAYER)
-  {
-    exact_match = it;
-    return;
-  }
-  if (*match_name == LOOKUP_TOKEN)
-  {
-    for (p = match_name + 1; isspace(*p); p++) ;
-    if ((match = lookup_player(p)) != NOTHING)
-    {
-      exact_match = match;
-    }
-  }
-}
 
 void match_channel()
 {
@@ -368,7 +349,7 @@ void match_everything()
   match_here();
   /* if(power(player, TYPE_HONWIZ)) { */
   match_absolute();
-  match_player();
+  match_player(NOTHING, NULL);
   /* } */
 }
 
