@@ -1,0 +1,83 @@
+broadcast.o: broadcast.c ../../config/config.h ../hdrs/db.h \
+ ../hdrs/attrib.h ../hdrs/powers.h ../hdrs/interface.h \
+ ../hdrs/copyright.h ../hdrs/db.h ../hdrs/externs.h ../hdrs/net.h \
+ ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h \
+ ../hdrs/player.h
+color.o: color.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/externs.h ../hdrs/db.h ../hdrs/net.h \
+ ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h \
+ ../hdrs/interface.h ../hdrs/copyright.h
+com.o: com.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h ../hdrs/player.h
+create.o: create.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h
+datetime.o: datetime.c ../../config/config.h ../hdrs/db.h \
+ ../hdrs/attrib.h ../hdrs/powers.h ../hdrs/interface.h \
+ ../hdrs/copyright.h ../hdrs/db.h ../hdrs/externs.h ../hdrs/net.h \
+ ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h
+dbtop.o: dbtop.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h
+email.o: email.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h
+emit.o: emit.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/match.h ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h \
+ ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h
+help.o: help.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h ../hdrs/help.h
+info.o: info.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h
+look.o: look.c ../hdrs/db.h ../../config/config.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/match.h ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h \
+ ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h
+lstats.o: lstats.c ../../config/config.h ../hdrs/externs.h ../hdrs/db.h \
+ ../hdrs/attrib.h ../hdrs/powers.h ../hdrs/net.h ../hdrs/fifo.h \
+ ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h ../hdrs/sock.h \
+ ../hdrs/externs.h ../hdrs/db.h
+messaging.o: messaging.c ../hdrs/externs.h ../../config/config.h \
+ ../hdrs/db.h ../hdrs/attrib.h ../hdrs/powers.h ../hdrs/net.h \
+ ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h \
+ ../hdrs/db.h
+page.o: page.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h
+paste.o: paste.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/externs.h ../hdrs/db.h ../hdrs/net.h \
+ ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h \
+ ../hdrs/interface.h ../hdrs/copyright.h
+pcmds.o: pcmds.c ../hdrs/credits.h ../hdrs/db.h ../../config/config.h \
+ ../hdrs/attrib.h ../hdrs/powers.h ../hdrs/externs.h ../hdrs/db.h \
+ ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h \
+ ../hdrs/conf.h ../hdrs/net.h
+player.o: player.c ../hdrs/db.h ../../config/config.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h \
+ ../hdrs/universe.h ../hdrs/conf.h ../hdrs/credits.h ../hdrs/player.h \
+ ../hdrs/admin.h
+rob.o: rob.c ../hdrs/copyright.h ../hdrs/db.h ../../config/config.h \
+ ../hdrs/attrib.h ../hdrs/powers.h ../hdrs/interface.h \
+ ../hdrs/copyright.h ../hdrs/db.h ../hdrs/match.h ../hdrs/externs.h \
+ ../hdrs/net.h ../hdrs/fifo.h ../hdrs/log.h ../hdrs/universe.h \
+ ../hdrs/conf.h
+set.o: set.c ../hdrs/db.h ../../config/config.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/match.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/interface.h ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h \
+ ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h ../hdrs/credits.h
+speech.o: speech.c ../../config/config.h ../hdrs/db.h ../hdrs/attrib.h \
+ ../hdrs/powers.h ../hdrs/interface.h ../hdrs/copyright.h ../hdrs/db.h \
+ ../hdrs/match.h ../hdrs/externs.h ../hdrs/net.h ../hdrs/fifo.h \
+ ../hdrs/log.h ../hdrs/universe.h ../hdrs/conf.h

@@ -119,3 +119,11 @@
 10/17 00:39:24| FAILED CONNECT wizard on concid 1
 10/17 00:39:27| DISCONNECT concid 1 never connected
 10/17 00:39:41| CHECKPOINTING: db/mdb.#1#
+10/17 00:58:52| DUMPING: db/mdb.PANIC
+10/17 00:58:52| DUMPING: db/mdb.PANIC (done)
+10/17 01:11:29| Starting up on port 4208
+10/17 01:11:29| Binding to all interfaces (INADDR_ANY)
+10/17 01:11:29| Successfully opened socket on port 4208
+10/17 01:11:36| Connection from: localhost
+10/17 01:11:36| USER CONNECT: concid: 1 host ???@localhost time: Fri Oct 17 01:11:36 2025
+10/17 01:11:43| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1

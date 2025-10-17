@@ -1,2 +1,9 @@
 
 10/12 19:54:43| broken queue. ouch,
+10/17 00:58:52| PANIC!! BAILOUT: caught signal 2
+10/17 00:58:52| *** Reporting position ***
+10/17 00:58:52| Depth: 2 Command: object #20
+
+10/17 00:58:52| Player: 31 location: 31
+10/17 00:58:52| **************************
+10/17 00:58:52| Emergency shutdown.
