@@ -1,5 +1,5 @@
 *.o
 *.a
 *-backup
-run/logs/
-bin/
+run/logs/*
+bin/*
