@@ -341,4 +341,9 @@ multi-homing either.) -wm 05/08/2000 */
 /* change this if you add or delete a directory in the directory tree. */
 #define MUSE_DIRECTORIES "src src/hdrs src/comm src/io src/db src/util run run/files run/files/p run/files/p/1 run/db run/msgs run/logs doc bin config"
 
+/* max length of command argument to process_command */
+#define MAX_COMMAND_LEN 1000
+#define BUFFER_LEN ((MAX_COMMAND_LEN)*8)
+
+
 #endif /* _LOADED_CONFIG_ */
