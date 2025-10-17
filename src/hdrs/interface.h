@@ -13,9 +13,6 @@ extern int boot_off();	/* remove a player */
 
 /* the following symbols are provided by game.c */
 
-/* max length of command argument to process_command */
-#define MAX_COMMAND_LEN 1000
-#define BUFFER_LEN ((MAX_COMMAND_LEN)*8)
 extern void process_command();
 
 extern dbref create_player();

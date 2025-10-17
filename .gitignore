@@ -1,2 +1,5 @@
 *.o
 *.a
+*-backup
+run/logs/*
+run/msgs/*

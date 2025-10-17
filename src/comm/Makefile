@@ -3,10 +3,25 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -ansi -std=c99 -g -O2 \
+#CFLAGS = -Wall -Wextra -pedantic -ansi -std=c99 -g -O2 \
+#         -I../hdrs -I../../config \
+#         -D_POSIX_C_SOURCE=200809L \
+#         -D_DEFAULT_SOURCE
+
+CFLAGS = -Wall -Wextra -pedantic -std=c11 -g -O2 \
          -I../hdrs -I../../config \
          -D_POSIX_C_SOURCE=200809L \
-         -D_DEFAULT_SOURCE
+         -D_DEFAULT_SOURCE \
+         -Wformat=2 -Wformat-security \
+         -Werror=format-security \
+         -D_FORTIFY_SOURCE=2 \
+         -fstack-protector-strong \
+         -fPIE -pie \
+         -Wconversion -Wsign-conversion \
+         -Wshadow -Wstrict-overflow=5
+
+
+
 LDFLAGS = 
 LIBS = -lcrypt 
 

@@ -30,6 +30,6 @@ symbols: all
 	gawk -f findsym.awk symbols
 
 clean:
-	rm -f */*.[oa] util/wd util/mycompress util/mkindx muse/netmuse */.depend
+	rm -f */*.[oad] util/wd util/mycompress util/mkindx muse/netmuse */.depend
 
 

@@ -14,7 +14,7 @@
 	} while (0)
 
 
-extern struct descriptor_data *descriptor_list;
+//extern struct descriptor_data *descriptor_list;
 extern struct descriptor_data *dsc;
 #define EPROMPT "<edit>\r\n"
 #define COMMAND 0

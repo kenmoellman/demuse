@@ -8,6 +8,7 @@
 typedef long dbref;
 #endif
 
+
 #ifndef _EXTERNS_H_ 
 #define _EXTERNS_H_
 
@@ -76,6 +77,7 @@ typedef long dbref;
 #endif
 
 
+
 /* and all the definitions */
 /* From admin.c */
 extern void do_su P((dbref, char *, char *, dbref));
@@ -130,8 +132,8 @@ extern void announce_disconnect P((dbref));
 extern int boot_off P((dbref));
 extern void emergency_shutdown P((void));
 extern int getdtablesize P((void));
-extern int queue_string P((struct descriptor_data *,char *));
-extern int queue_write P((struct descriptor_data *, char *, int));
+extern int queue_string P((struct descriptor_data *, const char *));
+extern int queue_write P((struct descriptor_data *, const char *, int));
 extern void raw_notify P((dbref, char *));
 extern void raw_notify_noc P((dbref, char *));
 extern void remove_muse_pid P((void));
@@ -685,6 +687,7 @@ extern void do_killid P((struct descriptor_data *, long));
 #elseif MEMWATCH
 #include "memwatch.h"
 #endif
+
 
 
 #endif /* _EXTERNS_H_ */
