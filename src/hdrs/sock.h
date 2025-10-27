@@ -28,7 +28,7 @@ extern int shutdown_flag;
 
 
 
-#define MALLOC(result, type, number) do { if (!((result) = (type *) malloc ((number) * sizeof (type)))) panic("Out of memory"); } while (0)
+//#define MALLOC(result, type, number) do { if (!((result) = (type *) malloc ((number) * sizeof (type)))) panic("Out of memory"); } while (0)
 
-#define FREE(x) (free((void *) x))
+//#define FREE(x) (free((void *) x))
 

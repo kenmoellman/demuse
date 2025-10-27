@@ -8,7 +8,7 @@
 #endif
 
 /* make sure we have these definitions */
-#define MALLOC(result, type, number) do {				\
+#define SAFE_MALLOC(result, type, number) do {				\
 	if (!((result) = (type *) malloc ((number) * sizeof (type))))	\
 		panic("Out of memory");					\
 	} while (0)

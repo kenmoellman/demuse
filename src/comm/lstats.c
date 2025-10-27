@@ -647,7 +647,8 @@ void give_allowances(void)
         
         if (!found) {
             /* Add to list */
-            e = (struct plist_str *)malloc(sizeof(struct plist_str));
+//            e = (struct plist_str *)malloc(sizeof(struct plist_str));
+            SAFE_MALLOC(e, struct plist_str, 1);
             if (!e) {
                 log_error("Out of memory in give_allowances");
                 break;
@@ -665,7 +666,7 @@ void give_allowances(void)
         giveto(x->player, allowance);
         notify(x->player, tprintf("You collect %d credits.", allowance));
         
-        free(x);
+        SAFE_FREE(x);
         x = next;
     }
 }

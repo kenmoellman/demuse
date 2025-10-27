@@ -32,7 +32,9 @@ int i;
 
 void set_signals()
 {
-  struct sigaction *act = malloc(sizeof(struct sigaction));
+//  struct sigaction *act = malloc(sizeof(struct sigaction));
+  struct sigaction *act;
+  SAFE_MALLOC(act, struct sigaction, 1);
 
   /* we don't care about SIGPIPE, we notice it in select() and write() */
   signal(SIGPIPE, SIG_IGN);
@@ -42,7 +44,7 @@ void set_signals()
   act->sa_handler = reaper;
   act->sa_flags = SA_RESTART;
   sigaction(SIGCHLD, act, NULL);
-  free(act);
+  SAFE_FREE(act);
   signal(SIGCHLD, SIG_IGN);
 
   /* standard termination signals */

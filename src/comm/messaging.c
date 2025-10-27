@@ -131,7 +131,8 @@ void init_mail(void)
 {
     mdb_top = 0;
     mdb_alloc = 512;
-    mdb = malloc(sizeof(MDB_ENTRY) * mdb_alloc);
+//    mdb = malloc(sizeof(MDB_ENTRY) * mdb_alloc);
+    SAFE_MALLOC(mdb, MDB_ENTRY, mdb_alloc);
     
     if (!mdb) {
         panic("Failed to allocate message database");
@@ -147,12 +148,12 @@ void free_mail(void)
     
     for (i = 0; i < mdb_top; i++) {
         if (mdb[i].message) {
-            free(mdb[i].message);
+            SAFE_FREE(mdb[i].message);
         }
     }
     
     if (mdb) {
-        free(mdb);
+        SAFE_FREE(mdb);
         mdb = NULL;
     }
 }
@@ -232,7 +233,7 @@ void make_free_mail_slot(mdbref slot)
     if (slot < 0 || slot >= mdb_top) return;
     
     if (mdb[slot].message) {
-        free(mdb[slot].message);
+        SAFE_FREE(mdb[slot].message);
     }
     
     mdb[slot].message = NULL;
@@ -319,7 +320,8 @@ void send_message(dbref from, dbref to, const char *message,
     }
     
     /* Copy message safely */
-    msg_copy = malloc(strlen(message) + 1);
+//    msg_copy = malloc(strlen(message) + 1);
+    SAFE_MALLOC(msg_copy, char, strlen(message) + 1);
     if (!msg_copy) return;
     strcpy(msg_copy, message);
     

@@ -105,7 +105,8 @@ char *arg1, *arg2;
 
     /* we need to re-allocate strings so we can change them. */
 #define DO_NUM(str,var) ;
-#define DO_STR(str,var) newv=malloc(strlen(var)+1);strcpy(newv,var);var=newv;
+//#define DO_STR(str,var) newv=malloc(strlen(var)+1);strcpy(newv,var);var=newv;
+#define DO_STR(str,var) SAFE_MALLOC(newv, char, strlen(var)+1); strcpy(newv,var); var=newv;
 #define DO_REF(str,var) ;
 #define DO_LNG(str,var) ;
 #include "conf.h"

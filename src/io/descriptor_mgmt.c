@@ -20,12 +20,12 @@ struct ctrace_int {
 //    }
 //
 //    if (d->output_prefix) {
-//        free(d->output_prefix);
+//        SAFE_FREE(d->output_prefix);
 //        d->output_prefix = NULL;
 //    }
 //    
 //    if (d->output_suffix) {
-//        free(d->output_suffix);
+//        SAFE_FREE(d->output_suffix);
 //        d->output_suffix = NULL;
 //    }
 //}

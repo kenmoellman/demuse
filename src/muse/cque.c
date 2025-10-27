@@ -170,7 +170,9 @@ time_t wait;
 
     return;
   }
-  tmp = (BQUE *) malloc(sizeof(BQUE) + strlen(command) + 1);
+//  tmp = (BQUE *) malloc(sizeof(BQUE) + strlen(command) + 1);
+  tmp = (BQUE *)safe_malloc(sizeof(BQUE) + strlen(command) + 1, __FILE__, __LINE__);
+
   if (tmp==NULL) 
   {
     add_to(player,-1); /* no entry made so subtract 1 again */
@@ -201,7 +203,10 @@ time_t wait;
     }
     else
     {
-      char *p = (char *)malloc(strlen(wptr[a]) + 1);
+//      char *p = (char *)malloc(strlen(wptr[a]) + 1);
+      char *p;
+      SAFE_MALLOC(p, char, strlen(wptr[a]) + 1);
+
       tmp->env[a]=p;
       if (p!=NULL) 
       {
@@ -420,11 +425,11 @@ int do_top()
   {
     if (tmp->env[b])
     {
-      free(tmp->env[b]);
+      SAFE_FREE(tmp->env[b]);
       tmp->env[b] = NULL;
     }
   }
-  free(tmp);
+  SAFE_FREE(tmp);
 
   if (qfirst == NULL)
     qlast = NULL;
@@ -504,14 +509,14 @@ dbref player;
     { 
       if (qfirst->env[a])
       { 
-        free(qfirst->env[a]);
+        SAFE_FREE(qfirst->env[a]);
         qfirst->env[a] = NULL;
       }
     }
     giveto(qfirst->player, queue_cost);
     free_pid(qfirst->pid);
     qfirst = next;
-    free(i);
+    SAFE_FREE(i);
   }  
      
   qfirst = NULL;
@@ -599,13 +604,13 @@ void do_halt_process(dbref player, int pid)
         {
     	if (point->env[a])
           {
-    	  free(point->env[a]);
+    	  SAFE_FREE(point->env[a]);
             point->env[a] = NULL;
           }
         }
         point->player = NOTHING;
         free_pid(point->pid);
-        free(point);
+        SAFE_FREE(point);
         notify(player, tprintf("@halt: Terminated process %d", pid));
         return;
       }
@@ -677,13 +682,13 @@ void do_halt_player(dbref player, char *ncom)
       {
 	if (point->env[a])
         {
-	  free(point->env[a]);
+	  SAFE_FREE(point->env[a]);
           point->env[a] = NULL;
         }
       }
       point->player = NOTHING;
       free_pid(point->pid);
-      free(point);
+      SAFE_FREE(point);
     }
     else
       next = (trail = point)->next;

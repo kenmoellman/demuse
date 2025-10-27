@@ -410,6 +410,11 @@ extern dbref get_room P((dbref));
 extern void moveit P((dbref, dbref));
 
 /* From nalloc.c */
+extern void* safe_malloc P((size_t, const char *, int));
+extern void safe_free P((void *, const char *file, int));
+extern void smart_free_internal P((void *, const char *, int));
+extern void safe_memory_init P((void));
+extern void safe_memory_cleanup P((void));
 extern void *stack_em_fun P((size_t));
 extern void *stack_em P((size_t));
 extern void clear_stack P((void));
@@ -417,6 +422,29 @@ extern char *stralloc P((const char *));
 extern char *stralloc_p P((char *));
 extern void strfree_p P((char *));
 extern char *funalloc P((char *));
+#define SAFE_MALLOC(result, type, number)  do {  (result) = (type *) safe_malloc((number) * sizeof(type), __FILE__, __LINE__);  } while (0)
+#define SAFE_FREE(x)  do {  safe_free((void *)(x), __FILE__, __LINE__);  (x) = NULL;  } while (0)
+#define SMART_FREE(x) do {  smart_free((void*)(x), __FILE__, __LINE__); (x) = NULL; } while(0)
+/* Logging control - only available when MEMORY_DEBUG_LOG is defined */
+
+#ifdef MEMORY_DEBUG_LOG
+extern void safe_memory_set_log_file(const char *filename);
+extern void safe_memory_set_content_log_size(size_t max_bytes);
+
+extern void memdebug_log P((const char *format, ...));
+extern void memdebug_log_ts P((const char *format, ...));
+extern void memdebug_log_hex_dump P((const void *data, size_t size));
+extern int memdebug_is_active P((void));
+#else
+/* No-op macros when MEMORY_DEBUG_LOG is not defined */
+#define memdebug_log(...)
+#define memdebug_log_ts(...)
+#define memdebug_log_hex_dump(data, size)
+#define memdebug_is_active() 0
+#endif /* MEMORY_DEBUG_LOG */
+
+
+
 
 /* From page.c */
 extern void do_page P((dbref, char *, char *));

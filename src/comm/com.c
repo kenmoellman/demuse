@@ -2502,7 +2502,7 @@ void clear_channels(void)
     if (pl_used) {
       for (e = channel_list[i]; e; e = next) {
         next = e->next;
-        free(e);
+        SAFE_FREE(e);
       }
     }
     channel_list[i] = NULL;
@@ -2530,7 +2530,9 @@ void add_channel(dbref channel)
 
   hash = hash_chan_function(db[channel].name);
 
-  e = (struct pl_elt *)malloc(sizeof(struct pl_elt));
+//  e = (struct pl_elt *)malloc(sizeof(struct pl_elt));
+//  SAFE_MALLOC(result, type, number)
+  SAFE_MALLOC(e, struct pl_elt*, 1);
   if (!e) {
     log_error("Out of memory in add_channel!");
     return;
@@ -2609,7 +2611,7 @@ void delete_channel(dbref channel)
     if (e->next) {
       e->next->prev = NULL;
     }
-    free(e);
+    SAFE_FREE(e);
     return;
   }
 
@@ -2620,7 +2622,7 @@ void delete_channel(dbref channel)
       if (e->next) {
         e->next->prev = prev;
       }
-      free(e);
+      SAFE_FREE(e);
       return;
     }
   }

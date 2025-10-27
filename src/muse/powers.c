@@ -99,7 +99,8 @@ ptype val;
     return;
   if (!db[player].pows)
   {
-    db[player].pows = malloc(sizeof(ptype) * 3);
+//    db[player].pows = malloc(sizeof(ptype) * 3);
+    SAFE_MALLOC(db[player].pows, ptype, 3);
     db[player].pows[0] = pow;
   }
   nlist = 0;
@@ -109,7 +110,7 @@ ptype val;
   for (; *x; x += 2, nlist += 2) ;
 /*  bcopy(db[player].pows, powbuf, nlist * sizeof(ptype)); */
   memcpy(powbuf, db[player].pows, nlist * sizeof(ptype));
-  free(db[player].pows);
+  SAFE_FREE(db[player].pows);
   x = powbuf + nlist;
   /* didn't see it.. make it up */
   *x = pow;
@@ -118,7 +119,8 @@ ptype val;
   x++, nlist++;
   *x = 0;
   nlist++;
-  db[player].pows = malloc(nlist * sizeof(ptype));
+//  db[player].pows = malloc(nlist * sizeof(ptype));
+  SAFE_MALLOC(db[player].pows, ptype, nlist);
 /*  bcopy(powbuf, db[player].pows, nlist * sizeof(ptype)); */
   memcpy(db[player].pows, powbuf, nlist * sizeof(ptype));
 }
@@ -133,7 +135,8 @@ char *str;
     if (!strchr(str, '/'))
     {
       powbuf[pos++] = 0;
-      db[i].pows = malloc(pos * sizeof(ptype));
+//      db[i].pows = malloc(pos * sizeof(ptype));
+      SAFE_MALLOC(db[i].pows, ptype, pos);
 /*      bcopy(powbuf, db[i].pows, pos * sizeof(ptype)); */
       memcpy(db[i].pows, powbuf, pos * sizeof(ptype));
       return;

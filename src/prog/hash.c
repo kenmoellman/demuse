@@ -1,4 +1,3 @@
-
 /* $Id: hash.c,v 1.3 1993/07/25 19:06:50 nils Exp $ */
 /* generic hash table functions */
 
@@ -21,12 +20,12 @@ void free_hash()
     {
 /*      int k;
    for (k=0; j->buckets[j][k].name; k++)
-   free(i->buckets[j][k].name); */
-      free(i->buckets[j]);
+   SAFE_FREE(i->buckets[j][k].name); */
+      SAFE_FREE(i->buckets[j]);
     }
-    free(i->buckets);
-    free(i->name);
-    free(i);
+    SAFE_FREE(i->buckets);
+    SAFE_FREE(i->name);
+    SAFE_FREE(i);
   }
 }
 
@@ -80,11 +79,14 @@ char *(*displayfunc) P((void *));
   struct hashtab *op;
   int i;
 
-  op = malloc(sizeof(struct hashtab));
+//  op = malloc(sizeof(struct hashtab));
+  SAFE_MALLOC(op, struct hashtab, 1);
 
   op->nbuckets = nbuck;
-  op->buckets = malloc(sizeof(hashbuck) * nbuck);
-  op->name = malloc(strlen(name) + 1);
+//  op->buckets = malloc(sizeof(hashbuck) * nbuck);
+//  op->name = malloc(strlen(name) + 1);
+  SAFE_MALLOC(op->buckets, hashbuck, nbuck);
+  SAFE_MALLOC(op->name, char, strlen(name) + 1);
   strcpy(op->name, name);
   op->display = displayfunc;
   op->next = hashtabs;
@@ -102,7 +104,8 @@ char *(*displayfunc) P((void *));
       if ((val % nbuck) == i)
 	numinbuck++;
     }
-    op->buckets[i] = malloc(sizeof(struct hashent) * numinbuck);
+//    op->buckets[i] = malloc(sizeof(struct hashent) * numinbuck);
+    SAFE_MALLOC(op->buckets[i], struct hashent, numinbuck);
 
     op->buckets[i][--numinbuck].name = NULL;	/* end of list marker */
     for (thisent = ents; thisent->name; thisent = (struct hashdeclent *)(((char *)thisent) + entsize))

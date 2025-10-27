@@ -38,20 +38,27 @@ ATRDEF *get_atrdefs (f,olddefs)
       break;
     case '/':
       if (!endptr)
+      {
 	if (olddefs) {
 	  endptr = ourdefs = olddefs;
 	  olddefs = olddefs->next;
 	} else
-	  endptr = ourdefs = malloc( sizeof(ATRDEF));
+//	  endptr = ourdefs = malloc( sizeof(ATRDEF));
+	  SAFE_MALLOC(endptr, ATRDEF, 1);
+          ourdefs = endptr;
+      }
       else
+      {
 	if (olddefs) {
 	  endptr->next = olddefs;
 	  olddefs = olddefs->next;
 	  endptr = endptr->next;
 	} else {
-	  endptr->next = malloc( sizeof(ATRDEF));
+//	  endptr->next = malloc( sizeof(ATRDEF));
+	  SAFE_MALLOC(endptr->next, ATRDEF, 1);
 	  endptr = endptr->next;
 	}
+      }
       endptr->a.flags = getref(f);
       endptr->a.obj = getref(f);
       endptr->next = NULL;
@@ -95,8 +102,8 @@ void do_undefattr (player, arg1)
 	db[obj].atrdefs = d->next;
       remove_attribute (obj, atr);
       if (0==--d->a.refcount) {	/* this should always happen, but... */
-	free(d->a.name);
-	free(d);
+	SAFE_FREE(d->a.name);
+	SAFE_FREE(d);
       }
       notify(player, "Deleted.");
       return;
@@ -167,7 +174,8 @@ void do_defattr (player, arg1, arg2)
       notify(player, "Sorry, attribute shadows a builtin attribute or one on a parent.");
       return;
     }
-    k=malloc( sizeof(ATRDEF));
+//    k=malloc( sizeof(ATRDEF));
+    SAFE_MALLOC(k, ATRDEF, 1);
     k->a.name = NULL;
     SET (k->a.name, attribute);
     k->a.flags = atr_flags;

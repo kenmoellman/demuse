@@ -81,9 +81,9 @@ void rlpage_tick(void)
 
   /* we're done with the top of the rlpage queue. free it. */
 
-    free(rlqc->to);
-    free(rlqc->msg);
-    free(rlqc);
+    SAFE_FREE(rlqc->to);
+    SAFE_FREE(rlqc->msg);
+    SAFE_FREE(rlqc);
     last_send = now;
   }
 }
@@ -94,7 +94,8 @@ int queue_rlpage (dbref from, char *to, char *msg)
   struct rlq *rlqnew;
   int templen;
 
-  rlqnew = malloc(sizeof(RLQ));
+//  rlqnew = malloc(sizeof(RLQ));
+  SAFE_MALLOC(rlqnew, RLQ, 1);
 
   if (!rlpq)
   {
@@ -109,12 +110,14 @@ int queue_rlpage (dbref from, char *to, char *msg)
   rlqnew->from = from;
 
   templen = strlen(to);
-  rlqnew->to = malloc(templen + 1);
+//  rlqnew->to = malloc(templen + 1);
+  SAFE_MALLOC(rlqnew->to, char, templen + 1);
   strncpy(rlqnew->to, to, templen);
   rlqnew->to[templen] = 0;
 
   templen = strlen(msg);
-  rlqnew->msg = malloc(templen + 1);
+//  rlqnew->msg = malloc(templen + 1);
+  SAFE_MALLOC(rlqnew->msg, char, templen + 1);
   strncpy(rlqnew->msg, msg, templen);
   rlqnew->msg[templen] = 0;
   

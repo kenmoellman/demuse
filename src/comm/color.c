@@ -211,7 +211,7 @@ static char *color_escape(const char *s)
 
         char *num_str = make_num_string(foreground, background, attribs);
         snprintf(escape, sizeof(escape), "\033[%sm", num_str);
-        free(num_str);
+        SMART_FREE(num_str); 
     } else {
         escape[0] = '\0';
     }
@@ -311,7 +311,7 @@ char *colorize(const char *str, int strip, int pueblo)
                 markup = color_pueblo(s);
             }
             strncat(buf2, markup, sizeof(buf2) - strlen(buf2) - 1);
-            free(markup);
+            SMART_FREE(markup);
             
             strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
             
@@ -323,7 +323,7 @@ char *colorize(const char *str, int strip, int pueblo)
 #else
             char *escape = color_escape(s);
             strncat(buf2, escape, sizeof(buf2) - strlen(buf2) - 1);
-            free(escape);
+            SMART_FREE(escape); 
             strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
             strncat(buf2, normal_ansi, sizeof(buf2) - strlen(buf2) - 1);
 #endif
@@ -423,7 +423,7 @@ char *strip_color_nobeep(char *str)
 {
     char *temp = strip_beep(str);
     char *result = colorize(temp, 1, 0);
-    free(temp);
+    SMART_FREE(temp);
     return result;
 }
 
@@ -444,7 +444,7 @@ char *parse_color_nobeep(char *str, int pueblo)
 {
     char *temp = strip_beep(str);
     char *result = colorize(temp, 0, pueblo);
-    free(temp);
+    SMART_FREE(temp);
     return result;
 }
 
@@ -529,11 +529,11 @@ char *html_exit(dbref player, char *exit_name)
         char *converted = html_conversion(player, name);
         snprintf(newname, sizeof(newname), 
                 "<a xch_cmd=\"%s\">%s</a>", alias, converted);
-        free(converted);
+        SMART_FREE(converted);
     } else {
         char *converted = html_conversion(player, name);
         snprintf(newname, sizeof(newname), "%s", converted);
-        free(converted);
+        SMART_FREE(converted);
     }
 
     return stralloc(newname);
@@ -653,7 +653,7 @@ static char *color_pueblo(const char *s)
     if (valid) {
         char *font_str = make_font_string(foreground, background, attribs);
         snprintf(escape, sizeof(escape), "<font %s>", font_str);
-        free(font_str);
+        SMART_FREE(font_str);
     } else {
         escape[0] = '\0';
     }

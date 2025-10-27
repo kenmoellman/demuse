@@ -18,7 +18,8 @@ static char *strsave(const char *s)
         return NULL;
     }
 
-    p = malloc(strlen(s) + 1);
+//    p = malloc(strlen(s) + 1);
+    SAFE_MALLOC(p, char, strlen(s) + 1);
     if (p) {
         strcpy(p, s);
     } else {
@@ -47,7 +48,7 @@ void set_userstring(char **userstring, const char *command)
 
     /* Free existing string */
     if (*userstring) {
-        free(*userstring);
+        SAFE_FREE(*userstring);
         *userstring = NULL;
     }
 
@@ -84,7 +85,8 @@ int process_input(struct descriptor_data *d)
 
     /* Allocate raw input buffer if needed */
     if (!d->raw_input) {
-        d->raw_input = malloc(MAX_COMMAND_LEN);
+//        d->raw_input = malloc(MAX_COMMAND_LEN);
+        SAFE_MALLOC(d->raw_input, char, MAX_COMMAND_LEN);
         if (!d->raw_input) {
             log_error("Failed to allocate raw input buffer");
             return 0;
@@ -115,7 +117,7 @@ int process_input(struct descriptor_data *d)
     if (p > d->raw_input) {
         d->raw_input_at = p;
     } else {
-        free(d->raw_input);
+        SAFE_FREE(d->raw_input);
         d->raw_input = NULL;
         d->raw_input_at = NULL;
     }

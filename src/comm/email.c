@@ -169,7 +169,8 @@ static char *sanitize_email_header(const char *input)
         len = 998;
     }
     
-    output = malloc(len + 1);
+//    output = malloc(len + 1);
+    SAFE_MALLOC(output, char, len + 1);
     if (!output) {
         return NULL;
     }
@@ -213,7 +214,8 @@ static char *encode_email_body(const char *body)
     }
     
     /* Allocate extra space for encoding */
-    output = malloc(len * 2 + 1);
+//    output = malloc(len * 2 + 1);
+    SAFE_MALLOC(output, char, len * 2 + 1);
     if (!output) {
         return NULL;
     }
@@ -398,10 +400,10 @@ static char *build_email_payload(const char *from, const char *to,
     clean_body = encode_email_body(body);
     
     if (!clean_from || !clean_to || !clean_subject || !clean_body) {
-        free(clean_from);
-        free(clean_to);
-        free(clean_subject);
-        free(clean_body);
+        SAFE_FREE(clean_from);
+        SAFE_FREE(clean_to);
+        SAFE_FREE(clean_subject);
+        SAFE_FREE(clean_body);
         return NULL;
     }
     
@@ -409,12 +411,13 @@ static char *build_email_payload(const char *from, const char *to,
     needed_size = strlen(clean_from) + strlen(clean_to) + 
                   strlen(clean_subject) + strlen(clean_body) + 512;
     
-    payload = malloc(needed_size);
+//    payload = malloc(needed_size);
+    SAFE_MALLOC(payload, char, needed_size+1);
     if (!payload) {
-        free(clean_from);
-        free(clean_to);
-        free(clean_subject);
-        free(clean_body);
+        SAFE_FREE(clean_from);
+        SAFE_FREE(clean_to);
+        SAFE_FREE(clean_subject);
+        SAFE_FREE(clean_body);
         return NULL;
     }
     
@@ -432,13 +435,13 @@ static char *build_email_payload(const char *from, const char *to,
         "%s\r\n",
         date_buffer, clean_from, clean_to, clean_subject, clean_body);
     
-    free(clean_from);
-    free(clean_to);
-    free(clean_subject);
-    free(clean_body);
+    SAFE_FREE(clean_from);
+    SAFE_FREE(clean_to);
+    SAFE_FREE(clean_subject);
+    SAFE_FREE(clean_body);
     
     if (result < 0 || (size_t)result >= needed_size) {
-        free(payload);
+        SAFE_FREE(payload);
         return NULL;
     }
     
@@ -470,7 +473,8 @@ static int send_email_curl(const char *to, const char *subject, const char *body
     /* Initialize curl */
     curl = curl_easy_init();
     if (!curl) {
-        free((void *)upload.payload);
+//        SAFE_FREE((void *)upload.payload);
+        SAFE_FREE(upload.payload);
         snprintf(error_buf, error_buf_size, "Failed to initialize CURL");
         return 0;
     }
@@ -527,7 +531,8 @@ static int send_email_curl(const char *to, const char *subject, const char *body
     /* Cleanup */
     curl_slist_free_all(recipients);
     curl_easy_cleanup(curl);
-    free((void *)upload.payload);
+//    SAFE_FREE((void *)upload.payload);
+    SAFE_FREE(upload.payload);
     
     return success;
 }

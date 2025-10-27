@@ -40,18 +40,29 @@
 #define CONST_CAST(type, ptr) ((type)(uintptr_t)(ptr))
 
 /* Const-safe version of SET macro */
+//#define SET_CONST(astr, bstr) do { \
+//    char **__a = &(astr); \
+//    const char *__b = (bstr); \
+//    if (*__a) free(*__a); \
+//    if (!__b || !*__b) { \
+//        *__a = NULL; \
+//    } else { \
+//        *__a = malloc(strlen(__b) + 1); \
+//        if (*__a) strcpy(*__a, __b); \
+//    } \
+//} while(0)
+
 #define SET_CONST(astr, bstr) do { \
     char **__a = &(astr); \
     const char *__b = (bstr); \
-    if (*__a) free(*__a); \
+    if (*__a) SAFE_FREE(*__a); \
     if (!__b || !*__b) { \
         *__a = NULL; \
     } else { \
-        *__a = malloc(strlen(__b) + 1); \
-        if (*__a) strcpy(*__a, __b); \
+        SAFE_MALLOC(*__a, char, strlen(__b) + 1); \
+        strcpy(*__a, __b); \
     } \
 } while(0)
-
 
 
 /* ===================================================================
@@ -693,7 +704,8 @@ void do_class(dbref player, const char *arg1, const char *class)
                        class_to_name(newlevel)));
     
     if (!db[who].pows) {
-        db[who].pows = malloc(sizeof(ptype) * 2);
+//        db[who].pows = malloc(sizeof(ptype) * 2);
+        SAFE_MALLOC(db[who].pows, ptype, 2);
         if (!db[who].pows) {
             notify(player, "Memory allocation error!");
             return;
@@ -1326,7 +1338,8 @@ dbref create_guest(const char *name, const char *alias, const char *password)
     db[player].link = guest_start;
     db[player].owner = player;
     db[player].flags = TYPE_PLAYER;
-    db[player].pows = malloc(sizeof(ptype) * 2);
+//    db[player].pows = malloc(sizeof(ptype) * 2);
+    SAFE_MALLOC(db[player].pows, ptype, 2);
     
     if (!db[player].pows) {
         log_error("Out of memory creating guest!");
@@ -1436,7 +1449,8 @@ dbref create_player(const char *name, const char *password, int class, dbref sta
     db[player].link = start;
     db[player].owner = player;
     db[player].flags = TYPE_PLAYER;
-    db[player].pows = malloc(sizeof(ptype) * 2);
+//    db[player].pows = malloc(sizeof(ptype) * 2);
+    SAFE_MALLOC(db[player].pows, ptype, 2);
 
     if (!db[player].pows) {
         log_error("Out of memory creating player!");
