@@ -109,7 +109,7 @@ void do_say(dbref player, char *arg1, char *arg2)
     notify(player, tprintf("You say \"%s\"", bf));
     notify_in(loc, player, tprintf("%s says \"%s\"", spname(player), bf));
     
-    free(message);
+    SAFE_FREE(message);
 }
 
 /**
@@ -218,7 +218,7 @@ void do_pose(dbref player, char *arg1, char *arg2, int possessive)
     /* Notify everybody */
     notify_in(loc, NOTHING, tprintf(format, spname(player), bf));
     
-    free(message);
+    SAFE_FREE(message);
 }
 
 /**
@@ -250,7 +250,7 @@ void do_think(dbref player, char *arg1, char *arg2)
     /* Notify everybody */
     notify_in(loc, NOTHING, tprintf("%s . o O ( %s )", spname(player), bf));
     
-    free(message);
+    SAFE_FREE(message);
 }
 
 /**
@@ -282,14 +282,14 @@ void do_to(dbref player, char *arg1, char *arg2)
     s = strchr(message, ' ');
     if (!s) {
         notify(player, "No message.");
-        free(message);
+        SAFE_FREE(message);
         return;
     }
     
     *s++ = '\0';
     if (!*message || strlen(s) < 1) {
         notify(player, "No player mentioned.");
-        free(message);
+        SAFE_FREE(message);
         return;
     }
     
@@ -350,7 +350,7 @@ void do_to(dbref player, char *arg1, char *arg2)
     /* Notify everybody in the room */
     notify_in(loc, NOTHING, buf3);
     
-    free(message);
+    SAFE_FREE(message);
 }
 
 /* ===================================================================
@@ -376,7 +376,7 @@ void do_echo(dbref player, char *arg1, char *arg2, int type)
         notify(player, message);
     }
     
-    free(message);
+    SAFE_FREE(message);
 }
 
 /**

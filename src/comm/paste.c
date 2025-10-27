@@ -120,9 +120,9 @@ static void free_paste_lines(PASTEY *lines)
     while (current) {
         next = current->next;
         if (current->str) {
-            free(current->str);
+            SAFE_FREE(current->str);
         }
-        free(current);
+        SAFE_FREE(current);
         current = next;
     }
 }
@@ -183,7 +183,8 @@ static void add_to_stack(dbref player, dbref target, ATTR *attr, int code, int f
 {
     PASTE *new_paste;
     
-    new_paste = (PASTE *)malloc(sizeof(PASTE));
+//    new_paste = (PASTE *)malloc(sizeof(PASTE));
+    SAFE_MALLOC(new_paste, PASTE, 1);
     if (!new_paste) {
         log_error("Out of memory in add_to_stack!");
         notify(player, "System error: out of memory.");
@@ -221,7 +222,7 @@ void remove_paste(dbref player)
             free_paste_lines(p->paste);
             
             /* Free the paste structure */
-            free(p);
+            SAFE_FREE(p);
             return;
         }
     }
@@ -378,7 +379,8 @@ void add_more_paste(dbref player, char *str)
     /* For attribute pastes, concatenate to single string */
     if (p->attr) {
         if (!p->paste) {
-            p->paste = (PASTEY *)malloc(sizeof(PASTEY));
+//            p->paste = (PASTEY *)malloc(sizeof(PASTEY));
+            SAFE_MALLOC(p->paste, PASTEY, 1);
             if (!p->paste) {
                 log_error("Out of memory in add_more_paste!");
                 notify(player, "System error: out of memory.");
@@ -404,7 +406,8 @@ void add_more_paste(dbref player, char *str)
     }
     
     /* For other pastes, add as separate line */
-    new_line = (PASTEY *)malloc(sizeof(PASTEY));
+//    new_line = (PASTEY *)malloc(sizeof(PASTEY));
+    SAFE_MALLOC(new_line,PASTEY,1);
     if (!new_line) {
         log_error("Out of memory in add_more_paste!");
         notify(player, "System error: out of memory.");
@@ -413,7 +416,7 @@ void add_more_paste(dbref player, char *str)
     
     new_line->str = stralloc(str);
     if (!new_line->str) {
-        free(new_line);
+        SAFE_FREE(new_line);
         log_error("Out of memory in add_more_paste!");
         notify(player, "System error: out of memory.");
         return;

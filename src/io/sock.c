@@ -205,7 +205,8 @@ int make_socket(int port)
     struct sockaddr_in *addr_in = (struct sockaddr_in *)res->ai_addr;
     server.sin_addr = addr_in->sin_addr;
     log_io(tprintf("Binding to hostname: %s", HOSTNAME));
-    freeaddrinfo(res);
+//    temporarily comment out to track down SAFE_FREE() bug.
+//    freeaddrinfo(res);
   }
 #else
   /* Bind to all interfaces */
@@ -251,7 +252,8 @@ struct descriptor_data *initializesock(int s, struct sockaddr_in *a,
   char *ct;
 
   ndescriptors++;
-  MALLOC(d, struct descriptor_data, 1);
+//  d=malloc(struct descriptor_data, sizeof(struct descriptor_data));
+  SAFE_MALLOC(d, struct descriptor_data, 1);
   if (!d) {
     log_error("Failed to allocate descriptor");
     return NULL;
@@ -380,7 +382,7 @@ void shutdownsock(struct descriptor_data *d)
   if (!(d->cstatus & C_REMOTE))
     ndescriptors--;
   
-  FREE(d);
+  SAFE_FREE(d);
   
   /* Clean up guest accounts */
   if (guest_player != NOTHING)
@@ -466,12 +468,12 @@ void clearstrings(struct descriptor_data *d)
   
   if (d->output_prefix)
   {
-    FREE(d->output_prefix);
+    SAFE_FREE(d->output_prefix);
     d->output_prefix = 0;
   }
   if (d->output_suffix)
   {
-    FREE(d->output_suffix);
+    SAFE_FREE(d->output_suffix);
     d->output_suffix = 0;
   }
 }
@@ -503,7 +505,7 @@ void freeqs(struct descriptor_data *d)
   d->input.tail = &d->input.head;
   
   if (d->raw_input)
-    FREE(d->raw_input);
+    SAFE_FREE(d->raw_input);
   d->raw_input = 0;
   d->raw_input_at = 0;
 }

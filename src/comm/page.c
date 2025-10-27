@@ -258,7 +258,7 @@ static void send_page_message(dbref pager, dbref target,
     }
     
     /* Free allocated title string */
-    free(pager_title);
+    SAFE_FREE(pager_title);
     
     /* Record last pager for "page last" functionality */
     record_last_pager(target, pager);

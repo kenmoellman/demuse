@@ -42,10 +42,21 @@ struct descriptor_data *descriptor_list = 0;
 /* Main entry point */
 int main(int argc, char *argv[])
 {
+    /* Initialize the safe memory system FIRST */
+    safe_memory_init();
+#ifdef MEMORY_DEBUG_LOG
+    /* Set up logging if compiled with -DMEMORY_DEBUG_LOG */
+    safe_memory_set_log_file(MEMORY_DEBUG_FILE);
+    safe_memory_set_content_log_size(MEMORY_DEBUG_SIZE);
+#endif
+    atexit(safe_memory_cleanup);
+
     /* Initialize global state */
     init_io_globals();
     init_args(argc, argv);
     init_io();
+
+
     
     printf("--------------------------------\n");
     printf("MUSE online (pid=%d)\n", getpid());
@@ -117,6 +128,8 @@ int main(int argc, char *argv[])
         unlink("logs/socket_table");
         _exit(exit_status);
     }
+
+
 
     /* Normal shutdown */
     shutdown_stack();
@@ -517,7 +530,8 @@ void outgoing_setupfd(dbref player, int fd)
     }
 
     ndescriptors++;
-    d = malloc(sizeof(struct descriptor_data));
+//    d = malloc(sizeof(struct descriptor_data));
+    SAFE_MALLOC(d, struct descriptor_data, 1);
     if (!d) {
         log_error("Failed to allocate descriptor for outgoing connection");
         return;

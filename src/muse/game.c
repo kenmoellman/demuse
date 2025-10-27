@@ -504,13 +504,13 @@ void free_database()
 
   for (i = 0; i < db_top; i++)
   {
-    free(db[i].name);
+    SAFE_FREE(db[i].name);
     if (db[i].parents)
-      free(db[i].parents);
+      SAFE_FREE(db[i].parents);
     if (db[i].children)
-      free(db[i].children);
+      SAFE_FREE(db[i].children);
     if (db[i].pows)
-      free(db[i].pows);
+      SAFE_FREE(db[i].pows);
     if (db[i].atrdefs)
     {
       struct atrdef *j, *next = NULL;
@@ -518,8 +518,8 @@ void free_database()
       for (j = db[i].atrdefs; j; j = next)
       {
 	next = j->next;
-	free(j->a.name);
-	free(j);
+	SAFE_FREE(j->a.name);
+	SAFE_FREE(j);
       }
     }
     if (db[i].list)
@@ -529,11 +529,14 @@ void free_database()
       for (j = db[i].list; j; j = next)
       {
 	next = AL_NEXT(j);
-	free(j);
+	SAFE_FREE(j);
       }
     }
   }
-  free(db - 5);
+  // free(db - 5);
+  struct object *temp = db - 5;
+  SAFE_FREE(temp);
+  db=NULL;
 }
 
 void fork_and_dump()

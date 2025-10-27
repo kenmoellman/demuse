@@ -881,15 +881,19 @@ void init_universe(struct object *o)
         return;
     }
     
-    o->ua_string = (char **)malloc(NUM_UA * sizeof(char *));
-    o->ua_float = (float *)malloc(NUM_UA * sizeof(float));
-    o->ua_int = (int *)malloc(NUM_UA * sizeof(int));
+//    o->ua_string = (char **)malloc(NUM_UA * sizeof(char *));
+//    o->ua_float = (float *)malloc(NUM_UA * sizeof(float));
+//    o->ua_int = (int *)malloc(NUM_UA * sizeof(int));
+    
+    SAFE_MALLOC(o->ua_string, char *, NUM_UA);
+    SAFE_MALLOC(o->ua_float, float, NUM_UA);
+    SAFE_MALLOC(o->ua_int, int, NUM_UA);
     
     if (!o->ua_string || !o->ua_float || !o->ua_int) {
         log_error("init_universe: malloc failed");
-        if (o->ua_string) free(o->ua_string);
-        if (o->ua_float) free(o->ua_float);
-        if (o->ua_int) free(o->ua_int);
+        if (o->ua_string) SAFE_FREE(o->ua_string);
+        if (o->ua_float) SAFE_FREE(o->ua_float);
+        if (o->ua_int) SAFE_FREE(o->ua_int);
         return;
     }
     
@@ -907,7 +911,8 @@ void init_universe(struct object *o)
                 break;
                 
             case UF_STRING:
-                o->ua_string[i] = malloc(strlen(univ_config[i].def) + 1);
+//                o->ua_string[i] = malloc(strlen(univ_config[i].def) + 1);
+                SAFE_MALLOC(o->ua_string[i], char, strlen(univ_config[i].def) + 1);
                 if (o->ua_string[i]) {
                     strcpy(o->ua_string[i], univ_config[i].def);
                 }

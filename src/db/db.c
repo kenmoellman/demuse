@@ -412,7 +412,7 @@ dbref thing;
   for (ptr = db[thing].list; ptr; ptr = next)
   {
     next = AL_NEXT(ptr);
-    free(ptr);
+    SAFE_FREE(ptr);
   }
   db[thing].list = NULL;
   atr_obj = -1;
@@ -425,7 +425,8 @@ char *string;
 {
   ALIST *ptr;
 
-  ptr = (ALIST *) malloc(sizeof(ALIST) + strlen(string) + 1);
+//  ptr = (ALIST *) malloc(sizeof(ALIST) + strlen(string) + 1);
+  ptr = (ALIST *)safe_malloc(sizeof(ALIST) + strlen(string) + 1, __FILE__, __LINE__);
   AL_TYPE(ptr) = type;
   ptr->next = next;
   strcpy(AL_STR(ptr), string);
@@ -448,7 +449,7 @@ dbref thing;
     if (AL_TYPE(ptr))
       db[thing].list = AL_MAKE(AL_TYPE(ptr), db[thing].list, AL_STR(ptr));
     next = AL_NEXT(ptr);
-    free(ptr);
+    SAFE_FREE(ptr);
     ptr = next;
   }
   atr_obj = -1;
@@ -482,15 +483,25 @@ dbref newtop;
 
   if (newtop > db_top)
   {
+//    if (!db)
+//    {
+//      /* make the initial db */
+//      db_size = (db_init) ? db_init : 100;
+//      if ((db = 5 + (struct object *)
+//	   malloc((db_size + 5) * sizeof(struct object))) == 0)
+//      {
+//	abort();
+//      }
+//      memchr(db - 5, 0, sizeof(struct object) * (db_size + 5));
+//    }
+
     if (!db)
     {
       /* make the initial db */
       db_size = (db_init) ? db_init : 100;
-      if ((db = 5 + (struct object *)
-	   malloc((db_size + 5) * sizeof(struct object))) == 0)
-      {
-	abort();
-      }
+      struct object *temp;
+      SAFE_MALLOC(temp, struct object, db_size + 5);
+      db = temp + 5;
       memchr(db - 5, 0, sizeof(struct object) * (db_size + 5));
     }
 
@@ -561,71 +572,71 @@ dbref ref;
   fprintf(f, "%ld\n", ref);
 }
 
-/*
-   void putstring(f,s)
-   FILE *f;
-   char *s;
-   {
-   if (s) fputs(s, f);
-   fputc('\n', f);
-   }
- */
-
-/* static char *atr_format P((ATTR *));
-   static char *atr_format (k)
-   ATTR *k;
-   {
-   static char opbuf[100];
-   ATRDEF *def;
-   int j;
-
-   if (k->obj == NOTHING) {
-   sprintf(opbuf,"%d",*(((int *)k)-1)); * get the atr number. kludgy. *
-   return opbuf;
-   }
-   for (j=0,def=db[k->obj].atrdefs; def; def=def->next, j++)
-   if (&(def->a) == k) {
-   sprintf(opbuf,"%d.%d",k->obj, j);
-   return opbuf;
-   }
-   sprintf(opbuf,"%d.%d",k->obj,0);
-   return opbuf;
-   }
-   static ATTR *atr_unformat (o, str)
-   dbref o;
-   char *str;
-   {
-   dbref obj;
-   int num;
-   int i;
-   ATRDEF *atr;
-
-   if (!strchr(str,'.'))
-   return builtin_atr(atol(str));
-   *strchr(str,'.') = '\0';
-   obj = atol(str);
-   num = atol(str+strlen(str)+1);
-   if (obj>=o) {
-   db_grow (obj+1);
-   if (!db[obj].atrdefs) {
-   db[obj].atrdefs=malloc(sizeof(ATRDEF));
-   db[obj].atrdefs->a.name=NULL;
-   db[obj].atrdefs->next=NULL;
-   }
-   for (atr = db[obj].atrdefs, i=0; atr->next && i<num; atr=atr->next, i++)
-   ;
-   while (i < num) {
-   atr->next = malloc( sizeof(ATRDEF));
-   atr->next->a.name = NULL;
-   atr->next->next = NULL;
-   atr = atr->next;
-   i++;
-   }
-   } else
-   for (atr=db[obj].atrdefs, i=0; i<num; atr=atr->next, i++)
-   ;
-   return &(atr->a);
-   } */
+///*
+//   void putstring(f,s)
+//   FILE *f;
+//   char *s;
+//   {
+//   if (s) fputs(s, f);
+//   fputc('\n', f);
+//   }
+// */
+//
+///* static char *atr_format P((ATTR *));
+//   static char *atr_format (k)
+//   ATTR *k;
+//   {
+//   static char opbuf[100];
+//   ATRDEF *def;
+//   int j;
+//
+//   if (k->obj == NOTHING) {
+//   sprintf(opbuf,"%d",*(((int *)k)-1)); * get the atr number. kludgy. *
+//   return opbuf;
+//   }
+//   for (j=0,def=db[k->obj].atrdefs; def; def=def->next, j++)
+//   if (&(def->a) == k) {
+//   sprintf(opbuf,"%d.%d",k->obj, j);
+//   return opbuf;
+//   }
+//   sprintf(opbuf,"%d.%d",k->obj,0);
+//   return opbuf;
+//   }
+//   static ATTR *atr_unformat (o, str)
+//   dbref o;
+//   char *str;
+//   {
+//   dbref obj;
+//   int num;
+//   int i;
+//   ATRDEF *atr;
+//
+//   if (!strchr(str,'.'))
+//   return builtin_atr(atol(str));
+//   *strchr(str,'.') = '\0';
+//   obj = atol(str);
+//   num = atol(str+strlen(str)+1);
+//   if (obj>=o) {
+//   db_grow (obj+1);
+//   if (!db[obj].atrdefs) {
+//   db[obj].atrdefs=malloc(sizeof(ATRDEF));
+//   db[obj].atrdefs->a.name=NULL;
+//   db[obj].atrdefs->next=NULL;
+//   }
+//   for (atr = db[obj].atrdefs, i=0; atr->next && i<num; atr=atr->next, i++)
+//   ;
+//   while (i < num) {
+//   atr->next = malloc( sizeof(ATRDEF));
+//   atr->next->a.name = NULL;
+//   atr->next->next = NULL;
+//   atr = atr->next;
+//   i++;
+//   }
+//   } else
+//   for (atr=db[obj].atrdefs, i=0; i<num; atr=atr->next, i++)
+//   ;
+//   return &(atr->a);
+//   } */
 
 static int db_write_object(f, i)
 FILE *f;
@@ -990,11 +1001,30 @@ static void convert_boolexp()
   return;
 }
 
+//static void db_free()
+//{
+//  dbref i;
+//  struct object *o;
+//
+//  if (db)
+//  {
+//    for (i = 0; i < db_top; i++)
+//    {
+//      o = &db[i];
+//      SET(o->name, NULL);
+//      atr_free(i);
+//      /* Everything starts off very old */
+//    }
+//    free(db - 5);
+//    db = 0;
+//    db_init = db_top = 0;
+//  }
+//}
+
 static void db_free()
 {
   dbref i;
   struct object *o;
-
   if (db)
   {
     for (i = 0; i < db_top; i++)
@@ -1004,7 +1034,8 @@ static void db_free()
       atr_free(i);
       /* Everything starts off very old */
     }
-    free(db - 5);
+    struct object *temp = db - 5;  /* Get the original allocated pointer */
+    SAFE_FREE(temp);
     db = 0;
     db_init = db_top = 0;
   }
@@ -1053,7 +1084,8 @@ int vers;
 	  db_top = old_db_top;
 	  if (!db[atrobj].atrdefs)
 	  {
-	    db[atrobj].atrdefs = malloc(sizeof(ATRDEF));
+//	    db[atrobj].atrdefs = malloc(sizeof(ATRDEF));
+	    SAFE_MALLOC(db[atrobj].atrdefs, ATRDEF, 1);
 	    db[atrobj].atrdefs->a.name = NULL;
 	    db[atrobj].atrdefs->next = NULL;
 	  }
@@ -1063,7 +1095,8 @@ int vers;
 	    ;			/* check to see if it's already there. */
 	  while (i < atrnum)
 	  {
-	    atr->next = malloc(sizeof(ATRDEF));
+//	    atr->next = malloc(sizeof(ATRDEF));
+	    SAFE_MALLOC(atr->next, ATRDEF, 1);
 	    atr->next->a.name = NULL;
 	    atr->next->next = NULL;
 	    atr = atr->next;
@@ -1574,7 +1607,7 @@ FILE *f;
     end = getstring_noalloc(f);
     if (strcmp(end, "**END OF DUMP***"))
     {
-      /* free((void *) end); */
+      /* SAFE_FREE((void *) end); */
       log_error(tprintf("No end of dump %ld.", i));
       return -2;
     }
@@ -1582,7 +1615,7 @@ FILE *f;
     {
       extern void zero_free_list P((void));
 
-      /* free((void *) end); */
+      /* SAFE_FREE((void *) end); */
       log_important("Done loading database.");
       zero_free_list();
       db_check();
@@ -1600,7 +1633,8 @@ FILE *f;
 	    do_class(root, stralloc(tprintf("#%ld", i)), class_to_name(old_to_new_class(db[i].flags & TYPE_MASK)));
 	    db[i].flags &= ~TYPE_MASK;
 	    db[i].flags |= TYPE_PLAYER;
-	    db[i].pows = malloc(2 * sizeof(ptype));;
+//	    db[i].pows = malloc(2 * sizeof(ptype));
+	    SAFE_MALLOC(db[i].pows, ptype, 2);
 	    db[i].pows[1] = 0;	/* don't care about the [0]... */
 	  }
 	}
@@ -1637,7 +1671,8 @@ FILE *f;
   len = getref(f);
   if (len == 0)
     return NULL;
-  op = malloc(sizeof(dbref) * (len + 1));
+//  op = malloc(sizeof(dbref) * (len + 1));
+  SAFE_MALLOC(op,dbref,len + 1);
   op[len] = NOTHING;
   for (len--; len >= 0; len--)
     op[len] = getref(f);

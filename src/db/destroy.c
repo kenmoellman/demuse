@@ -436,8 +436,8 @@ dbref thing;
     next = k->next;
     if (0 == --k->a.refcount)
     {
-      free(k->a.name);
-      free(k);
+      SAFE_FREE(k->a.name);
+      SAFE_FREE(k);
     }
   }
   db[thing].atrdefs = NULL;
@@ -447,10 +447,10 @@ dbref thing;
 #ifdef USE_UNIV
   case TYPE_UNIVERSE:
     for (i = 0; i < NUM_UA; i++)
-      free(db[thing].ua_string[i]);
-    free(db[thing].ua_string);
-    free(db[thing].ua_float);
-    free(db[thing].ua_int);
+      SAFE_FREE(db[thing].ua_string[i]);
+    SAFE_FREE(db[thing].ua_string);
+    SAFE_FREE(db[thing].ua_float);
+    SAFE_FREE(db[thing].ua_int);
 #endif
   case TYPE_THING:
   case TYPE_PLAYER:
@@ -513,7 +513,7 @@ dbref thing;
   db[thing].list = NULL;
   if (db[thing].pows)
   {
-    free(db[thing].pows);
+    SAFE_FREE(db[thing].pows);
     db[thing].pows = 0;
   }
   /* don't eat name otherwise examine will crash */
@@ -525,12 +525,12 @@ dbref thing;
   for (i = 0; db[thing].children && db[thing].children[i] != NOTHING; i++)
     REMOVE_FIRST_L(db[db[thing].children[i]].parents, thing);
   if (db[thing].children)
-    free(db[thing].children);
+    SAFE_FREE(db[thing].children);
   db[thing].children = NULL;
   for (i = 0; db[thing].parents && db[thing].parents[i] != NOTHING; i++)
     REMOVE_FIRST_L(db[db[thing].parents[i]].children, thing);
   if (db[thing].parents)
-    free(db[thing].parents);
+    SAFE_FREE(db[thing].parents);
   db[thing].parents = NULL;
   do_halt(thing, "", "");
   free_object(thing);
@@ -636,6 +636,10 @@ void do_incremental()
       }
 
       strcpy(buff, o->name);
+#ifdef MEMORY_DEBUG_LOG
+      memdebug_log_ts( "GC: About to SET object #%ld name=%s ptr=%p\n",
+            thing, o->name, (void*)o->name);
+#endif
       SET(o->name, buff);
 
       atr_collect(thing);

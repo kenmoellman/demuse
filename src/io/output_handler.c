@@ -215,7 +215,8 @@ void raw_notify_internal(dbref player, char *msg, int color)
 
 #ifdef PUEBLO_CLIENT
     /* Allocate and format HTML output if needed */
-    html = malloc(HTML_BUFFER_SIZE);
+//    html = malloc(HTML_BUFFER_SIZE);
+    SAFE_MALLOC(html, char, HTML_BUFFER_SIZE);
     if (!html) {
         log_error("Failed to allocate HTML buffer");
         return;
@@ -261,7 +262,7 @@ void raw_notify_internal(dbref player, char *msg, int color)
 
 #ifdef PUEBLO_CLIENT
     if (html) {
-        free(html);
+        SAFE_FREE(html);
     }
 #endif
 }

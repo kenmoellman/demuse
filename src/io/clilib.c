@@ -55,9 +55,14 @@ char *comment;
   if (dgramfd != -1)
     return (1);
 
-  password = malloc(strlen(serverpw) + 1);
-  localnam = malloc(strlen(myname) + 1);
-  lcomment = malloc(strlen(comment) + 1);
+//  password = malloc(strlen(serverpw) + 1);
+//  localnam = malloc(strlen(myname) + 1);
+//  lcomment = malloc(strlen(comment) + 1);
+
+  SAFE_MALLOC(password, char, strlen(serverpw) + 1);
+  SAFE_MALLOC(localnam, char, strlen(myname) + 1);
+  SAFE_MALLOC(lcomment, char, strlen(comment) + 1);
+
   if (password == (char *)0 || localnam == (char *)0 || lcomment == (char *)0)
     return (1);
   strcpy(password, serverpw);
@@ -114,8 +119,8 @@ int rwhocli_shutdown()
     sendto(dgramfd, pbuf, strlen(pbuf), 0, (struct sockaddr *)&addr, sizeof(addr));
     close(dgramfd);
     dgramfd = -1;
-    free(password);
-    free(localnam);
+    SAFE_FREE(password);
+    SAFE_FREE(localnam);
   }
   return (0);
 }

@@ -63,7 +63,7 @@ void clear_players()
       for (e = player_list[i]; e; e = next)
       {
 	next = e->next;
-	free(e);
+	SAFE_FREE(e);
       }
     }
     player_list[i] = 0;
@@ -80,7 +80,8 @@ dbref player;
   if (!strchr(db[player].name, ' '))
   {
     hash = hash_function(db[player].name);
-    e = malloc(sizeof(struct pl_elt));
+//    e = malloc(sizeof(struct pl_elt));
+    SAFE_MALLOC(e, struct pl_elt, 1);
 
     e->player = player;
     e->next = player_list[hash];
@@ -89,7 +90,8 @@ dbref player;
   if (*atr_get(player, A_ALIAS))
   {
     hash = hash_function(atr_get(player, A_ALIAS));
-    e = malloc(sizeof(struct pl_elt));
+//    e = malloc(sizeof(struct pl_elt));
+    SAFE_MALLOC(e, struct pl_elt, 1);
 
     e->player = player;
     e->next = player_list[hash];
@@ -143,7 +145,7 @@ dbref player;
     {
       /* it's the first one */
       player_list[hash] = e->next;
-      free(e);
+      SAFE_FREE(e);
     }
     else
     {
@@ -153,7 +155,7 @@ dbref player;
 	{
 	  /* got it */
 	  prev->next = e->next;
-	  free(e);
+	  SAFE_FREE(e);
 	  break;
 	}
       }
@@ -170,7 +172,7 @@ dbref player;
     {
       /* it's the first one */
       player_list[hash] = e->next;
-      free(e);
+      SAFE_FREE(e);
     }
     else
     {
@@ -180,7 +182,7 @@ dbref player;
 	{
 	  /* got it */
 	  prev->next = e->next;
-	  free(e);
+	  SAFE_FREE(e);
 	  break;
 	}
       }

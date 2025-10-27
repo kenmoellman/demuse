@@ -100,7 +100,18 @@ typedef long object_flag_type;
 /* end of flags */
 
 /* macro to make set string easier to use */
-#define SET(astr,bstr) do { char **__a, *__b; __a=(&(astr)); __b=(bstr); if (*__a) free(*__a); if (!__b || !*__b) *__a=NULL; else { *__a = malloc(strlen(__b)+1); strcpy(*__a,__b); } } while(0)
+// #define SET(astr,bstr) do { char **__a, *__b; __a=(&(astr)); __b=(bstr); if (*__a) SAFE_FREE(*__a); if (!__b || !*__b) *__a=NULL; else { *__a = malloc(strlen(__b)+1); strcpy(*__a,__b); } } while(0)
+#define SET(astr,bstr) do { \
+    char **__a = &(astr); \
+    char *__b = (bstr); \
+    if (*__a) SAFE_FREE(*__a); \
+    if (!__b || !*__b) { \
+        *__a = NULL; \
+    } else { \
+        SAFE_MALLOC(*__a, char, strlen(__b) + 1); \
+        strcpy(*__a, __b); \
+    } \
+} while(0)
 
 /* Updates an objects age */
 /*#define RLevel(x) (db[(x)].flags & TYPE_MASK)*/
@@ -275,18 +286,18 @@ struct object {
 
 
 
-typedef struct mem_stack_t {
-      void *ptr;    		/* information to be stored */
-      size_t size;  		/* size of stuff allocated. */
-      int timer;    		/* times through loops before killing. */
-      int perm;			/* permanant flag */
-      struct mem_stack_t *prev; /* pointer to last peice of stack. */
-      struct mem_stack_t *next; /* pointer to next peice of stack. */
-} MSTACK;
+//typedef struct mem_stack_t {
+//      void *ptr;    		/* information to be stored */
+//      size_t size;  		/* size of stuff allocated. */
+//      int timer;    		/* times through loops before killing. */
+//      int perm;			/* permanant flag */
+//      struct mem_stack_t *prev; /* pointer to last peice of stack. */
+//      struct mem_stack_t *next; /* pointer to next peice of stack. */
+//} MSTACK;
+//extern MSTACK *mem_stack;
  
 extern struct object *db;
 extern dbref db_top;
-extern MSTACK *mem_stack;
 extern size_t number_stack_blocks;
 extern size_t stack_size;
 extern size_t text_block_size;
@@ -317,7 +328,7 @@ struct all_atr_list {
   struct all_atr_list *next;
 };
 
-#define unref_atr(foo) do { if((foo)) if(0==--(foo)->refcount) { if((foo)->name) free((foo)->name); free((foo)); } } while(0)
+#define unref_atr(foo) do { if((foo)) if(0==--(foo)->refcount) { if((foo)->name) SAFE_FREE((foo)->name); SAFE_FREE((foo)); } } while(0)
 #define ref_atr(foo) do { ((foo)->refcount++); } while(0)
 
 //extern struct num_logins

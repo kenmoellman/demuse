@@ -162,7 +162,7 @@ void check_connect(struct descriptor_data *d, char *msg)
                 d->charname, msg);
         foobuf[MAX_COMMAND_LEN * 3 - 1] = '\0';
         
-        free(d->charname);
+        SAFE_FREE(d->charname);
         d->charname = NULL;
         queue_string(d, got_password);
         d->state = WAITCONNECT;
@@ -234,7 +234,8 @@ void check_connect(struct descriptor_data *d, char *msg)
         if (player == NOTHING && !*password) {
             queue_string(d, get_password);
             d->state = WAITPASS;
-            d->charname = malloc(strlen(user) + 1);
+//            d->charname = malloc(strlen(user) + 1);
+            SAFE_MALLOC(d->charname, char, strlen(user) + 1);
             if (d->charname) {
                 strcpy(d->charname, user);
             } else {

@@ -557,7 +557,8 @@ void mark_hearing(dbref obj)
   int i;
   struct hearing *mine;
 
-  mine = malloc(sizeof(struct hearing));
+//  mine = malloc(sizeof(struct hearing));
+  SAFE_MALLOC(mine, struct hearing, 1);
   if (!mine) {
     return;  /* Memory allocation failed */
   }
@@ -593,7 +594,7 @@ void check_hearing(void)
     if (mine->did_hear && !now_hear)
       notify_in(db[obj].location, obj,
 		tprintf("%s loses its ears and is now deaf.", db[obj].name ? db[obj].name : "Something"));
-    free(mine);
+    SAFE_FREE(mine);
   }
 }
 

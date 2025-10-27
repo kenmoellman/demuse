@@ -21,16 +21,18 @@ struct text_block *make_text_block(const char *s, int n)
         return NULL;
     }
 
-    p = malloc(sizeof(struct text_block));
+//    p = malloc(sizeof(struct text_block));
+    SAFE_MALLOC(p, struct text_block, 1);
     if (!p) {
         log_error("Failed to allocate text_block structure");
         return NULL;
     }
 
-    p->buf = malloc(n);
+//    p->buf = malloc(n);
+    p->buf = safe_malloc(n, __FILE__, __LINE__);
     if (!p->buf) {
         log_error("Failed to allocate text_block buffer");
-        free(p);
+        SAFE_FREE(p);
         return NULL;
     }
 
@@ -54,10 +56,10 @@ void free_text_block(struct text_block *t)
 
     if (t->buf) {
         text_block_size -= t->nchars;
-        free(t->buf);
+        SAFE_FREE(t->buf);
     }
     
-    free(t);
+    SAFE_FREE(t);
     text_block_num--;
 }
 
@@ -208,7 +210,7 @@ int queue_string(struct descriptor_data *d, const char *s)
 //
 //    /* Free raw input buffer */
 //    if (d->raw_input) {
-//        free(d->raw_input);
+//        SAFE_FREE(d->raw_input);
 //        d->raw_input = NULL;
 //    }
 //    d->raw_input_at = NULL;

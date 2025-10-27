@@ -1,4 +1,3 @@
-
 /* newconc.c */
 /* $Id: newconc.c,v 1.5 1993/08/22 04:54:13 nils Exp $ */
 
@@ -107,7 +106,8 @@ char *addr;
       queue_string(d, "//Sorry, there's already someone with that concid.\r\n");
       return;
     }
-  k = malloc(sizeof(struct descriptor_data));
+//  k = malloc(sizeof(struct descriptor_data));
+  SAFE_MALLOC(k, struct descriptor_data, 1);
 
   k->descriptor = d->descriptor;
   k->concid = concid;

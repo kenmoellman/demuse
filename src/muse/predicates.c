@@ -1257,7 +1257,8 @@ dbref item;
     for (len = 0; (*list)[len] != NOTHING; len++) ;
   len += 1;
 
-  newlist = malloc((len + 1) * sizeof(dbref));
+//  newlist = malloc((len + 1) * sizeof(dbref));
+  SAFE_MALLOC(newlist, dbref, len + 1);
 
   if (*list)
   {
@@ -1267,7 +1268,7 @@ dbref item;
   else
     newlist[0] = NOTHING;
   if (*list)
-    free(*list);
+    SAFE_FREE(*list);
   newlist[len - 1] = item;
   newlist[len] = NOTHING;
   (*list) = newlist;
@@ -1289,7 +1290,7 @@ dbref item;
   /* and ignore the reallocation, unless we have to free it. */
   if ((*list)[0] == NOTHING)
   {
-    free(*list);
+    SAFE_FREE(*list);
     (*list) = NULL;
   }
 }

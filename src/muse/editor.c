@@ -184,8 +184,8 @@ char *fname;
     }
   fprintf(stderr, tprintf("Player %d(concid %d) opened %s for editing.\n",
 			  player, dsc->concid, name_buffer));
-  MALLOC(head, struct top, 1);
-  MALLOC(head->next, struct buffer, 1);
+  SAFE_MALLOC(head, struct top, 1);
+  SAFE_MALLOC(head->next, struct buffer, 1);
 
   strcpy(head->filename, name_buffer);
   dsc->edit_buff = head;
@@ -193,7 +193,7 @@ char *fname;
   p->next = NULL;
   while (fgets(line_buff, 80, fp) != NULL)
   {
-    MALLOC(p->next, struct buffer p, 1);
+    SAFE_MALLOC(p->next, struct buffer p, 1);
 
     p = p->next;
     line_buff[strlen(line_buff) - 1] = '\0';
@@ -358,7 +358,7 @@ char *string;
     l = head->current->next;
     while (head->current != head->bound->next)
     {
-      free(head->current);
+      SAFE_FREE(head->current);
       head->current = l;
       l = l->next;
     }
@@ -499,7 +499,7 @@ char *string;
 {
   if (strcmp(string, "."))
   {
-    MALLOC(head->current->next, struct buffer, 1);
+    SAFE_MALLOC(head->current->next, struct buffer, 1);
 
     head->current = head->current->next;
     if (strlen(string) > 80)
@@ -523,7 +523,7 @@ char *string;
 {
   if (strcmp(string, "."))
   {
-    MALLOC(head->current->next, struct buffer, 1);
+    SAFE_MALLOC(head->current->next, struct buffer, 1);
 
     head->current = head->current->next;
     if (strlen(string) > 80)

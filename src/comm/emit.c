@@ -217,7 +217,7 @@ void do_emit(dbref player, char *arg1, char *arg2, int type)
     }
     
     /* Free allocated message */
-    free(message);
+    SAFE_FREE(message);
     
     /* Wizards can always emit */
     if (power(player, POW_REMOTE)) {
@@ -272,7 +272,7 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
         
         pronoun_substitute(buf, player, message, player);
         bf = buf + strlen(db[player].name) + 1;
-        free(message);
+        SAFE_FREE(message);
         message = NULL;
     }
     
@@ -423,7 +423,7 @@ void do_cemit(dbref player, char *arg1, char *arg2)
     
     pronoun_substitute(buf, player, message, player);
     bf = buf + strlen(db[player].name) + 1;
-    free(message);
+    SAFE_FREE(message);
     
     /* Send feedback to emitter */
     if (!(db[player].flags & QUIET)) {
@@ -469,7 +469,7 @@ void do_wemit(dbref player, char *arg1, char *arg2)
     
     pronoun_substitute(buf, player, message, player);
     bf = buf + strlen(db[player].name) + 1;
-    free(message);
+    SAFE_FREE(message);
     
     /* Send to all connected players */
     for (d = descriptor_list; d; d = d->next) {
