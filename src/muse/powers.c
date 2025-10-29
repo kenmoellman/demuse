@@ -110,7 +110,7 @@ ptype val;
   for (; *x; x += 2, nlist += 2) ;
 /*  bcopy(db[player].pows, powbuf, nlist * sizeof(ptype)); */
   memcpy(powbuf, db[player].pows, nlist * sizeof(ptype));
-  SAFE_FREE(db[player].pows);
+  SMART_FREE(db[player].pows);
   x = powbuf + nlist;
   /* didn't see it.. make it up */
   *x = pow;

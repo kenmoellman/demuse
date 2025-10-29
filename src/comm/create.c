@@ -891,9 +891,9 @@ void init_universe(struct object *o)
     
     if (!o->ua_string || !o->ua_float || !o->ua_int) {
         log_error("init_universe: malloc failed");
-        if (o->ua_string) SAFE_FREE(o->ua_string);
-        if (o->ua_float) SAFE_FREE(o->ua_float);
-        if (o->ua_int) SAFE_FREE(o->ua_int);
+        if (o->ua_string) SMART_FREE(o->ua_string);
+        if (o->ua_float) SMART_FREE(o->ua_float);
+        if (o->ua_int) SMART_FREE(o->ua_int);
         return;
     }
     

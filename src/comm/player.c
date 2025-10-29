@@ -55,7 +55,7 @@
 #define SET_CONST(astr, bstr) do { \
     char **__a = &(astr); \
     const char *__b = (bstr); \
-    if (*__a) SAFE_FREE(*__a); \
+    if (*__a) SMART_FREE(*__a); \
     if (!__b || !*__b) { \
         *__a = NULL; \
     } else { \

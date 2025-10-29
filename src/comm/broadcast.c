@@ -70,7 +70,7 @@ void do_announce(dbref player, char *arg1, char *arg2)
     if (!message || !*message) {
         notify(player, "Announce what?");
         if (message) {
-            SAFE_FREE(message);
+            SMART_FREE(message);
         }
         return;
     }
@@ -78,7 +78,7 @@ void do_announce(dbref player, char *arg1, char *arg2)
     /* Check payment (free for those with announce power) */
     if (!power(player, POW_ANNOUNCE) && !payfor(player, announce_cost)) {
         notify(player, "Sorry, you don't have enough credits.");
-        SAFE_FREE(message);
+        SMART_FREE(message);
         return;
     }
     
@@ -122,8 +122,8 @@ void do_announce(dbref player, char *arg1, char *arg2)
     notify_all(buf, NOTHING, 1);
     
     /* Clean up */
-    SAFE_FREE(ann_name);
-    SAFE_FREE(message);
+    SMART_FREE(ann_name);
+    SMART_FREE(message);
 }
 
 /**
@@ -154,7 +154,7 @@ void do_broadcast(dbref player, char *arg1, char *arg2)
     if (!message || !*message) {
         notify(player, "Broadcast what?");
         if (message) {
-            SAFE_FREE(message);
+            SMART_FREE(message);
         }
         return;
     }
@@ -171,7 +171,7 @@ void do_broadcast(dbref player, char *arg1, char *arg2)
     notify_all(buf, NOTHING, 0);
     
     /* Clean up */
-    SAFE_FREE(message);
+    SMART_FREE(message);
 }
 
 /* ===================================================================

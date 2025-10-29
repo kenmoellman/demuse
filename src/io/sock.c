@@ -205,7 +205,7 @@ int make_socket(int port)
     struct sockaddr_in *addr_in = (struct sockaddr_in *)res->ai_addr;
     server.sin_addr = addr_in->sin_addr;
     log_io(tprintf("Binding to hostname: %s", HOSTNAME));
-//    temporarily comment out to track down SAFE_FREE() bug.
+//    temporarily comment out to track down SMART_FREE() bug.
 //    freeaddrinfo(res);
   }
 #else
@@ -382,7 +382,7 @@ void shutdownsock(struct descriptor_data *d)
   if (!(d->cstatus & C_REMOTE))
     ndescriptors--;
   
-  SAFE_FREE(d);
+  SMART_FREE(d);
   
   /* Clean up guest accounts */
   if (guest_player != NOTHING)
@@ -468,12 +468,12 @@ void clearstrings(struct descriptor_data *d)
   
   if (d->output_prefix)
   {
-    SAFE_FREE(d->output_prefix);
+    SMART_FREE(d->output_prefix);
     d->output_prefix = 0;
   }
   if (d->output_suffix)
   {
-    SAFE_FREE(d->output_suffix);
+    SMART_FREE(d->output_suffix);
     d->output_suffix = 0;
   }
 }
@@ -505,7 +505,7 @@ void freeqs(struct descriptor_data *d)
   d->input.tail = &d->input.head;
   
   if (d->raw_input)
-    SAFE_FREE(d->raw_input);
+    SMART_FREE(d->raw_input);
   d->raw_input = 0;
   d->raw_input_at = 0;
 }

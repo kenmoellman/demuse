@@ -1268,7 +1268,7 @@ dbref item;
   else
     newlist[0] = NOTHING;
   if (*list)
-    SAFE_FREE(*list);
+    SMART_FREE(*list);
   newlist[len - 1] = item;
   newlist[len] = NOTHING;
   (*list) = newlist;
@@ -1290,7 +1290,7 @@ dbref item;
   /* and ignore the reallocation, unless we have to free it. */
   if ((*list)[0] == NOTHING)
   {
-    SAFE_FREE(*list);
+    SMART_FREE(*list);
     (*list) = NULL;
   }
 }

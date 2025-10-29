@@ -76,6 +76,12 @@ typedef long dbref;
 #include "universe.h"
 #endif
 
+/* Macro for checking valid dbrefs - potentially add to db.h eventually */
+#ifndef GoodObject
+#define GoodObject(x) ((x) >= 0 && (x) < db_top && \
+                      (Typeof(x) != NOTYPE) && \
+                      !(db[x].flags & GOING))
+#endif
 
 
 /* and all the definitions */
@@ -243,6 +249,7 @@ extern void putref P((FILE *, dbref));
 extern void putstring P((FILE *, char *));
 extern void remove_temp_dbs P((void));
 extern void get_univ_info P((FILE *, struct object *));
+extern char *getstring_noalloc P((FILE *));
 
 /* From dbtop.c */
 extern void do_dbtop P((dbref, char *));
@@ -412,7 +419,7 @@ extern void moveit P((dbref, dbref));
 /* From nalloc.c */
 extern void* safe_malloc P((size_t, const char *, int));
 extern void safe_free P((void *, const char *file, int));
-extern void smart_free_internal P((void *, const char *, int));
+extern void smart_free P((void *, const char *, int));
 extern void safe_memory_init P((void));
 extern void safe_memory_cleanup P((void));
 extern void *stack_em_fun P((size_t));
@@ -642,6 +649,8 @@ extern char *string_match P((char *, char *));
 extern int string_prefix P((const char *, char *));
 extern char to_lower P((int));
 extern char to_upper P((int));
+extern char *int_to_str P((int));
+
 
 /* From timer.c */
 extern void dispatch P((void));

@@ -120,9 +120,9 @@ static void free_paste_lines(PASTEY *lines)
     while (current) {
         next = current->next;
         if (current->str) {
-            SAFE_FREE(current->str);
+            SMART_FREE(current->str);
         }
-        SAFE_FREE(current);
+        SMART_FREE(current);
         current = next;
     }
 }
@@ -222,7 +222,7 @@ void remove_paste(dbref player)
             free_paste_lines(p->paste);
             
             /* Free the paste structure */
-            SAFE_FREE(p);
+            SMART_FREE(p);
             return;
         }
     }
@@ -416,7 +416,7 @@ void add_more_paste(dbref player, char *str)
     
     new_line->str = stralloc(str);
     if (!new_line->str) {
-        SAFE_FREE(new_line);
+        SMART_FREE(new_line);
         log_error("Out of memory in add_more_paste!");
         notify(player, "System error: out of memory.");
         return;

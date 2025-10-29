@@ -162,7 +162,7 @@ void check_connect(struct descriptor_data *d, char *msg)
                 d->charname, msg);
         foobuf[MAX_COMMAND_LEN * 3 - 1] = '\0';
         
-        SAFE_FREE(d->charname);
+        SMART_FREE(d->charname);
         d->charname = NULL;
         queue_string(d, got_password);
         d->state = WAITCONNECT;

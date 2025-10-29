@@ -1,5 +1,12 @@
 *.o
 *.a
+*.bak
+*.bak2
 *-backup
+*-old
 run/logs/*
+!run/logs/.gitkeep
 bin/*
+!bin/.gitkeep
+run/db/mdb.#*#
+run/db/mdb.PANIC

@@ -44,7 +44,7 @@ void set_signals()
   act->sa_handler = reaper;
   act->sa_flags = SA_RESTART;
   sigaction(SIGCHLD, act, NULL);
-  SAFE_FREE(act);
+  SMART_FREE(act);
   signal(SIGCHLD, SIG_IGN);
 
   /* standard termination signals */

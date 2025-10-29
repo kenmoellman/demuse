@@ -400,10 +400,10 @@ static char *build_email_payload(const char *from, const char *to,
     clean_body = encode_email_body(body);
     
     if (!clean_from || !clean_to || !clean_subject || !clean_body) {
-        SAFE_FREE(clean_from);
-        SAFE_FREE(clean_to);
-        SAFE_FREE(clean_subject);
-        SAFE_FREE(clean_body);
+        SMART_FREE(clean_from);
+        SMART_FREE(clean_to);
+        SMART_FREE(clean_subject);
+        SMART_FREE(clean_body);
         return NULL;
     }
     
@@ -414,10 +414,10 @@ static char *build_email_payload(const char *from, const char *to,
 //    payload = malloc(needed_size);
     SAFE_MALLOC(payload, char, needed_size+1);
     if (!payload) {
-        SAFE_FREE(clean_from);
-        SAFE_FREE(clean_to);
-        SAFE_FREE(clean_subject);
-        SAFE_FREE(clean_body);
+        SMART_FREE(clean_from);
+        SMART_FREE(clean_to);
+        SMART_FREE(clean_subject);
+        SMART_FREE(clean_body);
         return NULL;
     }
     
@@ -435,13 +435,13 @@ static char *build_email_payload(const char *from, const char *to,
         "%s\r\n",
         date_buffer, clean_from, clean_to, clean_subject, clean_body);
     
-    SAFE_FREE(clean_from);
-    SAFE_FREE(clean_to);
-    SAFE_FREE(clean_subject);
-    SAFE_FREE(clean_body);
+    SMART_FREE(clean_from);
+    SMART_FREE(clean_to);
+    SMART_FREE(clean_subject);
+    SMART_FREE(clean_body);
     
     if (result < 0 || (size_t)result >= needed_size) {
-        SAFE_FREE(payload);
+        SMART_FREE(payload);
         return NULL;
     }
     
@@ -473,8 +473,8 @@ static int send_email_curl(const char *to, const char *subject, const char *body
     /* Initialize curl */
     curl = curl_easy_init();
     if (!curl) {
-//        SAFE_FREE((void *)upload.payload);
-        SAFE_FREE(upload.payload);
+//        SMART_FREE((void *)upload.payload);
+        SMART_FREE(upload.payload);
         snprintf(error_buf, error_buf_size, "Failed to initialize CURL");
         return 0;
     }
@@ -531,8 +531,8 @@ static int send_email_curl(const char *to, const char *subject, const char *body
     /* Cleanup */
     curl_slist_free_all(recipients);
     curl_easy_cleanup(curl);
-//    SAFE_FREE((void *)upload.payload);
-    SAFE_FREE(upload.payload);
+//    SMART_FREE((void *)upload.payload);
+    SMART_FREE(upload.payload);
     
     return success;
 }

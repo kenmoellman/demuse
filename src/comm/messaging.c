@@ -148,12 +148,12 @@ void free_mail(void)
     
     for (i = 0; i < mdb_top; i++) {
         if (mdb[i].message) {
-            SAFE_FREE(mdb[i].message);
+            SMART_FREE(mdb[i].message);
         }
     }
     
     if (mdb) {
-        SAFE_FREE(mdb);
+        SMART_FREE(mdb);
         mdb = NULL;
     }
 }
@@ -233,7 +233,7 @@ void make_free_mail_slot(mdbref slot)
     if (slot < 0 || slot >= mdb_top) return;
     
     if (mdb[slot].message) {
-        SAFE_FREE(mdb[slot].message);
+        SMART_FREE(mdb[slot].message);
     }
     
     mdb[slot].message = NULL;

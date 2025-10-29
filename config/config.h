@@ -43,6 +43,14 @@ multi-homing either.) -wm 05/08/2000 */
 #endif /* MULTIHOME */
 /*  END MULTIHOMING SECTION  */
 
+/* Define whether memory debug is turned on or not. You want this diabled    *
+ * unless your game is crashing with memory errors.                          */
+#define MEMORY_DEBUG_LOG
+#ifdef MEMORY_DEBUG_LOG
+#define MEMORY_DEBUG_FILE "./logs/malloc-debug.log"
+#define MEMORY_DEBUG_SIZE 128
+#endif
+/* END memory debug section */
 
 /* define whether or not you want reverse DNS.  This option is fine on most
  * systems, however, if your server has a slow DNS server or just does not 

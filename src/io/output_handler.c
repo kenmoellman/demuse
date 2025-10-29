@@ -262,7 +262,7 @@ void raw_notify_internal(dbref player, char *msg, int color)
 
 #ifdef PUEBLO_CLIENT
     if (html) {
-        SAFE_FREE(html);
+        SMART_FREE(html);
     }
 #endif
 }
