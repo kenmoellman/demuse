@@ -7,3 +7,12 @@
 10/17 00:58:52| Player: 31 location: 31
 10/17 00:58:52| **************************
 10/17 00:58:52| Emergency shutdown.
+10/29 02:38:10| get_list: Invalid object #44
+10/29 02:38:10| Bad attribute list object 44
+10/29 02:38:10| Couldn't load database; shutting down the muse.
+10/29 02:45:58| atr_add: Invalid object #44
+10/29 02:45:58| atr_add: Invalid object #45
+10/29 02:46:12| db_write_object: Invalid object #44
+10/29 02:46:12| db_write: Failed to write object #44
+10/29 06:47:16| db_write_object: Invalid object #44
+10/29 06:47:16| db_write: Failed to write object #44

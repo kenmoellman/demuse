@@ -504,13 +504,13 @@ void free_database()
 
   for (i = 0; i < db_top; i++)
   {
-    SAFE_FREE(db[i].name);
+    SMART_FREE(db[i].name);
     if (db[i].parents)
-      SAFE_FREE(db[i].parents);
+      SMART_FREE(db[i].parents);
     if (db[i].children)
-      SAFE_FREE(db[i].children);
+      SMART_FREE(db[i].children);
     if (db[i].pows)
-      SAFE_FREE(db[i].pows);
+      SMART_FREE(db[i].pows);
     if (db[i].atrdefs)
     {
       struct atrdef *j, *next = NULL;
@@ -518,8 +518,8 @@ void free_database()
       for (j = db[i].atrdefs; j; j = next)
       {
 	next = j->next;
-	SAFE_FREE(j->a.name);
-	SAFE_FREE(j);
+	SMART_FREE(j->a.name);
+	SMART_FREE(j);
       }
     }
     if (db[i].list)
@@ -529,13 +529,13 @@ void free_database()
       for (j = db[i].list; j; j = next)
       {
 	next = AL_NEXT(j);
-	SAFE_FREE(j);
+	SMART_FREE(j);
       }
     }
   }
   // free(db - 5);
   struct object *temp = db - 5;
-  SAFE_FREE(temp);
+  SMART_FREE(temp);
   db=NULL;
 }
 

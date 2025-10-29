@@ -666,7 +666,7 @@ void give_allowances(void)
         giveto(x->player, allowance);
         notify(x->player, tprintf("You collect %d credits.", allowance));
         
-        SAFE_FREE(x);
+        SMART_FREE(x);
         x = next;
     }
 }

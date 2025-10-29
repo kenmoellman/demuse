@@ -48,7 +48,7 @@ void set_userstring(char **userstring, const char *command)
 
     /* Free existing string */
     if (*userstring) {
-        SAFE_FREE(*userstring);
+        SMART_FREE(*userstring);
         *userstring = NULL;
     }
 
@@ -117,7 +117,7 @@ int process_input(struct descriptor_data *d)
     if (p > d->raw_input) {
         d->raw_input_at = p;
     } else {
-        SAFE_FREE(d->raw_input);
+        SMART_FREE(d->raw_input);
         d->raw_input = NULL;
         d->raw_input_at = NULL;
     }

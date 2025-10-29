@@ -63,7 +63,7 @@ void clear_players()
       for (e = player_list[i]; e; e = next)
       {
 	next = e->next;
-	SAFE_FREE(e);
+	SMART_FREE(e);
       }
     }
     player_list[i] = 0;
@@ -145,7 +145,7 @@ dbref player;
     {
       /* it's the first one */
       player_list[hash] = e->next;
-      SAFE_FREE(e);
+      SMART_FREE(e);
     }
     else
     {
@@ -155,7 +155,7 @@ dbref player;
 	{
 	  /* got it */
 	  prev->next = e->next;
-	  SAFE_FREE(e);
+	  SMART_FREE(e);
 	  break;
 	}
       }
@@ -172,7 +172,7 @@ dbref player;
     {
       /* it's the first one */
       player_list[hash] = e->next;
-      SAFE_FREE(e);
+      SMART_FREE(e);
     }
     else
     {
@@ -182,7 +182,7 @@ dbref player;
 	{
 	  /* got it */
 	  prev->next = e->next;
-	  SAFE_FREE(e);
+	  SMART_FREE(e);
 	  break;
 	}
       }

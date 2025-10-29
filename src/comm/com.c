@@ -44,11 +44,6 @@ static int pl_used = 0;
 
 #define DOWNCASE(x) to_lower(x)
 
-#ifndef GoodObject
-#define GoodObject(x) ((x) >= 0 && (x) < db_top && \
-                      (Typeof(x) != NOTYPE) && \
-                      !(db[x].flags & GOING))
-#endif
 
 /* ===================================================================
  * Forward Declarations
@@ -2502,7 +2497,7 @@ void clear_channels(void)
     if (pl_used) {
       for (e = channel_list[i]; e; e = next) {
         next = e->next;
-        SAFE_FREE(e);
+        SMART_FREE(e);
       }
     }
     channel_list[i] = NULL;
@@ -2611,7 +2606,7 @@ void delete_channel(dbref channel)
     if (e->next) {
       e->next->prev = NULL;
     }
-    SAFE_FREE(e);
+    SMART_FREE(e);
     return;
   }
 
@@ -2622,7 +2617,7 @@ void delete_channel(dbref channel)
       if (e->next) {
         e->next->prev = prev;
       }
-      SAFE_FREE(e);
+      SMART_FREE(e);
       return;
     }
   }

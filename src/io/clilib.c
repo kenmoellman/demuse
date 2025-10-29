@@ -119,8 +119,8 @@ int rwhocli_shutdown()
     sendto(dgramfd, pbuf, strlen(pbuf), 0, (struct sockaddr *)&addr, sizeof(addr));
     close(dgramfd);
     dgramfd = -1;
-    SAFE_FREE(password);
-    SAFE_FREE(localnam);
+    SMART_FREE(password);
+    SMART_FREE(localnam);
   }
   return (0);
 }

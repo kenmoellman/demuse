@@ -20,12 +20,12 @@ void free_hash()
     {
 /*      int k;
    for (k=0; j->buckets[j][k].name; k++)
-   SAFE_FREE(i->buckets[j][k].name); */
-      SAFE_FREE(i->buckets[j]);
+   SMART_FREE(i->buckets[j][k].name); */
+      SMART_FREE(i->buckets[j]);
     }
-    SAFE_FREE(i->buckets);
-    SAFE_FREE(i->name);
-    SAFE_FREE(i);
+    SMART_FREE(i->buckets);
+    SMART_FREE(i->name);
+    SMART_FREE(i);
   }
 }
 

@@ -81,9 +81,9 @@ void rlpage_tick(void)
 
   /* we're done with the top of the rlpage queue. free it. */
 
-    SAFE_FREE(rlqc->to);
-    SAFE_FREE(rlqc->msg);
-    SAFE_FREE(rlqc);
+    SMART_FREE(rlqc->to);
+    SMART_FREE(rlqc->msg);
+    SMART_FREE(rlqc);
     last_send = now;
   }
 }

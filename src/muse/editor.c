@@ -358,7 +358,7 @@ char *string;
     l = head->current->next;
     while (head->current != head->bound->next)
     {
-      SAFE_FREE(head->current);
+      SMART_FREE(head->current);
       head->current = l;
       l = l->next;
     }

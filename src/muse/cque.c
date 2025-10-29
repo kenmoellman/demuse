@@ -425,11 +425,11 @@ int do_top()
   {
     if (tmp->env[b])
     {
-      SAFE_FREE(tmp->env[b]);
+      SMART_FREE(tmp->env[b]);
       tmp->env[b] = NULL;
     }
   }
-  SAFE_FREE(tmp);
+  SMART_FREE(tmp);
 
   if (qfirst == NULL)
     qlast = NULL;
@@ -509,14 +509,14 @@ dbref player;
     { 
       if (qfirst->env[a])
       { 
-        SAFE_FREE(qfirst->env[a]);
+        SMART_FREE(qfirst->env[a]);
         qfirst->env[a] = NULL;
       }
     }
     giveto(qfirst->player, queue_cost);
     free_pid(qfirst->pid);
     qfirst = next;
-    SAFE_FREE(i);
+    SMART_FREE(i);
   }  
      
   qfirst = NULL;
@@ -604,13 +604,13 @@ void do_halt_process(dbref player, int pid)
         {
     	if (point->env[a])
           {
-    	  SAFE_FREE(point->env[a]);
+    	  SMART_FREE(point->env[a]);
             point->env[a] = NULL;
           }
         }
         point->player = NOTHING;
         free_pid(point->pid);
-        SAFE_FREE(point);
+        SMART_FREE(point);
         notify(player, tprintf("@halt: Terminated process %d", pid));
         return;
       }
@@ -682,13 +682,13 @@ void do_halt_player(dbref player, char *ncom)
       {
 	if (point->env[a])
         {
-	  SAFE_FREE(point->env[a]);
+	  SMART_FREE(point->env[a]);
           point->env[a] = NULL;
         }
       }
       point->player = NOTHING;
       free_pid(point->pid);
-      SAFE_FREE(point);
+      SMART_FREE(point);
     }
     else
       next = (trail = point)->next;

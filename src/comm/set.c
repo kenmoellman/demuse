@@ -594,7 +594,7 @@ void check_hearing(void)
     if (mine->did_hear && !now_hear)
       notify_in(db[obj].location, obj,
 		tprintf("%s loses its ears and is now deaf.", db[obj].name ? db[obj].name : "Something"));
-    SAFE_FREE(mine);
+    SMART_FREE(mine);
   }
 }
 
