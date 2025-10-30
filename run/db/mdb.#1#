@@ -1593,54 +1593,54 @@ bank machine parent
 8397825
 799482346
 799468735
->37
--1
-glances at the [name(me)].
->129
--1
-#128
->6
--1
-A matte-black box, set into one wall. Bright orange lettering reads, "BANK OF BILLBOB, AUTOMATED TELLER". A shatter-proof screen/punchpad combination is located directly above a credit-jack and a magnetocard slot.[if(lnot(v(available)),{ There seems to be a card in the slot.})] Type 'menu' for commands you [ifelse(v(valid_pin),{can use now},s({will be able to use after[if(v(available),{ doing 'insert card <account number>' and then})] typing: PIN <your 4-digit PIN number>}))].
->0
-33
-$balance:/[if(v(valid_pin),v(#))]/@pe %#=*BEEP* Your current balance is: %[get(con(me),cash_balance)] credits.
->10
-33
-$PIN *:/[if(land(lnot(v(available)),lnot(v(valid_pin))),v(#))]/@swi v(0)=get([con(me)]/pin_number),{@pin_tries me=0;@valid_pin me=1;@pe %#=*BEEP* PIN accepted. Type 'menu' to see what you can do from here.},{[switch(v(pin_tries),3,{@pe %#=Too many tries! This card is siezed.;@pin_tries me=0;@available me=1},{@pe %#=Invalid PIN entered! Try again.;@pin_tries me=add(v(pin_tries),1)})]}
->1
-33
-$insert card *:/[if(v(available),v(#))]/@swi loc(#%0)=v(#),{[ifelse(is_a(s(#%0),#1203),ifelse(match(get(s(#%0/status)),STOLEN),{@tel #%0=#%0;@pe %#=*BEEP* Error. This card has been reported stolen. Thank you for returning it.},{@tel #%0=me;@available me=0;@pe %#=Please type: pin <your 4-digit PIN number>}),{@pe %#=The ATM machine buzzes at you as you attempt to force a foreign object into the slot.})]},{@pe %#=You don't have that!}
->6
-33
-$deposit *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),credits(v(#)))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{give %#=sub(0,v(0));@cash_balance con(me)=add(get([con(me)]/cash_balance),v(0));@x_log con(me)=spstrcat({[xtime()]_[num(here)]_D_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Deposit Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]}
->7
-33
-$withdraw *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(0));give %#=add(v(0),0);@x_log con(me)=spstrcat({[xtime()]_[num(here)]_W_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Withdrawal Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]
->3
-33
-[rand(10)][rand(10)][rand(10)][rand(10)]
->9
-33
-0
->8
-33
-0
->52
--1
-1
->11
-33
-1
->4
-33
-$remove card:/[if(v(valid_pin),v(#))]/@valid_pin me=0;give %#=con(me);@pe %#=*BEEP* Thank you for doing business with the Bank of Billbob. Have a nice day!;@available me=1
->5
-33
-$transfer *=*:/[if(v(valid_pin),v(#))]/@swi gt(v(1),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(1),0),ifelse(is_a(s(#%0),#1203),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(1));@cash_balance #%0=add(get(#%0/cash_balance),v(1));@pe %#=*BEEP* Transaction completed. Please remember to 'remove card' when you are done with your transactions.;@x_log con(me)=[xtime()]_TW_[num(here)]_[num(s(#%0))]_[add(v(1),0)];@x_log #%0=[xtime()]_TD_[num(here)]_[con(me)]_[add(v(1),0)]},{@pe %#=*BEEP* Error. No such account number.}),{@pe %#=*BEEP* Error. Positive amounts only.})]}
 >2
 33
 $menu:@npe %#= .[string(-,50)].;@npe %#= |[cjust({Bank of Billbob ATM},50)]|;@npe %#= | <[string(-,46)]> |;@npe %#= |[cjust({deposit <amount>},50)]|;@npe %#= |[cjust({withdraw <amount>},50)]|;@npe %#= |[cjust({balance},50)]|;@npe %#= |[cjust({transfer <account number>=<amount>},50)]|;@npe %#= |[cjust({remove card},50)]|;@npe %#= `[string(-,50)]'
+>5
+33
+$transfer *=*:/[if(v(valid_pin),v(#))]/@swi gt(v(1),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(1),0),ifelse(is_a(s(#%0),#1203),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(1));@cash_balance #%0=add(get(#%0/cash_balance),v(1));@pe %#=*BEEP* Transaction completed. Please remember to 'remove card' when you are done with your transactions.;@x_log con(me)=[xtime()]_TW_[num(here)]_[num(s(#%0))]_[add(v(1),0)];@x_log #%0=[xtime()]_TD_[num(here)]_[con(me)]_[add(v(1),0)]},{@pe %#=*BEEP* Error. No such account number.}),{@pe %#=*BEEP* Error. Positive amounts only.})]}
+>4
+33
+$remove card:/[if(v(valid_pin),v(#))]/@valid_pin me=0;give %#=con(me);@pe %#=*BEEP* Thank you for doing business with the Bank of Billbob. Have a nice day!;@available me=1
+>11
+33
+1
+>52
+-1
+1
+>8
+33
+0
+>9
+33
+0
+>3
+33
+[rand(10)][rand(10)][rand(10)][rand(10)]
+>7
+33
+$withdraw *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(0));give %#=add(v(0),0);@x_log con(me)=spstrcat({[xtime()]_[num(here)]_W_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Withdrawal Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]
+>6
+33
+$deposit *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),credits(v(#)))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{give %#=sub(0,v(0));@cash_balance con(me)=add(get([con(me)]/cash_balance),v(0));@x_log con(me)=spstrcat({[xtime()]_[num(here)]_D_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Deposit Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]}
+>1
+33
+$insert card *:/[if(v(available),v(#))]/@swi loc(#%0)=v(#),{[ifelse(is_a(s(#%0),#1203),ifelse(match(get(s(#%0/status)),STOLEN),{@tel #%0=#%0;@pe %#=*BEEP* Error. This card has been reported stolen. Thank you for returning it.},{@tel #%0=me;@available me=0;@pe %#=Please type: pin <your 4-digit PIN number>}),{@pe %#=The ATM machine buzzes at you as you attempt to force a foreign object into the slot.})]},{@pe %#=You don't have that!}
+>10
+33
+$PIN *:/[if(land(lnot(v(available)),lnot(v(valid_pin))),v(#))]/@swi v(0)=get([con(me)]/pin_number),{@pin_tries me=0;@valid_pin me=1;@pe %#=*BEEP* PIN accepted. Type 'menu' to see what you can do from here.},{[switch(v(pin_tries),3,{@pe %#=Too many tries! This card is siezed.;@pin_tries me=0;@available me=1},{@pe %#=Invalid PIN entered! Try again.;@pin_tries me=add(v(pin_tries),1)})]}
+>0
+33
+$balance:/[if(v(valid_pin),v(#))]/@pe %#=*BEEP* Your current balance is: %[get(con(me),cash_balance)] credits.
+>6
+-1
+A matte-black box, set into one wall. Bright orange lettering reads, "BANK OF BILLBOB, AUTOMATED TELLER". A shatter-proof screen/punchpad combination is located directly above a credit-jack and a magnetocard slot.[if(lnot(v(available)),{ There seems to be a card in the slot.})] Type 'menu' for commands you [ifelse(v(valid_pin),{can use now},s({will be able to use after[if(v(available),{ doing 'insert card <account number>' and then})] typing: PIN <your 4-digit PIN number>}))].
+>129
+-1
+#128
+>37
+-1
+glances at the [name(me)].
 <
 0
 1
@@ -1698,21 +1698,21 @@ bank card parent
 9217
 799482374
 799468723
->37
--1
-peers at the gleaming [name(me)] in %p hand.
->129
--1
-#128
->0
-34
-GOOD
->52
--1
-1
 >6
 -1
 A shiny silver plasti-metal card that reads in large letters, "Bank of Billbob: Serving YOUR needs for the 32nd century!", and in smaller letters underneath, the name '[name(v(registered_owner))]', and account number '[delete(num(me),0,1)]'.
+>52
+-1
+1
+>0
+34
+GOOD
+>129
+-1
+#128
+>37
+-1
+peers at the gleaming [name(me)] in %p hand.
 <
 0
 1
@@ -1750,18 +1750,18 @@ Banker
 0
 799479983
 5/13/y/38/y/39/y/32/y/33/y/0
->52
--1
-38656
->50
--1
-public
->38
--1
-91
 >5
 -1
 XXWml8yHjiHRM
+>38
+-1
+91
+>50
+-1
+public
+>52
+-1
+38656
 <
 0
 0
@@ -1782,21 +1782,21 @@ ATM Card
 9217
 894678970
 894678970
->4
-34
-#5431
->2
-34
-0
->1
-34
-894678970_S_#1111
->3
-34
-3009
 >52
 -1
 1
+>3
+34
+3009
+>1
+34
+894678970_S_#1111
+>2
+34
+0
+>4
+34
+#5431
 <
 1
 34
@@ -1818,21 +1818,21 @@ Automated Teller
 8193
 799480976
 799480108
->9
-33
-0
->8
-33
-0
->11
-33
+>52
+-1
 1
 >129
 -1
 #128
->52
--1
+>11
+33
 1
+>8
+33
+0
+>9
+33
+0
 <
 1
 33
@@ -1854,15 +1854,15 @@ exit_organizer
 8193
 840293415
 840292010
->100
--1
-$organize:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=n
->52
--1
-1
 >101
 -1
 $org2:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=s
+>52
+-1
+1
+>100
+-1
+$organize:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=n
 <
 0
 0
@@ -2022,7 +2022,7 @@ Bobby Newmark
 39
 -1
 43
-33554952
+35652104
 913745826
 794113020
 10/38/y/2/y/3/y/4/y/5/y/6/=/7/</8/y/9/y/10/y/12/y/13/y/16/y/17/y/18/=/19/y/21/</22/y/23/y/24/</26/y/28/y/29/y/30/y/31/y/32/</33/y/34/y/35/y/36/y/37/</39/y/40/y/41/y/42/y/43/y/44/y/45/y/20/y/0
@@ -2034,7 +2034,7 @@ public:public:1 *dc *players *log_force dbinfo log_imp *log_space *log_io *dc*pl
 17
 >30
 -1
-1761808169
+1761809232
 >181
 -1
 !coke
@@ -2148,7 +2148,7 @@ $idle:=:idles;:idles
 naihd
 >1020
 -1
--1042704680
+-1042703753
 >57
 -1
 0:Y
@@ -2160,7 +2160,7 @@ naihd
 @wait 10={@dbck;@tr me/vq}
 >25
 -1
-1761808308
+1761809225
 <
 2
 24
@@ -2179,3 +2179,69 @@ public
 >5
 \
 &44
+turd
+turd
+-1
+-1
+-1
+-1
+-1
+-1
+45
+1
+16385
+0
+1630536195
+<
+0
+0
+\
+>-1
+\
+&45
+llama
+llama
+-1
+-1
+-1
+-1
+-1
+-1
+-1
+1
+16385
+0
+1632100736
+<
+0
+0
+\
+>-1
+\
+&46
+*log_space
+*log_space
+46
+-1
+46
+-1
+-1
+46
+-1
+43
+1048580
+0
+1632100811
+>1110
+-1
+46
+>52
+-1
+19
+<
+0
+0
+\
+>5
+\
+***END OF DUMP***

@@ -95,3 +95,13 @@
 10/30 07:11:48| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:11:48 2025
 10/30 07:11:48| DUMPING: db/mdb.#1#
 10/30 07:11:48| DUMPING: db/mdb.#1# (done)
+10/30 03:27:05| Starting up on port 4208
+10/30 03:27:05| Binding to all interfaces (INADDR_ANY)
+10/30 03:27:05| Successfully opened socket on port 4208
+10/30 07:27:08| Connection from: localhost
+10/30 07:27:08| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 07:27:08 2025
+10/30 07:27:12| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+10/30 07:27:36| CHECKPOINTING: db/mdb.#1#
+10/30 07:28:11| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:28:11 2025
+10/30 07:28:11| DUMPING: db/mdb.#2#
+10/30 07:28:11| DUMPING: db/mdb.#2# (done)

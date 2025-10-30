@@ -273,11 +273,6 @@ static int db_write_object(FILE *f, dbref i)
         return -1;
     }
     
-    if (!GoodObject(i)) {
-        log_error(tprintf("db_write_object: Invalid object #%ld", i));
-        return -1;
-    }
-    
     o = db + i;
     
     /* Write basic object data */
