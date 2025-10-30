@@ -51,3 +51,35 @@
 10/29 06:47:16| Shutdown attempt by Bobb|W!+y New|mark(#43PcNa)
 10/29 06:47:16| SHUTDOWN: by Bobb|W!+y New|mark(#43PcNa)
 10/29 06:47:16| Shutting down normally.
+10/29 23:48:30| LOADING: db/mdb
+10/29 23:48:30| LOADING: db/mdb (done)
+10/29 23:49:25| LOADING: db/mdb
+10/29 23:49:25| LOADING: db/mdb (done)
+10/29 23:49:25| Done loading database.
+10/29 23:49:25| YourMUSE online.
+
+10/30 03:50:01| EMERGENCY BYPASS used for user: root
+10/30 03:50:05| SECURITY: Root (#1) attempted invalid text file: news
+10/30 06:59:46| Shutdown attempt by Root(#1PcNa)
+10/30 06:59:46| SHUTDOWN: by Root(#1PcNa)
+10/30 06:59:46| Shutting down normally.
+10/30 03:00:13| LOADING: db/mdb
+10/30 03:00:13| LOADING: db/mdb (done)
+10/30 03:00:13| Done loading database.
+10/30 03:00:13| YourMUSE online.
+
+10/30 07:00:25| EMERGENCY BYPASS used for user: wm
+10/30 07:00:57| Shutdown attempt by Bobb|W!+y New|mark(#43PcNa)
+10/30 07:00:57| SHUTDOWN: by Bobb|W!+y New|mark(#43PcNa)
+10/30 07:00:57| Shutting down normally.
+10/30 03:01:01| LOADING: db/mdb
+10/30 03:01:01| LOADING: db/mdb (done)
+10/30 03:09:19| LOADING: db/mdb
+10/30 03:09:19| LOADING: db/mdb (done)
+10/30 03:09:19| Done loading database.
+10/30 03:09:19| YourMUSE online.
+
+10/30 07:09:29| EMERGENCY BYPASS used for user: wm
+10/30 07:11:48| Shutdown attempt by Bobb|W!+y New|mark(#43PcNa)
+10/30 07:11:48| SHUTDOWN: by Bobb|W!+y New|mark(#43PcNa)
+10/30 07:11:48| Shutting down normally.
