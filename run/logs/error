@@ -16,3 +16,42 @@
 10/29 02:46:12| db_write: Failed to write object #44
 10/29 06:47:16| db_write_object: Invalid object #44
 10/29 06:47:16| db_write: Failed to write object #44
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| getref: Failed to read from file
+10/29 23:48:30| Bad character ÿ on object 44
+10/29 23:48:30| Bad attribute list object 44
+10/29 23:48:30| Couldn't load database; shutting down the muse.
+10/30 04:10:12| Invalid object #10 in contents of #3, clearing contents
+10/30 04:10:12| DBCK: Moved object 1
+10/30 04:10:12| DBCK: Moved object 2
+10/30 03:00:13| atr_add: Invalid object #44
+10/30 03:00:13| atr_add: Invalid object #45
+10/30 07:00:57| db_write_object: Invalid object #44
+10/30 07:00:57| db_write: Failed to write object #44
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| getref: Failed to read from file
+10/30 03:01:01| Bad character ÿ on object 44
+10/30 03:01:01| Bad attribute list object 44
+10/30 03:01:01| Couldn't load database; shutting down the muse.
+10/30 03:09:19| atr_add: Invalid object #44
+10/30 03:09:19| atr_add: Invalid object #45
+10/30 07:11:48| db_write_object: Invalid object #44
+10/30 07:11:48| db_write: Failed to write object #44

@@ -1,6 +1,5 @@
 /* warnings.c - Database topology and security checking system
  * Validates database integrity and warns object owners about potential issues
- * $Id: warnings.c,v 1.2 1993/08/22 18:09:34 nils Exp $
  * 
  * This module performs incremental checks on database objects to identify:
  * - Missing descriptions and messages

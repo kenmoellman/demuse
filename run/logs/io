@@ -55,3 +55,43 @@
 10/29 06:47:16| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Wed Oct 29 06:47:16 2025
 10/29 06:47:16| DUMPING: db/mdb.#2#
 10/29 06:47:16| DUMPING: db/mdb.#2# (done)
+10/29 23:48:30| Starting up on port 4208
+10/29 23:48:30| Binding to all interfaces (INADDR_ANY)
+10/29 23:48:30| Successfully opened socket on port 4208
+10/29 23:49:25| Starting up on port 4208
+10/29 23:49:25| Binding to all interfaces (INADDR_ANY)
+10/29 23:49:25| Successfully opened socket on port 4208
+10/30 03:49:33| Connection from: localhost
+10/30 03:49:33| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 03:49:33 2025
+10/30 03:50:01| CONNECTED: Root(#1PNa) on concid 1
+10/30 03:50:01| CHECKPOINTING: db/mdb.#1#
+10/30 04:34:57| CHECKPOINTING: db/mdb.#2#
+10/30 04:50:06| (|R!+HIDDEN|) Root idled after 60 minutes inactivity
+10/30 05:20:39| CHECKPOINTING: db/mdb.#3#
+10/30 06:06:21| CHECKPOINTING: db/mdb.#4#
+10/30 06:16:26| (|R!+HIDDEN|) Root(#1PcNa) unidled after 2 hours and 26 minutes.
+10/30 06:51:48| CHECKPOINTING: db/mdb.#5#
+10/30 06:59:46| DISCONNECT concid 1 player Root(#1PcNa) at Thu Oct 30 06:59:46 2025
+10/30 06:59:46| DUMPING: db/mdb.#6#
+10/30 06:59:46| DUMPING: db/mdb.#6# (done)
+10/30 03:00:13| Starting up on port 4208
+10/30 03:00:13| Binding to all interfaces (INADDR_ANY)
+10/30 03:00:13| Successfully opened socket on port 4208
+10/30 07:00:21| Connection from: localhost
+10/30 07:00:21| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 07:00:21 2025
+10/30 07:00:25| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+10/30 07:00:57| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:00:57 2025
+10/30 07:00:57| DUMPING: db/mdb.#1#
+10/30 07:00:57| DUMPING: db/mdb.#1# (done)
+10/30 03:01:01| Starting up on port 4208
+10/30 03:01:01| Binding to all interfaces (INADDR_ANY)
+10/30 03:01:01| Successfully opened socket on port 4208
+10/30 03:09:19| Starting up on port 4208
+10/30 03:09:19| Binding to all interfaces (INADDR_ANY)
+10/30 03:09:19| Successfully opened socket on port 4208
+10/30 07:09:25| Connection from: localhost
+10/30 07:09:25| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 07:09:25 2025
+10/30 07:09:29| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+10/30 07:11:48| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:11:48 2025
+10/30 07:11:48| DUMPING: db/mdb.#1#
+10/30 07:11:48| DUMPING: db/mdb.#1# (done)
