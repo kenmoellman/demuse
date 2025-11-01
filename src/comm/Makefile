@@ -38,7 +38,7 @@ TOPDIR = ../..
 
 # Source files
 SRCS = broadcast.c color.c com.c create.c datetime.c dbtop.c email.c emit.c help.c info.c \
-       look.c lstats.c messaging.c page.c paste.c pcmds.c player.c rob.c set.c speech.c
+       look.c lstats.c messaging.c page.c paste.c pcmds.c rob.c set.c speech.c
 
 
 # Object files

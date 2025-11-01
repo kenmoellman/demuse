@@ -11,19 +11,13 @@ int ndisrooms;
 #include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
-#ifdef XENIX
-#include <sys/signal.h>
-#else
-#include <signal.h>
-#include <sys/wait.h>
-#endif /* xenix */
 
+#include "externs.h"
 #include "db.h"
 #include "config.h"
 #include "interface.h"
 #include "match.h"
 #include "admin.h"
-#include "externs.h"
 #include "credits.h"
 
 /* declarations */
