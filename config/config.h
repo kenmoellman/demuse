@@ -354,4 +354,509 @@ multi-homing either.) -wm 05/08/2000 */
 #define BUFFER_LEN ((MAX_COMMAND_LEN)*8)
 
 
+/* definition of classes and powers formerly powers.h */
+//typedef char ptype;  /* Power type for player powers/permissions */
+typedef int ptype;  /* Power type for player powers/permissions */
+
+
+#define CLASS_GUEST 1
+#define CLASS_VISITOR 2
+#define CLASS_CITIZEN 3
+#define CLASS_PCITIZEN 4
+#define CLASS_GROUP 5
+#define CLASS_JUNOFF 6
+#define CLASS_OFFICIAL 7
+#define CLASS_BUILDER 8
+#define CLASS_ADMIN 9
+#define CLASS_DIR 10
+
+#define NUM_CLASSES 11
+#define NUM_LIST_CLASSES 10
+
+#define PW_NO 1
+#define PW_YESLT 2
+#define PW_YESEQ 3
+#define PW_YES 4
+
+/* this number will fluxuate depending on what powers you have turned on */
+#define NUM_POWS         47
+#define MAX_POWERNAMELEN 16
+
+#define POW_ALLQUOTA     1
+#define POW_ANNOUNCE     2
+#define POW_BAN		 3
+#define POW_BOARD        46
+#define POW_BOOT         4
+#define POW_BROADCAST    5
+#define POW_CHANNEL      47
+#define POW_CHOWN        6
+#define POW_CLASS        7
+#define POW_COMBAT       14
+#define POW_DB           8
+#ifdef DBTOP_POW
+#define POW_DBTOP        9
+#else
+#define POW_NUTTIN0      9
+#endif /* DBTOP_POW */
+#define POW_EXAMINE      10
+#ifdef ALLOW_EXEC
+#define POW_EXEC         11
+#else
+#define POW_NUTTIN1      11
+#endif /* ALLOW_EXEC */
+#define POW_FREE         12
+#define POW_FUNCTIONS    13
+#ifdef USE_INCOMING
+#define POW_INCOMING     15
+#else
+#define POW_NUTTIN2      15
+#endif
+#define POW_JOIN         16
+#define POW_MEMBER       17
+#define POW_MODIFY       18
+#define POW_MONEY        19
+#define POW_MOTD	 20
+#define POW_NEWPASS      21
+#define POW_NOSLAY       22
+#define POW_NOQUOTA      23
+#define POW_NUKE         24
+#ifdef USE_OUTGOING
+#define POW_OUTGOING     25
+#else
+#define POW_NUTTIN3      25
+#endif
+#define POW_PCREATE      26
+#define POW_POOR         27
+#define POW_QUEUE        28
+#define POW_REMOTE       29
+#define POW_SECURITY     30
+#define POW_SEEATR       31
+#define POW_SETPOW       32
+#define POW_SETQUOTA     33
+#define POW_SLAY         34
+#define POW_SHUTDOWN     35
+#define POW_SUMMON       36
+#define POW_SLAVE        37
+#ifdef USE_SPACE
+#define POW_SPACE	 38
+#else
+#define POW_NUTTIN4      38
+#endif
+#define POW_NUTTIN5      39
+#define POW_STATS        40
+#define POW_STEAL        41
+#define POW_TELEPORT     42
+#define POW_WATTR        43
+#define POW_WFLAGS       44
+#define POW_WHO          45
+
+
+/* ============================================================================
+ * POWER AND CLASS CONFIGURATION DATA
+ * ============================================================================
+ * Add this section to the END of config/config.h
+ *
+ * This data was moved from powerlist.c to enable future database migration.
+ * These arrays define the power system and class hierarchy.
+ *
+ * MODERNIZATION NOTES:
+ * - This data will eventually be moved to MySQL database tables
+ * - Structure preserved for easy migration
+ * - All data is configuration, not code logic
+ */
+
+/* Power value definitions (already in powers.h, but documented here) */
+/* #define PW_NO    1  - No power */
+/* #define PW_YESLT 2  - Yes if level < target */
+/* #define PW_YESEQ 3  - Yes if level <= target */
+/* #define PW_YES   4  - Yes always */
+
+/* ============================================================================
+ * CLASS NAME ARRAY
+ * ============================================================================
+ * Maps class constants to human-readable names.
+ * Index corresponds to CLASS_* constants in powers.h
+ */
+static char *classnames[] =
+{
+  " ?",          /* CLASS_0 - Invalid/unknown */
+  "Guest",       /* CLASS_GUEST - 1 */
+  "Visitor",     /* CLASS_VISITOR - 2 */
+  "Citizen",     /* CLASS_CITIZEN - 3 */
+  "Builder",     /* CLASS_BUILDER - 4 (was CLASS_PCITIZEN) */
+  "VIP",         /* CLASS_VIP - 5 (was CLASS_GROUP) */
+  "Guide",       /* CLASS_GUIDE - 6 (was CLASS_JUNOFF) */
+  "Counselor",   /* CLASS_OFFICIAL - 7 */
+  "Judge",       /* CLASS_JUDGE - 8 (was part of builder) */
+  "Admin",       /* CLASS_ADMIN - 9 */
+  "Director" //,    /* CLASS_DIR - 10 */
+//  NULL
+};
+
+/* ============================================================================
+ * TYPE NAME ARRAY
+ * ============================================================================
+ * Maps type constants to human-readable names.
+ * Index corresponds to TYPE_* constants in db.h
+ */
+static char *typenames[] =
+{
+  "Room",        /* TYPE_ROOM - 0x0 */
+  "Thing",       /* TYPE_THING - 0x1 */
+  "Exit",        /* TYPE_EXIT - 0x2 */
+  "Universe",    /* TYPE_UNIVERSE - 0x3 */
+  "Channel",     /* TYPE_CHANNEL - 0x4 */
+  " 0x5",        /* Reserved */
+  " 0x6",        /* Reserved */
+  " 0x7",        /* Reserved */
+  "Player"       /* TYPE_PLAYER - 0x8 */
+};
+
+/* ============================================================================
+ * POWER DEFINITION ARRAY
+ * ============================================================================
+ * This is the main power configuration table.
+ *
+ * Each entry defines:
+ * - name: Human-readable power name
+ * - num: Power constant (POW_* from powers.h)
+ * - description: What this power allows
+ * - init[NUM_LIST_CLASSES]: Default power level for each class
+ * - max[NUM_LIST_CLASSES]: Maximum power level for each class
+ *
+ * Array indices for init/max correspond to class_to_list_pos() return values:
+ * [0] = Director
+ * [1] = Admin
+ * [2] = Builder/Judge
+ * [3] = Counselor/Official
+ * [4] = Citizen
+ * [5] = Visitor
+ * [6] = Guest
+ * [7] = Guide/JunOff
+ * [8] = Builder/VIP/Group
+ * [9] = (unused)
+ *
+ * Power level values:
+ * NO    = Cannot use this power
+ * YES   = Can use this power unconditionally
+ * YESLT = Can use on targets with level < own level
+ * YESEQ = Can use on targets with level <= own level
+ *
+ * MIGRATION NOTE: This array maps directly to database structure:
+ * CREATE TABLE powers (
+ *   id INT PRIMARY KEY,
+ *   name VARCHAR(32),
+ *   pow_num INT,
+ *   description TEXT,
+ *   class_id INT,
+ *   init_level ENUM('NO','YESLT','YESEQ','YES'),
+ *   max_level ENUM('NO','YESLT','YESEQ','YES')
+ * );
+ */
+
+/* Shorthand for readability */
+#define NO PW_NO
+#define YES PW_YES
+#define YESLT PW_YESLT
+#define YESEQ PW_YESEQ
+
+/* Director Admin Builder Official Citizen Visitor Guest Guide/VIP Builder/VIP VIP */
+static struct pow_list {
+  char *name; /* name of power */
+  ptype num; /* number of power */
+  char *description; /* description of what the power is */
+  int init[NUM_LIST_CLASSES];
+  int max[NUM_LIST_CLASSES];
+}  /* powers[]; */
+
+/* static struct pow_list  */
+powers[] =
+{
+  {
+    "Allquota", POW_ALLQUOTA, "Ability to alter everyone's quota at once",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Announce", POW_ANNOUNCE, "Ability to @announce for free",
+    {YES, YES, YES, YES, NO, NO, NO, NO,  NO,  YES},
+    {YES, YES, YES, YES, NO, NO, NO, YES, YES, YES}
+  },
+  {
+    "Ban", POW_BAN, "Ability to ban/unban people from channels",
+    {YES, YES, NO,  YES, NO, NO, NO, YES, NO, NO},
+    {YES, YES, YES, YES, NO, NO, NO, YES, NO, YES}
+  },
+  {
+    "Board", POW_BOARD, "Ability to be chairman of the +board.",
+    {YES, NO,  NO,  NO,  NO, NO, NO, NO,  NO,  YES},
+    {YES, YES, YES, YES, NO, NO, NO, YES, YES, YES}
+  },
+  {
+    "Boot", POW_BOOT, "Ability to @boot players off the game",
+    {YES, YESLT, NO,    YESLT, NO, NO, NO, NO,    NO, NO},
+    {YES, YESLT, YESLT, YESLT, NO, NO, NO, YESLT, NO, YESLT}
+  },
+  {
+    "Broadcast", POW_BROADCAST, "Ability to @broadcast a message",
+    {YES, YES, NO,  NO,  NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, YES, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Chown", POW_CHOWN, "Ability to change ownership of an object",
+    {YESEQ, YESEQ, YESEQ, YESLT, NO, NO, NO, YESLT, YESLT, YESLT},
+    {YES,   YESEQ, YESEQ, YESLT, NO, NO, NO, YESLT, YESLT, YESLT}
+  },
+  {
+    "Class", POW_CLASS, "Ability to re@classify somebody",
+    {YESLT, YESLT, NO, NO, NO, NO, NO, NO,    NO,    YESLT},
+    {YES,   YESEQ, NO, NO, NO, NO, NO, YESLT, YESLT, YESLT}
+  },
+  {
+    "Database", POW_DB, "Ability to use @dbck and other database utilities",
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#ifdef DBTOP_POW
+  {
+    "Dbtop", POW_DBTOP, "Abililty to do a @dbtop",
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#else
+  {
+    "NUTTIN0", POW_NUTTIN0, "Ability to do NUTTIN - Disabled POW_DBTOP",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#endif /* DBTOP_POW */
+  {
+    "Examine", POW_EXAMINE, "Ability to see people's homes and locations",
+    {YES, YESEQ, YESEQ, YESEQ, NO, NO, NO, YESLT, YESLT, YESLT},
+    {YES, YESEQ, YESEQ, YESEQ, NO, NO, NO, YESEQ, YESLT, YESEQ}
+  },
+#ifdef ALLOW_EXEC
+  {
+    "Exec", POW_EXEC, "Power to execute external programs",
+    {NO,  NO,  NO,  NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, NO, NO, NO, NO, NO, NO, NO}
+  },
+#else
+  {
+    "NUTTIN1", POW_NUTTIN1, "Ability to do NUTTIN - Disabled EXEC",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#endif /* allow_exec */
+  {
+    "Free", POW_FREE, "Ability to build, etc. for free",
+    {YES, YES, YES, NO, NO, NO, NO, NO,  NO,  NO},
+    {YES, YES, YES, NO, NO, NO, NO, YES, YES, YES}
+  },
+  {
+    "Functions", POW_FUNCTIONS, "Ability to get correct results from all functions",
+    {YES, YES, YES, YES, NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, YES, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Combat", POW_COMBAT, "Ability to do change Combat",
+    {NO,  NO,  NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#ifdef USE_INCOMING
+  {
+    "Incoming", POW_INCOMING, "Ability to connect net to non-players",
+    {YES, NO,  NO,  NO,  NO, NO, NO, NO,  NO,  NO},
+    {YES, YES, YES, YES, NO, NO, NO, YES, YES, NO}
+  },
+#else
+  {
+    "NUTTIN2", POW_NUTTIN2, "Ability to do NUTTIN - Disabled Incoming",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#endif
+  {
+    "Join", POW_JOIN, "Ability to 'join' players",
+    {YES, YES, YES, YES, NO, NO, NO, YESEQ, YESLT, YESEQ},
+    {YES, YES, YES, YES, NO, NO, NO, YES,   YESEQ, YESEQ}
+  },
+  {
+    "Member", POW_MEMBER, "Ability to change your name and password",
+    {YES, YES, YES, YES, YES, YES, NO, YES, YES, YES},
+    {YES, YES, YES, YES, YES, YES, NO, YES, YES, YES}
+  },
+  {
+    "Modify", POW_MODIFY, "Ability to modify other people's objects",
+    {YESEQ, YESEQ, YESEQ, YESEQ, NO, NO, NO, YESLT, YESLT, YESLT},
+    {YES,   YESEQ, YESEQ, YESEQ, NO, NO, NO, YESEQ, YESEQ, YESEQ}
+  },
+  {
+    "Money", POW_MONEY, "Power to have INFINITE money",
+    {YES, YES, YES, NO,  NO, NO, NO, NO, NO,  NO},
+    {YES, YES, YES, YES, NO, NO, NO, NO, YES, NO}
+  },
+  {
+    "MOTD", POW_MOTD, "Ability to set the Message of the Day",
+    {YES, YES, YES, NO,  NO,  NO,  NO, NO,  NO,  NO},
+    {YES, YES, YES, YES, YES, YES, NO, YES, YES, YES}
+  },
+  {
+    "Newpassword", POW_NEWPASS, "Ability to use the @newpassword command",
+    {YESLT, YESLT, YESLT, NO, NO, NO, NO, NO, NO, NO},
+    {YES,   YESLT, YESLT, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Noslay", POW_NOSLAY, "Power to not be killed",
+    {YES, YES, YES, YES, NO, NO, YES, NO,  YES, NO},
+    {YES, YES, YES, YES, NO, NO, YES, YES, YES, YES}
+  },
+  {
+    "Noquota", POW_NOQUOTA, "Power to have INFINITE quota",
+    {YES, YES, YES, NO,  NO, NO, NO, NO, NO,  NO},
+    {YES, YES, YES, YES, NO, NO, NO, NO, YES, NO}
+  },
+  {
+    "Nuke", POW_NUKE, "Power to @nuke other characters",
+    {YESLT, NO,    NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES,   YESLT, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#ifdef USE_OUTGOING
+  {
+    "Outgoing", POW_OUTGOING, "Ability to initiate net connections.",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#else
+  {
+    "NUTTIN3", POW_NUTTIN3, "Ability to do NUTTIN - Disabled Outgoing",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#endif
+  {
+    "Pcreate", POW_PCREATE, "Power to create new characters",
+    {YES, YES, YES, YES, NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, YES, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Poor", POW_POOR, "Power to use the @poor command",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Queue", POW_QUEUE, "Power to see everyone's commands in the queue",
+    {YES, YESEQ, YESLT, YESLT, NO, NO, NO, NO, NO, NO},
+    {YES, YES,   YES,   YES,   NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Remote", POW_REMOTE, "Ability to do remote whisper, @pemit, etc.",
+    {YES, YESEQ, YESLT, YESLT, NO, NO, NO, NO,  YESLT,  YESLT},
+    {YES, YES,   YES,   YES,   NO, NO, NO, YES, YES,    YES}
+  },
+  {
+    "Security", POW_SECURITY, "Ability to do various security-related things",
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Seeatr", POW_SEEATR, "Ability to see attributes on other people's things",
+    {YES, YESEQ, YESEQ, YESEQ, NO, NO, NO, YESLT, YESLT, YESLT},
+    {YES, YESEQ, YESEQ, YESEQ, NO, NO, NO, YESEQ, YESEQ, YESEQ}
+  },
+  {
+    "Setpow", POW_SETPOW, "Ability to alter people's powers",
+    {YESLT, YESLT, YESLT, NO, NO, NO, NO, NO, NO, NO},
+    {YES,   YESLT, YESLT, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Setquota", POW_SETQUOTA, "Ability to change people's quotas",
+    {YES, YESLT, YESLT, YESLT, NO, NO, NO, NO, NO, NO},
+    {YES, YESLT, YESLT, YESLT, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Slay", POW_SLAY, "Ability to use the 'slay' command",
+    {YES, YESLT, YESLT, YESLT, NO, NO, NO, YESLT, NO, NO},
+    {YES, YES,   YES,   YES,   NO, NO, NO, YESLT, NO, NO}
+  },
+  {
+    "Shutdown", POW_SHUTDOWN, "Ability to @shutdown the game",
+    {YES, NO,  NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Summon", POW_SUMMON, "Ability to 'summon' other players",
+    {YESLT, YESLT, YESLT, YESLT, NO, NO, NO, YESLT, YESLT, YESLT},
+    {YES,   YES,   YES,   YESEQ, NO, NO, NO, YESLT, YESLT, YESLT}
+  },
+  {
+    "Slave", POW_SLAVE, "Ability to set the slave flag.",
+    {YESLT, YESLT, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES,   YESLT, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#ifdef USE_SPACE
+  {
+    "Space", POW_SPACE, "Ability to control the cosmos",
+    {NO,  NO,  NO,  NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, NO, NO, NO, NO, NO, NO, NO}
+  },
+#else
+  {
+    "NUTTIN4", POW_NUTTIN4, "Ability to do NUTTIN - Disabled Space",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+#endif
+  {
+    "NUTTIN5", POW_NUTTIN5, "Ability to do NUTTIN - Removed Spoof",
+    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Stats", POW_STATS, "Ability to @stat other ppl",
+    {YES, YES, YES, YES, NO, NO, NO, NO,  NO,  NO},
+    {YES, YES, YES, YES, NO, NO, NO, YES, YES, NO}
+  },
+  {
+    "Steal", POW_STEAL, "Ability to give negative amounts of credits",
+    {YES, YES, NO,  NO,  NO, NO, NO, NO,  NO,  NO},
+    {YES, YES, YES, YES, NO, NO, NO, YES, YES, NO}
+  },
+  {
+    "Teleport", POW_TELEPORT, "Ability to use unlimited @tel",
+    {YES, YES, NO,  NO,  NO, NO, NO, YESLT, YESLT, YESLT},
+    {YES, YES, YES, YES, NO, NO, NO, YESLT, YESLT, YESLT}
+  },
+  {
+    "WizAttributes", POW_WATTR, "Ability to set Last, Queue, etc",
+    {YES, YES, NO,  NO,  NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, YES, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "WizFlags", POW_WFLAGS, "Ability to set Temple, etc",
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "Who", POW_WHO, "Ability to see classes and hidden players on the WHO list",
+    {YES, YESLT, YESLT, YESLT, NO, NO, NO, NO,    NO, NO},
+    {YES, YES,   YESEQ, YESEQ, NO, NO, NO, YESEQ, NO, NO}
+  },
+  {
+    "Channel", POW_CHANNEL, "Ability to maintain all channels.",
+    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+};
+
+/* Undefine shorthand */
+#undef NO
+#undef YES
+#undef YESLT
+#undef YESEQ
+
+
+
+/* End of power configuration data */
+
 #endif /* _LOADED_CONFIG_ */

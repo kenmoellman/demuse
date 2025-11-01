@@ -699,7 +699,8 @@ extern void suspectlog P((dbref, char *));
 
 /* From powerlist.c */
 extern char *class_to_name P((int));
-extern int name_to_class P((char *));
+//extern int name_to_class P((char *));
+extern int name_to_class P((const char *));
 extern int class_to_list_pos P((int));
 
 /* From powers.c */
