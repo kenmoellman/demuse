@@ -66,7 +66,7 @@ typedef long dbref;  /* Database reference - offset into db array */
 #endif
 
 typedef long object_flag_type;
-typedef char ptype;  /* Power type for player powers/permissions */
+//typedef char ptype;  /* Power type for player powers/permissions */
 
 /* ============================================================================
  * DATABASE I/O FUNCTION DECLARATIONS
@@ -568,12 +568,6 @@ struct all_atr_list {
     int numinherit;                 /* Inheritance depth */
     struct all_atr_list *next;      /* Next in list */
 };
-
-/* ============================================================================
- * EXTERNAL FUNCTION DECLARATIONS (Powers and Permissions)
- * ============================================================================ */
-
-#include "powers.h"
 
 /* ============================================================================
  * CONFIGURATION CONSTANTS

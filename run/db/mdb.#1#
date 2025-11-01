@@ -38,63 +38,63 @@ root
 870406745
 0
 10/40/y/2/y/3/y/4/y/5/=/6/</7/y/8/y/9/y/10/y/11/y/12/y/13/y/15/y/16/</17/y/18/y/19/</20/y/22/y/23/y/25/</27/y/28/y/29/</26/y/30/y/31/y/32/y/33/y/34/y/35/y/36/y/38/y/39/y/41/y/0
->25
+>1020
 -1
-1632100574
->30
+10790470
+>1022
 -1
-1630544507
->100
+ ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
+>50
 -1
-$poo *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=poo [add(1,v(0))]},{dtw 0}
->39
+public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
+>1110
 -1
-whee
->6
+39
+>101
 -1
-this is the root..
->42
+1366
+>102
 -1
-r
->52
--1
-3000
->38
--1
-56
->140
--1
-nafoichp
->5
--1
-XXjTP3nvQXZf2
->129
+$dtw *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=dtw [add(1,v(0))]},{@echo ALL DUN!!}
+>159
 -1
 #1
 >158
 -1
 #1
->159
+>129
 -1
 #1
->102
+>5
 -1
-$dtw *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=dtw [add(1,v(0))]},{@echo ALL DUN!!}
->101
+XXjTP3nvQXZf2
+>140
 -1
-1366
->1110
+nafoichp
+>38
 -1
-39
->50
+56
+>52
 -1
-public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
->1022
+3000
+>42
 -1
- ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
->1020
+r
+>6
 -1
-10790470
+this is the root..
+>39
+-1
+whee
+>100
+-1
+$poo *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=poo [add(1,v(0))]},{dtw 0}
+>30
+-1
+1630544507
+>25
+-1
+1632100574
 <
 0
 0
@@ -116,42 +116,42 @@ Wizard
 913693545
 894306263
 10/2/y/3/y/4/y/5/y/6/=/7/</8/y/9/y/10/y/12/y/13/y/16/y/17/y/18/=/19/y/21/</22/y/23/y/24/</26/y/28/y/29/y/30/y/31/y/32/</33/y/34/y/35/y/36/y/37/</39/y/40/y/41/y/42/y/43/y/44/y/45/y/0
->1020
--1
-158
->25
--1
-1630141913
->30
--1
-1630141807
->50
--1
-public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
->6
-42
-#4
->8
-42
-llama
->9
-42
-llama
->7
-42
-894306263
->38
--1
-93
->52
--1
-2010
->5
--1
-XXgnEgxSD8eMs
 >42
 -1
 god
+>5
+-1
+XXgnEgxSD8eMs
+>52
+-1
+2010
+>38
+-1
+93
+>7
+42
+894306263
+>9
+42
+llama
+>8
+42
+llama
+>6
+42
+#4
+>50
+-1
+public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
+>30
+-1
+1630141807
+>25
+-1
+1630141913
+>1020
+-1
+158
 <
 1
 42
@@ -173,21 +173,21 @@ wiz_parent
 1187841
 799855031
 799602294
->3
-3
-$jail *=*:@tel pnum(v(0))=ifelse(match(v(1),{lo*}),{#1375},{#646})
->52
--1
-1
->2
-3
-$boot *:@set %0=slave;@slay %0;@boot %0
->1
-3
-$@slave *:@set %0=slave
 >0
 3
 $@unslave *:@set %0=!slave
+>1
+3
+$@slave *:@set %0=slave
+>2
+3
+$boot *:@set %0=slave;@slay %0;@boot %0
+>52
+-1
+1
+>3
+3
+$jail *=*:@tel pnum(v(0))=ifelse(match(v(1),{lo*}),{#1375},{#646})
 <
 0
 0
@@ -220,144 +220,144 @@ Universal Zone
 17342465
 909785609
 0
->0
-4
-$gimmie the ball:@tel #233=loc([v(#)])
->2
-4
-$ls -al:@npemit %#=total 16;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] .;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] ..;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(9)]19 [time()] dumbass.txt;@npemit %#=master:~/>
->138
--1
-@chemit connections=* Disconnect: %n - [time()]
->136
--1
-@chemit connections=* Connect: %n - [time()]
->50
--1
-public *log_force
->3
-4
-$ls:@npemit %#=dumbass.txt;@npemit %#=master:~/>
->23
-4
-$@selfboot:@swi type(v(#))=Player,{@pemit v(#)=Okay, you will be booted three times in a row, in 5 seconds.;@wait 5={@boot [v(#)]=Selfboot;@boot [v(#)]=Selfboot; @boot [v(#)]=Selfboot}; @wait 30=@pemit v(#)=Welcome back.},@pemit v(#)=Only players can be booted.
->6
-4
-$register *--*--*--*:+com *character=Character Request: %0--%1--%2--%3;@pe %#=Your character request has been sent. expect action within 48 hours. You will be contacted online during this session, or via email.;@force #20=+mail wm=Registration request: %0--%1--%2--%3
->8
-4
-Allquota Announce Boot Broadcast Chown Class Database Examine Free Who Outgoing Join Member Modify Money Newpassword Noslay Noquota Nuke Pcreate Poor Queue Exec Seeatr Setpow Slay Shutdown Summon Slave Spoof Stats Steal Teleport WizAttributes WizFlags Remote Security Incoming Functions Dbtop Setquota
->7
-4
-$think *:%# :. o 0 ( %%%[v(0)%%%] )
->9
-4
-$+queuelag:[s({@pemit %#=Difference of commands: %[tms(sub(xtime(),[xtime()]))] - [rtime()] & %[rtime()]})]
->5
--1
-XXdsfghkj
->11
-4
-$@memory *:@swi num(strcat(*,v(0)))=#-1,@pemit %#=who?,@pemit %#=[name(strcat(*,v(0)))] is using up [playmem(strcat(*,v(0)))] bytes.
->12
-4
-$@memory:@pemit v(#)=You are using up [playmem(v(#))] bytes.
->21
-4
-$@relink *=*:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pe %#=That's not yours to fiddle with.},#-1,{@pe %#=I don't know what that is.},{@swi lor(pos(flags(rmatch(v(#),v(1))),L),controls(v(#),rmatch(v(#),v(1)),modify))=1,{@fo %#={@unlink [rmatch(v(#),v(0))];@link [rmatch(v(#),v(0))]=[rmatch(v(#),v(1))]}},{@pe %#=Permission Denied.}
->14
-4
-[s_as(%s,v(0),v(!))]
->118
--1
-$@unprotect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0));@pe %#=That object is now unprotected.}
->117
--1
-$@protect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0))=-1;@pe %#=That object is now protected.}
->125
--1
-#26
->25
-4
-$@@_* *=*:%# @defattr strcat(v(1),strcat(/,v(0)))=inherit;%# @set v(1)=%[v(0)%]:%[v(2)%]
->120
--1
-$@unprotect:@pemit %#=Unprotect what?
->101
--1
-$&*:@remit loc(%#)=%[v(0)%] --%n.(%#)
->115
--1
-$@poof:@pemit %#=What object do you want to get rid of?
->24
-4
-$@_* *:@swi v(1)=*=*,{%# @@_%%%[v(0)%%%] %%%[v(1)%%%]},{%# @defattr strcat(%%%[v(1)%%%],strcat(/,%%%[v(0)%%%]))}
->52
--1
-1
->57
--1
--5:y
->6
--1
-Universal Zone Object
->119
--1
-$@protect:@pemit %#=Protect what?
->20
-4
-$@searchobj*:@swi v(0)={*=*},,@pe %#=Search what for what?
->16
-4
-[s_as(%p,v(0),v(!))]
->15
-4
-[s_as(%o,v(0),v(!))]
->19
-4
-$@searchobj *=*:@fo %#=@pe me=Found %1 in: %[foreach(lattr(%0),{%[if(match(get(%0,v(0)),%1),v(0))%]})%]
->13
-4
-$@relink *:@swi v(0)={*=*},,{@fo %#=@unlink %0}
->108
--1
-$@getalias *:@pe %#=[s_with({The alias for %[name(%0)] is: %[get(%0,alias)]},pnum(v(0))]
->10
-4
-nihilis
->22
-4
-$@cpattr */*=*/*:%# @%1 %0=%[get(%2,%3)]
->42
-6
-[controls(v(0),#3,v(1))]
->113
--1
-$@poof *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.}
->4
-4
-$quit:@pe %#=Try /quit or QUIT.
->5
-4
-$exit:@pe %#=Try /quit or QUIT to log out, or;@pe %#=try leave if you're trying to exit an object.
->30
--1
-890339469
->25
--1
-890339598
->1020
--1
-694
->11
-6
-thall museum univ mall bugs court history chart
->1
-4
-$date:@pe %#=[time()]
 >17
 4
 $@who:@pemit %#=Duh. try 'who'.
+>1
+4
+$date:@pe %#=[time()]
+>11
+6
+thall museum univ mall bugs court history chart
+>1020
+-1
+694
+>25
+-1
+890339598
+>30
+-1
+890339469
+>5
+4
+$exit:@pe %#=Try /quit or QUIT to log out, or;@pe %#=try leave if you're trying to exit an object.
+>4
+4
+$quit:@pe %#=Try /quit or QUIT.
+>113
+-1
+$@poof *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.}
+>42
+6
+[controls(v(0),#3,v(1))]
+>22
+4
+$@cpattr */*=*/*:%# @%1 %0=%[get(%2,%3)]
+>10
+4
+nihilis
+>108
+-1
+$@getalias *:@pe %#=[s_with({The alias for %[name(%0)] is: %[get(%0,alias)]},pnum(v(0))]
+>13
+4
+$@relink *:@swi v(0)={*=*},,{@fo %#=@unlink %0}
+>19
+4
+$@searchobj *=*:@fo %#=@pe me=Found %1 in: %[foreach(lattr(%0),{%[if(match(get(%0,v(0)),%1),v(0))%]})%]
+>15
+4
+[s_as(%o,v(0),v(!))]
+>16
+4
+[s_as(%p,v(0),v(!))]
+>20
+4
+$@searchobj*:@swi v(0)={*=*},,@pe %#=Search what for what?
+>119
+-1
+$@protect:@pemit %#=Protect what?
+>6
+-1
+Universal Zone Object
+>57
+-1
+-5:y
+>52
+-1
+1
+>24
+4
+$@_* *:@swi v(1)=*=*,{%# @@_%%%[v(0)%%%] %%%[v(1)%%%]},{%# @defattr strcat(%%%[v(1)%%%],strcat(/,%%%[v(0)%%%]))}
+>115
+-1
+$@poof:@pemit %#=What object do you want to get rid of?
+>101
+-1
+$&*:@remit loc(%#)=%[v(0)%] --%n.(%#)
+>120
+-1
+$@unprotect:@pemit %#=Unprotect what?
+>25
+4
+$@@_* *=*:%# @defattr strcat(v(1),strcat(/,v(0)))=inherit;%# @set v(1)=%[v(0)%]:%[v(2)%]
+>125
+-1
+#26
+>117
+-1
+$@protect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0))=-1;@pe %#=That object is now protected.}
+>118
+-1
+$@unprotect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0));@pe %#=That object is now unprotected.}
+>14
+4
+[s_as(%s,v(0),v(!))]
+>21
+4
+$@relink *=*:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pe %#=That's not yours to fiddle with.},#-1,{@pe %#=I don't know what that is.},{@swi lor(pos(flags(rmatch(v(#),v(1))),L),controls(v(#),rmatch(v(#),v(1)),modify))=1,{@fo %#={@unlink [rmatch(v(#),v(0))];@link [rmatch(v(#),v(0))]=[rmatch(v(#),v(1))]}},{@pe %#=Permission Denied.}
+>12
+4
+$@memory:@pemit v(#)=You are using up [playmem(v(#))] bytes.
+>11
+4
+$@memory *:@swi num(strcat(*,v(0)))=#-1,@pemit %#=who?,@pemit %#=[name(strcat(*,v(0)))] is using up [playmem(strcat(*,v(0)))] bytes.
+>5
+-1
+XXdsfghkj
+>9
+4
+$+queuelag:[s({@pemit %#=Difference of commands: %[tms(sub(xtime(),[xtime()]))] - [rtime()] & %[rtime()]})]
+>7
+4
+$think *:%# :. o 0 ( %%%[v(0)%%%] )
+>8
+4
+Allquota Announce Boot Broadcast Chown Class Database Examine Free Who Outgoing Join Member Modify Money Newpassword Noslay Noquota Nuke Pcreate Poor Queue Exec Seeatr Setpow Slay Shutdown Summon Slave Spoof Stats Steal Teleport WizAttributes WizFlags Remote Security Incoming Functions Dbtop Setquota
+>6
+4
+$register *--*--*--*:+com *character=Character Request: %0--%1--%2--%3;@pe %#=Your character request has been sent. expect action within 48 hours. You will be contacted online during this session, or via email.;@force #20=+mail wm=Registration request: %0--%1--%2--%3
+>23
+4
+$@selfboot:@swi type(v(#))=Player,{@pemit v(#)=Okay, you will be booted three times in a row, in 5 seconds.;@wait 5={@boot [v(#)]=Selfboot;@boot [v(#)]=Selfboot; @boot [v(#)]=Selfboot}; @wait 30=@pemit v(#)=Welcome back.},@pemit v(#)=Only players can be booted.
+>3
+4
+$ls:@npemit %#=dumbass.txt;@npemit %#=master:~/>
+>50
+-1
+public *log_force
+>136
+-1
+@chemit connections=* Connect: %n - [time()]
+>138
+-1
+@chemit connections=* Disconnect: %n - [time()]
+>2
+4
+$ls -al:@npemit %#=total 16;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] .;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] ..;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(9)]19 [time()] dumbass.txt;@npemit %#=master:~/>
+>0
+4
+$gimmie the ball:@tel #233=loc([v(#)])
 <
 2
 7
@@ -458,12 +458,12 @@ New Default Universe
 1048579
 0
 913739301
->1110
--1
-1
 >52
 -1
 9
+>1110
+-1
+1
 <
 0
 0
@@ -492,147 +492,147 @@ Universal Functions
 1090561
 892496020
 0
->0
-6
-[ifelse(match(v(0),),rtime2(xtime()),rtime2(v(0)))]
->40
-6
-[ifelse(gt(strlen(cstrip(v(0))),v(1)),mid(v(0),div(sub(strlen(cstrip(v(0))),v(1)),2),v(1)),ljust(strcat(spc(div(sub(v(1),strlen(cstrip(v(0)))),2)),v(0)),v(1)))]
->1
-6
-[add(fadd(v(0),0.5),0)]
->3
-6
-[remove(v(0),wcount(v(0)),1)]
->8
-6
-[extract(v(0),wcount(v(0)),1)]
->9
-6
-[lnot(truth(comp(v(0),v(1))))]
->12
-6
-[switch(wcount(v(0)),0,{},1,name(v(0)),2,s({[name(extract(v(0),1,1))] and [name(extract(v(0),2,1))]}),strcat(foreach(remove(v(0),wcount(v(0)),1),{[name(v(0))], }),s({ and [name(extract(v(0),wcount(v(0)),1))]})))]
->15
-6
-[v(0)][spc(2)][v(1)]
->16
-6
-[v(0)] [v(1)]
->17
-6
-[ifelse(land(gt(wcount(v(0)),sub(v(1),1)),gt(v(1),0)),s({[extract(v(0),1,sub(v(1),1))] [first(v(2))] [extract(v(0),add(v(1),1),wcount(v(0)))]}),s({[v(0)]}))]
->20
-6
-[num(strcat(*,v(0)))]
->22
-6
-[lnot(scomp(v(0),v(1)))]
->46
-6
-[fsqrt(fadd(fadd(pow(fsub(v(0),v(3)),2),pow(fsub(v(1),v(4)),2)),pow(fsub(v(2),v(5)),2)))]
->39
-6
-[fsqrt(fadd(pow(fsub(v(0),v(2)),2),pow(fsub(v(1),v(3)),2)))]
->45
-6
-[mid(v(0),0,sub(v(2),1))][v(1)][mid(v(0),v(2),sub(strlen(v(0)),sub(v(2),1)))]
->25
-6
-[time(D,v(0))]
->41
-6
-[truth(pos(mid(v(1),0,1),flags(v(0))))]
->43
-6
-[lnot(mod(v(0),2))]
->52
--1
-1
->31
-6
-[match(fcomp(v(0),v(1)),1)]
->32
-6
-[match(fcomp(v(0),v(1)),-1)]
->44
-6
-[mod(v(0),2)]
->26
-6
-[objlist(con(v(0)))]
->27
-6
-[objlist(exit(v(0)))]
->28
-6
-[s(ifelse(match(mid(extract(time(D,v(0)),4,1),0,2),<12),ifelse(match(mid(extract(time(D,v(0)),4,1),0,2),<1),strcat(12,strcat(mid(extract(time(D,v(0)),4,1),2,6),% AM)),strcat(extract(time(D,v(0)),4,1),% AM)),strcat(ifelse(match(sub(mid(extract(time(D,v(0)),4,1),0,2),12),0),12,if(match(sub(mid(extract(time(D,v(0)),4,1),0,2),12),<10),0)),strcat(if(match(mid(extract(time(D,v(0)),4,1),0,2),>12),sub(mid(extract(time(D,v(0)),4,1),0,2),12)),strcat(mid(extract(time(D,v(0)),4,1),2,6),% PM)))))]
->29
-6
-[simp2(fadd(v(0),0))]
->30
-6
-[ifelse(mid(v(0),sub(strlen(v(0)),1),1),v(0),ifelse(mid(v(0),sub(strlen(v(0)),2),1),mid(v(0),0,sub(strlen(v(0)),1)),ifelse(mid(v(0),sub(strlen(v(0)),3),1),mid(v(0),0,sub(strlen(v(0)),2)),ifelse(mid(v(0),sub(strlen(v(0)),4),1),mid(v(0),0,sub(strlen(v(0)),3)),ifelse(mid(v(0),sub(strlen(v(0)),5),1),mid(v(0),0,sub(strlen(v(0)),4)),ifelse(mid(v(0),sub(strlen(v(0)),6),1),mid(v(0),0,sub(strlen(v(0)),5)),if(mid(v(0),sub(strlen(v(0)),7),1),mid(v(0),0,sub(strlen(v(0)),7)))))))))]
->33
-6
-3.141593
->34
-6
-[ifelse(match(type(loc(loc(loc(loc(loc(loc(loc(loc(loc(loc(v(0)))))))))))),Room),loc(loc(loc(loc(loc(loc(loc(loc(loc(loc(v(0))))))))))),#-1)]
->35
-6
-[ifelse(match(mid(v(0),0,1),a),an,ifelse(match(mid(v(0),0,1),e),an,ifelse(match(mid(v(0),0,1),i),an,ifelse(match(mid(v(0),0,1),o),an,ifelse(match(mid(v(0),0,1),u),an,a)))))]
->36
-6
-[if(lnot(match(v(0),1)),v(1))]
->38
-6
-[ifelse(match(loc(v(0)),v(1)),1,ifelse(match(loc(v(1)),v(0)),1,ifelse(match(loc(v(0)),loc(v(1))),1,0)))]
->37
-6
-[ifelse(match(loc(v(0)),#-1),#-1,ifelse(match(loc(v(1)),#-1),#-1,nearby2(num(v(0)),num(v(1)))))]
->42
-6
-[controls(v(0),#2,v(1))]
->23
-6
-uh oh... someone used brf instead of unparse on [unparse(v(0))]. use unparse.
->14
-6
-[strcat(v(0),switch(mod(v(0),10),1,st,2,nd,3,rd,th))]
->13
-6
-[truth(match(parents(v(0)),v(1))]
->11
-6
-[switch(wcount(v(0)),0,{},1,v(0),2,s({[extract(v(0),1,1)] and [extract(v(0),2,1)]}),strcat(foreach(remove(v(0),wcount(v(0)),1),{[v(0)], }),s({ and [extract(v(0),wcount(v(0)),1)]})))]
->10
-6
-[remove(lnum(add(v(0),1)),1,1)]
->7
-6
-[lnot(match(comp(v(0),v(1)),-1))]
->6
-6
-[lnot(lt(v(0),v(1)))]
->5
-6
-[lnot(match(comp(v(1),v(0)),-1))]
->4
-6
-[lnot(gt(v(0),v(1)))]
->2
-6
-[mid(v(0),0,v(1))][if(gt(v(1),strlen(v(0))),string(.,sub(v(1),strlen(v(0)))))]
->24
-6
-[cname(v(0))]([num(v(0))][flags(v(0))])
->18
-6
-[cname(v(0))]([num(v(0))])
 >21
 6
 [ifelse(streq(num(v(0)),#128),cname(#128),ifelse(streq(cname(v(0)),cname(owner(v(0)))),cname(v(0)),unparse(v(0))))]
+>18
+6
+[cname(v(0))]([num(v(0))])
+>24
+6
+[cname(v(0))]([num(v(0))][flags(v(0))])
+>2
+6
+[mid(v(0),0,v(1))][if(gt(v(1),strlen(v(0))),string(.,sub(v(1),strlen(v(0)))))]
+>4
+6
+[lnot(gt(v(0),v(1)))]
+>5
+6
+[lnot(match(comp(v(1),v(0)),-1))]
+>6
+6
+[lnot(lt(v(0),v(1)))]
+>7
+6
+[lnot(match(comp(v(0),v(1)),-1))]
+>10
+6
+[remove(lnum(add(v(0),1)),1,1)]
+>11
+6
+[switch(wcount(v(0)),0,{},1,v(0),2,s({[extract(v(0),1,1)] and [extract(v(0),2,1)]}),strcat(foreach(remove(v(0),wcount(v(0)),1),{[v(0)], }),s({ and [extract(v(0),wcount(v(0)),1)]})))]
+>13
+6
+[truth(match(parents(v(0)),v(1))]
+>14
+6
+[strcat(v(0),switch(mod(v(0),10),1,st,2,nd,3,rd,th))]
+>23
+6
+uh oh... someone used brf instead of unparse on [unparse(v(0))]. use unparse.
+>42
+6
+[controls(v(0),#2,v(1))]
+>37
+6
+[ifelse(match(loc(v(0)),#-1),#-1,ifelse(match(loc(v(1)),#-1),#-1,nearby2(num(v(0)),num(v(1)))))]
+>38
+6
+[ifelse(match(loc(v(0)),v(1)),1,ifelse(match(loc(v(1)),v(0)),1,ifelse(match(loc(v(0)),loc(v(1))),1,0)))]
+>36
+6
+[if(lnot(match(v(0),1)),v(1))]
+>35
+6
+[ifelse(match(mid(v(0),0,1),a),an,ifelse(match(mid(v(0),0,1),e),an,ifelse(match(mid(v(0),0,1),i),an,ifelse(match(mid(v(0),0,1),o),an,ifelse(match(mid(v(0),0,1),u),an,a)))))]
+>34
+6
+[ifelse(match(type(loc(loc(loc(loc(loc(loc(loc(loc(loc(loc(v(0)))))))))))),Room),loc(loc(loc(loc(loc(loc(loc(loc(loc(loc(v(0))))))))))),#-1)]
+>33
+6
+3.141593
+>30
+6
+[ifelse(mid(v(0),sub(strlen(v(0)),1),1),v(0),ifelse(mid(v(0),sub(strlen(v(0)),2),1),mid(v(0),0,sub(strlen(v(0)),1)),ifelse(mid(v(0),sub(strlen(v(0)),3),1),mid(v(0),0,sub(strlen(v(0)),2)),ifelse(mid(v(0),sub(strlen(v(0)),4),1),mid(v(0),0,sub(strlen(v(0)),3)),ifelse(mid(v(0),sub(strlen(v(0)),5),1),mid(v(0),0,sub(strlen(v(0)),4)),ifelse(mid(v(0),sub(strlen(v(0)),6),1),mid(v(0),0,sub(strlen(v(0)),5)),if(mid(v(0),sub(strlen(v(0)),7),1),mid(v(0),0,sub(strlen(v(0)),7)))))))))]
+>29
+6
+[simp2(fadd(v(0),0))]
+>28
+6
+[s(ifelse(match(mid(extract(time(D,v(0)),4,1),0,2),<12),ifelse(match(mid(extract(time(D,v(0)),4,1),0,2),<1),strcat(12,strcat(mid(extract(time(D,v(0)),4,1),2,6),% AM)),strcat(extract(time(D,v(0)),4,1),% AM)),strcat(ifelse(match(sub(mid(extract(time(D,v(0)),4,1),0,2),12),0),12,if(match(sub(mid(extract(time(D,v(0)),4,1),0,2),12),<10),0)),strcat(if(match(mid(extract(time(D,v(0)),4,1),0,2),>12),sub(mid(extract(time(D,v(0)),4,1),0,2),12)),strcat(mid(extract(time(D,v(0)),4,1),2,6),% PM)))))]
+>27
+6
+[objlist(exit(v(0)))]
+>26
+6
+[objlist(con(v(0)))]
+>44
+6
+[mod(v(0),2)]
+>32
+6
+[match(fcomp(v(0),v(1)),-1)]
+>31
+6
+[match(fcomp(v(0),v(1)),1)]
+>52
+-1
+1
+>43
+6
+[lnot(mod(v(0),2))]
+>41
+6
+[truth(pos(mid(v(1),0,1),flags(v(0))))]
+>25
+6
+[time(D,v(0))]
+>45
+6
+[mid(v(0),0,sub(v(2),1))][v(1)][mid(v(0),v(2),sub(strlen(v(0)),sub(v(2),1)))]
+>39
+6
+[fsqrt(fadd(pow(fsub(v(0),v(2)),2),pow(fsub(v(1),v(3)),2)))]
+>46
+6
+[fsqrt(fadd(fadd(pow(fsub(v(0),v(3)),2),pow(fsub(v(1),v(4)),2)),pow(fsub(v(2),v(5)),2)))]
+>22
+6
+[lnot(scomp(v(0),v(1)))]
+>20
+6
+[num(strcat(*,v(0)))]
+>17
+6
+[ifelse(land(gt(wcount(v(0)),sub(v(1),1)),gt(v(1),0)),s({[extract(v(0),1,sub(v(1),1))] [first(v(2))] [extract(v(0),add(v(1),1),wcount(v(0)))]}),s({[v(0)]}))]
+>16
+6
+[v(0)] [v(1)]
+>15
+6
+[v(0)][spc(2)][v(1)]
+>12
+6
+[switch(wcount(v(0)),0,{},1,name(v(0)),2,s({[name(extract(v(0),1,1))] and [name(extract(v(0),2,1))]}),strcat(foreach(remove(v(0),wcount(v(0)),1),{[name(v(0))], }),s({ and [name(extract(v(0),wcount(v(0)),1))]})))]
+>9
+6
+[lnot(truth(comp(v(0),v(1))))]
+>8
+6
+[extract(v(0),wcount(v(0)),1)]
+>3
+6
+[remove(v(0),wcount(v(0)),1)]
+>1
+6
+[add(fadd(v(0),0.5),0)]
+>40
+6
+[ifelse(gt(strlen(cstrip(v(0))),v(1)),mid(v(0),div(sub(strlen(cstrip(v(0))),v(1)),2),v(1)),ljust(strcat(spc(div(sub(v(1),strlen(cstrip(v(0)))),2)),v(0)),v(1)))]
+>0
+6
+[ifelse(match(v(0),),rtime2(xtime()),rtime2(v(0)))]
 <
 0
 1
@@ -795,39 +795,39 @@ Global Zone Parent for Nifty Actions
 1090561
 888528117
 766647603
->5
-7
-[v(#)] +com %3=:%[delete(na_make_message([v(#)],%0,%1),0,add(1,strlen(v(c))))%]
->8
-7
-@swi 1=[streq(get(v(#),strcat(nav_,v(0))),NO MATCH)],{@pemit %#=what action?},[streq(get(v(1),strcat(nao_,v(0))),NO MATCH)],{@pemit %#=[unparse(v(1))] doesn't respond to that.},{[s(get(me,v(2)))];@wait 5=@tr_as strcat(%1,strcat(/,strcat(naa_,%0)))=%#,%0}
->2
-7
-$nap * *:[s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_page)]
->3
-7
-$ua*:@pemit %#=dolt. no universal actions here. only nifty actions. see 'na help'.
->4
-7
-$na help:@pemit %#={shkoo's nifty actions:};@pemit %#={ na <action> <player>};@pemit %#={ nac <action> <player> on <channel>};@pemit %#=;@pemit %#=for info on adding new actions, contact draco.
->9
-7
-$nac * * on *:[s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_com,v(2))]
->52
--1
-1
->10
-7
-$na * *:[s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_room)]
->7
-7
-@remit [loc(v(#))]=%%%[na_make_message([v(#)],%0,%1)%%%];@swi [loc(v(#))]=[loc(v(1))],,{@remit [loc(v(1))]=%%%%%%%[na_make_message([v(#)],%0,%1)%%%%%%%]}
->6
-7
-[sname(v(0))] [s_as_with(get(v(0),strcat(nav_,v(1))),v(2),v(0))] [sname(v(2))] [s_as_with(get(v(2),strcat(nao_,v(1))),v(0),v(2))]
 >1
 7
 [v(#)] page %1=:%[rest(na_make_message([v(#)],%0,%1))%]
+>6
+7
+[sname(v(0))] [s_as_with(get(v(0),strcat(nav_,v(1))),v(2),v(0))] [sname(v(2))] [s_as_with(get(v(2),strcat(nao_,v(1))),v(0),v(2))]
+>7
+7
+@remit [loc(v(#))]=%%%[na_make_message([v(#)],%0,%1)%%%];@swi [loc(v(#))]=[loc(v(1))],,{@remit [loc(v(1))]=%%%%%%%[na_make_message([v(#)],%0,%1)%%%%%%%]}
+>10
+7
+$na * *:[s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_room)]
+>52
+-1
+1
+>9
+7
+$nac * * on *:[s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_com,v(2))]
+>4
+7
+$na help:@pemit %#={shkoo's nifty actions:};@pemit %#={ na <action> <player>};@pemit %#={ nac <action> <player> on <channel>};@pemit %#=;@pemit %#=for info on adding new actions, contact draco.
+>3
+7
+$ua*:@pemit %#=dolt. no universal actions here. only nifty actions. see 'na help'.
+>2
+7
+$nap * *:[s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_page)]
+>8
+7
+@swi 1=[streq(get(v(#),strcat(nav_,v(0))),NO MATCH)],{@pemit %#=what action?},[streq(get(v(1),strcat(nao_,v(0))),NO MATCH)],{@pemit %#=[unparse(v(1))] doesn't respond to that.},{[s(get(me,v(2)))];@wait 5=@tr_as strcat(%1,strcat(/,strcat(naa_,%0)))=%#,%0}
+>5
+7
+[v(#)] +com %3=:%[delete(na_make_message([v(#)],%0,%1),0,add(1,strlen(v(c))))%]
 <
 0
 1
@@ -882,12 +882,12 @@ nacmd
 1048580
 0
 1630138898
->1110
--1
-56
 >52
 -1
 19
+>1110
+-1
+56
 <
 0
 0
@@ -1593,54 +1593,54 @@ bank machine parent
 8397825
 799482346
 799468735
->2
-33
-$menu:@npe %#= .[string(-,50)].;@npe %#= |[cjust({Bank of Billbob ATM},50)]|;@npe %#= | <[string(-,46)]> |;@npe %#= |[cjust({deposit <amount>},50)]|;@npe %#= |[cjust({withdraw <amount>},50)]|;@npe %#= |[cjust({balance},50)]|;@npe %#= |[cjust({transfer <account number>=<amount>},50)]|;@npe %#= |[cjust({remove card},50)]|;@npe %#= `[string(-,50)]'
->5
-33
-$transfer *=*:/[if(v(valid_pin),v(#))]/@swi gt(v(1),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(1),0),ifelse(is_a(s(#%0),#1203),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(1));@cash_balance #%0=add(get(#%0/cash_balance),v(1));@pe %#=*BEEP* Transaction completed. Please remember to 'remove card' when you are done with your transactions.;@x_log con(me)=[xtime()]_TW_[num(here)]_[num(s(#%0))]_[add(v(1),0)];@x_log #%0=[xtime()]_TD_[num(here)]_[con(me)]_[add(v(1),0)]},{@pe %#=*BEEP* Error. No such account number.}),{@pe %#=*BEEP* Error. Positive amounts only.})]}
->4
-33
-$remove card:/[if(v(valid_pin),v(#))]/@valid_pin me=0;give %#=con(me);@pe %#=*BEEP* Thank you for doing business with the Bank of Billbob. Have a nice day!;@available me=1
->11
-33
-1
->52
--1
-1
->8
-33
-0
->9
-33
-0
->3
-33
-[rand(10)][rand(10)][rand(10)][rand(10)]
->7
-33
-$withdraw *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(0));give %#=add(v(0),0);@x_log con(me)=spstrcat({[xtime()]_[num(here)]_W_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Withdrawal Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]
->6
-33
-$deposit *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),credits(v(#)))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{give %#=sub(0,v(0));@cash_balance con(me)=add(get([con(me)]/cash_balance),v(0));@x_log con(me)=spstrcat({[xtime()]_[num(here)]_D_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Deposit Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]}
->1
-33
-$insert card *:/[if(v(available),v(#))]/@swi loc(#%0)=v(#),{[ifelse(is_a(s(#%0),#1203),ifelse(match(get(s(#%0/status)),STOLEN),{@tel #%0=#%0;@pe %#=*BEEP* Error. This card has been reported stolen. Thank you for returning it.},{@tel #%0=me;@available me=0;@pe %#=Please type: pin <your 4-digit PIN number>}),{@pe %#=The ATM machine buzzes at you as you attempt to force a foreign object into the slot.})]},{@pe %#=You don't have that!}
->10
-33
-$PIN *:/[if(land(lnot(v(available)),lnot(v(valid_pin))),v(#))]/@swi v(0)=get([con(me)]/pin_number),{@pin_tries me=0;@valid_pin me=1;@pe %#=*BEEP* PIN accepted. Type 'menu' to see what you can do from here.},{[switch(v(pin_tries),3,{@pe %#=Too many tries! This card is siezed.;@pin_tries me=0;@available me=1},{@pe %#=Invalid PIN entered! Try again.;@pin_tries me=add(v(pin_tries),1)})]}
->0
-33
-$balance:/[if(v(valid_pin),v(#))]/@pe %#=*BEEP* Your current balance is: %[get(con(me),cash_balance)] credits.
->6
--1
-A matte-black box, set into one wall. Bright orange lettering reads, "BANK OF BILLBOB, AUTOMATED TELLER". A shatter-proof screen/punchpad combination is located directly above a credit-jack and a magnetocard slot.[if(lnot(v(available)),{ There seems to be a card in the slot.})] Type 'menu' for commands you [ifelse(v(valid_pin),{can use now},s({will be able to use after[if(v(available),{ doing 'insert card <account number>' and then})] typing: PIN <your 4-digit PIN number>}))].
->129
--1
-#128
 >37
 -1
 glances at the [name(me)].
+>129
+-1
+#128
+>6
+-1
+A matte-black box, set into one wall. Bright orange lettering reads, "BANK OF BILLBOB, AUTOMATED TELLER". A shatter-proof screen/punchpad combination is located directly above a credit-jack and a magnetocard slot.[if(lnot(v(available)),{ There seems to be a card in the slot.})] Type 'menu' for commands you [ifelse(v(valid_pin),{can use now},s({will be able to use after[if(v(available),{ doing 'insert card <account number>' and then})] typing: PIN <your 4-digit PIN number>}))].
+>0
+33
+$balance:/[if(v(valid_pin),v(#))]/@pe %#=*BEEP* Your current balance is: %[get(con(me),cash_balance)] credits.
+>10
+33
+$PIN *:/[if(land(lnot(v(available)),lnot(v(valid_pin))),v(#))]/@swi v(0)=get([con(me)]/pin_number),{@pin_tries me=0;@valid_pin me=1;@pe %#=*BEEP* PIN accepted. Type 'menu' to see what you can do from here.},{[switch(v(pin_tries),3,{@pe %#=Too many tries! This card is siezed.;@pin_tries me=0;@available me=1},{@pe %#=Invalid PIN entered! Try again.;@pin_tries me=add(v(pin_tries),1)})]}
+>1
+33
+$insert card *:/[if(v(available),v(#))]/@swi loc(#%0)=v(#),{[ifelse(is_a(s(#%0),#1203),ifelse(match(get(s(#%0/status)),STOLEN),{@tel #%0=#%0;@pe %#=*BEEP* Error. This card has been reported stolen. Thank you for returning it.},{@tel #%0=me;@available me=0;@pe %#=Please type: pin <your 4-digit PIN number>}),{@pe %#=The ATM machine buzzes at you as you attempt to force a foreign object into the slot.})]},{@pe %#=You don't have that!}
+>6
+33
+$deposit *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),credits(v(#)))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{give %#=sub(0,v(0));@cash_balance con(me)=add(get([con(me)]/cash_balance),v(0));@x_log con(me)=spstrcat({[xtime()]_[num(here)]_D_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Deposit Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]}
+>7
+33
+$withdraw *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(0));give %#=add(v(0),0);@x_log con(me)=spstrcat({[xtime()]_[num(here)]_W_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Withdrawal Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]
+>3
+33
+[rand(10)][rand(10)][rand(10)][rand(10)]
+>9
+33
+0
+>8
+33
+0
+>52
+-1
+1
+>11
+33
+1
+>4
+33
+$remove card:/[if(v(valid_pin),v(#))]/@valid_pin me=0;give %#=con(me);@pe %#=*BEEP* Thank you for doing business with the Bank of Billbob. Have a nice day!;@available me=1
+>5
+33
+$transfer *=*:/[if(v(valid_pin),v(#))]/@swi gt(v(1),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(1),0),ifelse(is_a(s(#%0),#1203),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(1));@cash_balance #%0=add(get(#%0/cash_balance),v(1));@pe %#=*BEEP* Transaction completed. Please remember to 'remove card' when you are done with your transactions.;@x_log con(me)=[xtime()]_TW_[num(here)]_[num(s(#%0))]_[add(v(1),0)];@x_log #%0=[xtime()]_TD_[num(here)]_[con(me)]_[add(v(1),0)]},{@pe %#=*BEEP* Error. No such account number.}),{@pe %#=*BEEP* Error. Positive amounts only.})]}
+>2
+33
+$menu:@npe %#= .[string(-,50)].;@npe %#= |[cjust({Bank of Billbob ATM},50)]|;@npe %#= | <[string(-,46)]> |;@npe %#= |[cjust({deposit <amount>},50)]|;@npe %#= |[cjust({withdraw <amount>},50)]|;@npe %#= |[cjust({balance},50)]|;@npe %#= |[cjust({transfer <account number>=<amount>},50)]|;@npe %#= |[cjust({remove card},50)]|;@npe %#= `[string(-,50)]'
 <
 0
 1
@@ -1698,21 +1698,21 @@ bank card parent
 9217
 799482374
 799468723
->6
--1
-A shiny silver plasti-metal card that reads in large letters, "Bank of Billbob: Serving YOUR needs for the 32nd century!", and in smaller letters underneath, the name '[name(v(registered_owner))]', and account number '[delete(num(me),0,1)]'.
->52
--1
-1
->0
-34
-GOOD
->129
--1
-#128
 >37
 -1
 peers at the gleaming [name(me)] in %p hand.
+>129
+-1
+#128
+>0
+34
+GOOD
+>52
+-1
+1
+>6
+-1
+A shiny silver plasti-metal card that reads in large letters, "Bank of Billbob: Serving YOUR needs for the 32nd century!", and in smaller letters underneath, the name '[name(v(registered_owner))]', and account number '[delete(num(me),0,1)]'.
 <
 0
 1
@@ -1750,18 +1750,18 @@ Banker
 0
 799479983
 5/13/y/38/y/39/y/32/y/33/y/0
->5
--1
-XXWml8yHjiHRM
->38
--1
-91
->50
--1
-public
 >52
 -1
 38656
+>50
+-1
+public
+>38
+-1
+91
+>5
+-1
+XXWml8yHjiHRM
 <
 0
 0
@@ -1782,21 +1782,21 @@ ATM Card
 9217
 894678970
 894678970
->52
--1
-1
->3
-34
-3009
->1
-34
-894678970_S_#1111
->2
-34
-0
 >4
 34
 #5431
+>2
+34
+0
+>1
+34
+894678970_S_#1111
+>3
+34
+3009
+>52
+-1
+1
 <
 1
 34
@@ -1818,21 +1818,21 @@ Automated Teller
 8193
 799480976
 799480108
->52
--1
+>9
+33
+0
+>8
+33
+0
+>11
+33
 1
 >129
 -1
 #128
->11
-33
+>52
+-1
 1
->8
-33
-0
->9
-33
-0
 <
 1
 33
@@ -1854,15 +1854,15 @@ exit_organizer
 8193
 840293415
 840292010
->101
--1
-$org2:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=s
->52
--1
-1
 >100
 -1
 $organize:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=n
+>52
+-1
+1
+>101
+-1
+$org2:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=s
 <
 0
 0
@@ -2022,7 +2022,7 @@ Bobby Newmark
 39
 -1
 43
-35652104
+33554952
 913745826
 794113020
 10/38/y/2/y/3/y/4/y/5/y/6/=/7/</8/y/9/y/10/y/12/y/13/y/16/y/17/y/18/=/19/y/21/</22/y/23/y/24/</26/y/28/y/29/y/30/y/31/y/32/</33/y/34/y/35/y/36/y/37/</39/y/40/y/41/y/42/y/43/y/44/y/45/y/20/y/0
@@ -2034,7 +2034,7 @@ public:public:1 *dc *players *log_force dbinfo log_imp *log_space *log_io *dc*pl
 17
 >30
 -1
-1761809232
+1761965619
 >181
 -1
 !coke
@@ -2148,19 +2148,19 @@ $idle:=:idles;:idles
 naihd
 >1020
 -1
--1042703753
+-1042703510
 >57
 -1
 0:Y
 >1022
 -1
- newmark@master.mu-net.org newmark@master.mu-net.org ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
+ newmark@master.mu-net.org ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
 >116
 -1
 @wait 10={@dbck;@tr me/vq}
 >25
 -1
-1761809225
+1761965803
 <
 2
 24
