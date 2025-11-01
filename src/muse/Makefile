@@ -19,7 +19,7 @@ LIBS = -lm -lcrypt
 TOPDIR = ..
 
 # Source files
-SRCS = admin.c cque.c game.c match.c move.c players.c powerlist.c powers.c \
+SRCS = admin.c cque.c game.c match.c move.c player.c powerlist.c powers.c \
        predicates.c stringutil.c timer.c unparse.c utils.c wild.c conf.c maze.c
 
 # Object files
