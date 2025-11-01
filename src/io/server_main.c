@@ -7,7 +7,6 @@
 #include "io_internal.h"
 #include "sock.h"
 #include "net.h"
-#include "conf.h"
 
 #include <stddef.h>
 #include <sys/time.h>
