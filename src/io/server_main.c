@@ -7,7 +7,9 @@
 #include "io_internal.h"
 #include "sock.h"
 #include "net.h"
+#include "conf.h"
 
+#include <stddef.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/ioctl.h>
