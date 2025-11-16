@@ -127,3 +127,18 @@
 11/01 19:47:30| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sat Nov  1 19:47:30 2025
 11/01 19:47:30| DUMPING: db/mdb.#2#
 11/01 19:47:30| DUMPING: db/mdb.#2# (done)
+11/14 19:06:18| Starting up on port 4208
+11/14 19:06:18| Binding to all interfaces (INADDR_ANY)
+11/14 19:06:18| Successfully opened socket on port 4208
+11/14 19:07:18| CHECKPOINTING: db/mdb.#1#
+11/14 19:07:27| Connection from: localhost
+11/14 19:07:27| USER CONNECT: concid: 1 host ???@localhost time: Fri Nov 14 19:07:27 2025
+11/14 19:07:31| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/15 00:08:19| CHECKPOINTING: db/mdb.#2#
+11/15 00:08:43| CHECKPOINTING: db/mdb.#3#
+11/15 00:28:44| Bobby Newmark idled after 20 minutes inactivity
+11/15 00:51:54| CHECKPOINTING: db/mdb.#4#
+11/15 01:06:21| Bobb|W!+y New|mark(#43PcNa) unidled after 57 minutes.
+11/15 01:06:21| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sat Nov 15 01:06:21 2025
+11/15 01:06:21| DUMPING: db/mdb.#5#
+11/15 01:06:21| DUMPING: db/mdb.#5# (done)
