@@ -1,24 +1,61 @@
-# Automatically generated from "domakefile" script. Do not edit by hand.
+# src/prog/Makefile - Build libprog.a (function evaluation library)
 #
+# MODERNIZATION NOTES (2025):
+# - Removed gperf dependency (was used for perfect hash generation)
+# - Now uses simple binary search for function lookup
+# - Much simpler build process
+
 CC = gcc
-CFLAGS = -Wall -g  -I../hdrs -I../../config
+CFLAGS = -Wall -Wextra -pedantic -std=c11 -g -O2 \
+         -I../hdrs -I../../config \
+         -D_POSIX_C_SOURCE=200809L \
+         -D_DEFAULT_SOURCE \
+         -Wformat=2 -Wformat-security \
+         -Werror=format-security \
+         -D_FORTIFY_SOURCE=2 \
+         -fstack-protector-strong \
+         -fPIE -pie \
+         -Wconversion -Wsign-conversion \
+         -Wshadow -Wstrict-overflow=5
+
 TOPDIR = ..
 LIBS = 
 
-all:  libprog.a
+# Target library
+LIB = libprog.a
 
+# Source files
+SRCS = ctrl.c hash.c eval.c
+OBJS = ctrl.o hash.o eval.o
+
+# Build rules
+all: $(LIB)
+
+$(LIB): $(OBJS)
+	rm -f $(LIB)
+	ar qcv $(LIB) $(OBJS)
+	-ranlib $(LIB)
+
+# eval.o depends on funcs.c being included
+eval.o: eval.c 
+	$(CC) $(CFLAGS) -c eval.c
+
+ctrl.o: ctrl.c
+	$(CC) $(CFLAGS) -c ctrl.c
+
+hash.o: hash.c
+	$(CC) $(CFLAGS) -c hash.c
+
+# Installation
 install: all
 
-libprog.a: ctrl.o hash.o eval.o
-	rm -f libprog.a
-	ar qcv libprog.a ctrl.o hash.o eval.o
-	-ranlib libprog.a
+# Cleanup
+clean:
+	rm -f *.o $(LIB)
 
-funcs.c: funcs.c.gp
-	gperf -t -G -p -D -r -j 0 -k '*' -N lookup_funcs_gperf -H hash_funcs_gperf < funcs.c.gp > funcs.c || (rm funcs.c;false)
+# Remove old generated files if they exist
+distclean: clean
+	rm -f funcs.c.gp.bak
+	@echo "Old gperf files removed (if any existed)"
 
-
-
-eval.o: funcs.c
-
-
+.PHONY: all install clean distclean
