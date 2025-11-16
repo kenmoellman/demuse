@@ -1,10 +1,8 @@
 /* config.h */
-/* config-dist,v 1.3 1993/02/06 18:00:09 nils Exp */
 
 /* note: some of the options in here may not work/compile correctly.
  * please try compiling first without changing things like
  * REGISTRATION and RESTRICTED_BUILDING. */
-#define ALPHA
 
 /* if you're on an ancient SysV box, this is apparently needed. */
 #undef RESOCK
@@ -15,10 +13,41 @@
 #ifndef _LOADED_CONFIG_
 #define _LOADED_CONFIG_
 
-/* change this only every once in a while.  it should be secure enough to not 
+/* ============================================================================
+ * GUEST_PASSWORD
+ * ============================================================================
+ * change this only every once in a while.  it should be secure enough to not 
  * create a problem anymore.  But, if it does, just change this string.  -wm
  */
 #define GUEST_PASSWORD "sjf\thdssd\ndsfg"
+
+/* ============================================================================
+ * DBREF TYPEDEF, MAX DBREF NUMBER, AND DBREF SYMBOL FOR STRINGS
+ * ============================================================================
+ * dbref is defined as 'typedef long dbref' by default today but that can be
+ * changed and macros allow for potential future changes to the dbref type.
+ */
+
+#ifndef DEFDBREF
+#define DEFDBREF
+typedef long dbref;  /* Database reference - offset into db array */
+
+/* Determine the type characteristics of dbref at compile time */
+#if LONG_MAX == 9223372036854775807L
+    /* dbref is 64-bit long */
+    #define DBREF_MAX LONG_MAX
+    #define DBREF_MIN LONG_MIN
+    #define DBREF_FMT "ld"
+#else
+    /* dbref is 32-bit long (or smaller) */
+    #define DBREF_MAX LONG_MAX
+    #define DBREF_MIN LONG_MIN
+    #define DBREF_FMT "ld"
+#endif
+
+#endif /* DEFDBREF */
+
+
 
 /* Network options */
 
@@ -45,7 +74,7 @@ multi-homing either.) -wm 05/08/2000 */
 
 /* Define whether memory debug is turned on or not. You want this diabled    *
  * unless your game is crashing with memory errors.                          */
-#define MEMORY_DEBUG_LOG
+#undef MEMORY_DEBUG_LOG
 #ifdef MEMORY_DEBUG_LOG
 #define MEMORY_DEBUG_FILE "./logs/malloc-debug.log"
 #define MEMORY_DEBUG_SIZE 128
