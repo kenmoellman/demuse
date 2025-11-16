@@ -743,8 +743,9 @@ static void calc_memstats(void)
     }
 
     snprintf(newbuf, sizeof(newbuf),
-             "|Y!+*| There are %d bytes being used in memory, total.", j);
+             "|Y!+*| There are %d bytes being used in memory for the database.", j);
 
+//    if (first_free != NOTHING && GoodObject(first_free)) {
     if (first_free != NOTHING && GoodObject(first_free)) {
         char tempbuf[128];
         snprintf(tempbuf, sizeof(tempbuf),
