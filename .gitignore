@@ -6,6 +6,7 @@
 *-backup
 *-old
 *-works
+*-saved
 run/logs/*
 !run/logs/.gitkeep
 bin/*
