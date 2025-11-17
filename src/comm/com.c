@@ -13,6 +13,7 @@
 #include "interface.h"
 #include "externs.h"
 #include "player.h"
+#include "hash_table.h"
 
 /* ===================================================================
  * Constants and Limits
@@ -26,17 +27,19 @@
  * Data Structures
  * =================================================================== */
 
-struct pl_elt {
-  dbref channel;
-  struct pl_elt *prev;
-  struct pl_elt *next;
-};
+//struct pl_elt {
+//  dbref channel;
+//  struct pl_elt *prev;
+//  struct pl_elt *next;
+//};
 
-/* Channel hash table */
-static dbref hash_chan_fun_table[256];
-static int hft_chan_initialized = 0;
-static struct pl_elt *channel_list[CHANNEL_LIST_SIZE];
-static int pl_used = 0;
+/* Global channel hash table (replaces channel_list array) */
+static hash_table_t *channel_hash = NULL;
+
+//static dbref hash_chan_fun_table[256];
+//static int hft_chan_initialized = 0;
+//static struct pl_elt *channel_list[CHANNEL_LIST_SIZE];
+//static int pl_used = 0;
 
 /* ===================================================================
  * Utility Macros
@@ -85,7 +88,6 @@ static int pl_used = 0;
 static int is_banned(dbref, const char *);
 static void com_who(dbref, const char *);
 static dbref hash_chan_function(const char *);
-static void init_chan_hft(void);
 
 /* Channel management functions */
 void do_channel_create(dbref, char *);
@@ -124,6 +126,12 @@ void channel_onoff_set(dbref, const char *, const char *);
 void do_chemit(dbref, char *, char *);
 void channel_talk(dbref, char *, char *, char *);
 void com_send_int(char *, char *, dbref, int);
+
+/* Channel hash management */
+void populate_channel_hash(void);
+void do_populate_channels(dbref);
+void do_channelhash_debug(dbref);
+static void debug_channel_callback(const char *, void *, void *);
 
 
 
@@ -1964,7 +1972,7 @@ void list_channels(dbref player, dbref target)
       status = "ON ";
     }
 
-    channum = lookup_channel(clist);
+    channum = lookup_channel(strip_color_nobeep(clist));
     if (channum == NOTHING) {
       notify(player, tprintf("%-30.30s  Invalid Channel.", clist));
     } else {
@@ -2002,20 +2010,58 @@ void list_channels(dbref player, dbref target)
  * Search for channels
  * Syntax: +channel search <own|op|all|<n>>
  */
+/**
+ * do_channel_search - Search and list channels
+ * 
+ * Syntax: +channel search [own|op|all|<channelname>]
+ * 
+ * SEARCH MODES:
+ * - own: Channels owned by the player (marked with *)
+ * - op: Channels where player is an operator (marked with #)
+ * - all: All visible channels
+ * - <name>: Search for specific channel by name
+ * 
+ * DISPLAY FORMAT: [status] channel_name owner_name
+ * - status: "ON"/"OFF" if player is on channel, "HID" if hidden
+ * 
+ * SECURITY:
+ * - Uses new hash table iterator
+ * - Validates all channel dbrefs
+ * - Respects channel visibility flags
+ * - Buffer overflow protection throughout
+ */
 void do_channel_search(dbref player, char *arg2)
 {
-  struct pl_elt *e;
+  hash_iterator_t iter;
+  char *key;
+  void *value;
+  dbref channel;
   int level;
   char onoff[4];
-  int i;
+  size_t owner_len;
+  size_t chan_len;
+  int found_specific = 0;
 
+  /* Validate input */
   if (!(arg2 && *arg2)) {
     notify(player, "+channel: Bad search syntax.");
     return;
   }
 
-  level = 0;
+  /* Initialize hash table if needed */
+  if (!channel_hash) {
+    notify(player, "+channel: Channel system not initialized.");
+    return;
+  }
 
+  /* Check if hash table is empty */
+  if (channel_hash->count == 0) {
+    notify(player, "+channel: No channels exist.");
+    return;
+  }
+
+  /* Determine search level */
+  level = 0;
   if (!strncmp(arg2, "own", 3)) {
     level = 1;
   } else if (!strncmp(arg2, "op", 2)) {
@@ -2026,74 +2072,100 @@ void do_channel_search(dbref player, char *arg2)
 
   notify(player, "+channel search results:");
 
-  for (i = 0; i < CHANNEL_LIST_SIZE; i++) {
-    if (!pl_used) {
+  /* Iterate through all channels in hash table */
+  hash_iterate_init(channel_hash, &iter);
+  while (hash_iterate_next(&iter, &key, &value)) {
+    char owner[MESSAGE_BUF_SIZE];
+    char chan[MESSAGE_BUF_SIZE];
+    char filler[26] = "                         ";
+
+    /* Extract channel dbref from hash value */
+    channel = (dbref)(intptr_t)value;
+
+    /* Validate channel object */
+    if (!GoodObject(channel)) {
+      log_error(tprintf("do_channel_search: Invalid channel dbref " DBREF_FMT " for key '%s'",
+                       channel, key));
       continue;
     }
 
-    for (e = channel_list[i]; e; e = e->next) {
-      char owner[MESSAGE_BUF_SIZE];
-      char chan[MESSAGE_BUF_SIZE];
-      char filler[26] = "                         ";
+    if (Typeof(channel) != TYPE_CHANNEL) {
+      log_error(tprintf("do_channel_search: Object " DBREF_FMT " is not a channel (key '%s')",
+                       channel, key));
+      continue;
+    }
 
-      strncpy(owner, truncate_color(unparse_object(player, db[e->channel].owner), 20),
-              sizeof(owner) - 1);
-      owner[sizeof(owner) - 1] = '\0';
+    /* Format owner name with truncation and padding */
+    strncpy(owner, truncate_color(unparse_object(player, db[channel].owner), 20),
+            sizeof(owner) - 1);
+    owner[sizeof(owner) - 1] = '\0';
 
-      int owner_len = strlen(strip_color(owner));
-      if (owner_len < 20) {
-        filler[20 - owner_len] = '\0';
+    owner_len = strlen(strip_color(owner));
+    if (owner_len < 20) {
+      filler[20 - owner_len] = '\0';
+    } else {
+      filler[0] = '\0';
+    }
+    strncat(owner, filler, sizeof(owner) - strlen(owner) - 1);
+
+    /* Format channel name with truncation and padding */
+    strcpy(filler, "                        ");
+    strncpy(chan, truncate_color(unparse_object(player, channel), 20),
+            sizeof(chan) - 1);
+    chan[sizeof(chan) - 1] = '\0';
+
+    chan_len = strlen(strip_color(chan));
+    if (chan_len < 20) {
+      filler[20 - chan_len] = '\0';
+    } else {
+      filler[0] = '\0';
+    }
+    strncat(chan, filler, sizeof(chan) - strlen(chan) - 1);
+
+    /* Determine on/off status */
+    if (is_on_channel_only(player, db[channel].name) != NOTHING) {
+      if (channel_onoff_chk(player, channel)) {
+        strcpy(onoff, "ON ");
       } else {
-        filler[0] = '\0';
+        strcpy(onoff, "OFF");
       }
-      strncat(owner, filler, sizeof(owner) - strlen(owner) - 1);
+    } else {
+      strcpy(onoff, "   ");
+    }
 
-      strcpy(filler, "                        ");
-      strncpy(chan, truncate_color(unparse_object(player, e->channel), 20),
-              sizeof(chan) - 1);
-      chan[sizeof(chan) - 1] = '\0';
-
-      int chan_len = strlen(strip_color(chan));
-      if (chan_len < 20) {
-        filler[20 - chan_len] = '\0';
-      } else {
-        filler[0] = '\0';
+    /* Filter by search level and display */
+    if (level == 0) {
+      /* Searching for specific channel name */
+      if (!string_compare(db[channel].name, arg2)) {
+        notify(player, tprintf("  %s %s %s", onoff, chan, owner));
+        found_specific = 1;
+        break;  /* Found the specific channel, stop searching */
       }
-      strncat(chan, filler, sizeof(chan) - strlen(chan) - 1);
-
-      /* Determine on/off status */
-      if (is_on_channel_only(player, db[e->channel].name) != NOTHING) {
-        if (channel_onoff_chk(player, e->channel)) {
-          strcpy(onoff, "ON ");
-        } else {
-          strcpy(onoff, "OFF");
-        }
-      } else {
-        strcpy(onoff, "   ");
-      }
-
-      /* Filter by search level */
-      if (level == 0) {
-        if (!string_compare(db[e->channel].name, arg2)) {
+    } else if (db[channel].owner == player) {
+      /* Player owns this channel */
+      notify(player, tprintf("* %s %s %s", onoff, chan, owner));
+    } else if ((level > 1) && group_controls(player, channel)) {
+      /* Player is operator on this channel */
+      notify(player, tprintf("# %s %s %s", onoff, chan, owner));
+    } else if (level == 3) {
+      /* Show all visible channels */
+      if (!((db[channel].flags & SEE_OK) &&
+            could_doit(player, channel, A_LHIDE))) {
+        /* Channel is hidden but player has permission to see it */
+        if (controls(player, channel, POW_CHANNEL)) {
+          strcpy(onoff, "HID");
           notify(player, tprintf("  %s %s %s", onoff, chan, owner));
-          break;
         }
-      } else if (db[e->channel].owner == player) {
-        notify(player, tprintf("* %s %s %s", onoff, chan, owner));
-      } else if ((level > 1) && group_controls(player, e->channel)) {
-        notify(player, tprintf("# %s %s %s", onoff, chan, owner));
-      } else if (level == 3) {
-        if (!((db[e->channel].flags & SEE_OK) &&
-              could_doit(player, e->channel, A_LHIDE))) {
-          if (controls(player, e->channel, POW_CHANNEL)) {
-            strcpy(onoff, "HID");
-            notify(player, tprintf("  %s %s %s", onoff, chan, owner));
-          }
-        } else {
-          notify(player, tprintf("  %s %s %s", onoff, chan, owner));
-        }
+      } else {
+        /* Channel is visible */
+        notify(player, tprintf("  %s %s %s", onoff, chan, owner));
       }
     }
+  }
+
+  /* If searching for specific channel and not found */
+  if (level == 0 && !found_specific) {
+    notify(player, tprintf("+channel: No channel named '%s' found.", arg2));
   }
 }
 
@@ -2449,179 +2521,237 @@ void channel_onoff_set(dbref player, const char *arg1, const char *arg2)
  * =================================================================== */
 
 /**
- * Initialize channel hash function table
+ * Initialize channel hash table
+ * 
+ * NOTE: We don't call register_hashtab() here because it can cause
+ * memory corruption when called during database load, especially if
+ * old hash code is still present. Channels will work fine without
+ * registration; you just won't see them in @showhash.
  */
-static void init_chan_hft(void)
-{
-  int i;
 
-  for (i = 0; i < 256; i++) {
-    hash_chan_fun_table[i] = random() & (CHANNEL_LIST_SIZE - 1);
-  }
-  hft_chan_initialized = 1;
+
+/**
+ * init_channel_hash - Initialize channel hash table
+ */
+void init_channel_hash(void)
+{
+    if (!channel_hash) {
+        channel_hash = hash_create("channels", HASH_SIZE_LARGE, 0, NULL);
+        if (!channel_hash) {
+            log_error("Failed to create channel hash table!");
+            exit_nicely(1);
+        }
+    }
 }
 
 /**
- * Hash function for channel names
- * @return Hash value
- */
-static dbref hash_chan_function(const char *string)
-{
-  dbref hash;
-
-  if (!string || !*string) {
-    return 0;
-  }
-
-  if (!hft_chan_initialized) {
-    init_chan_hft();
-  }
-
-  hash = 0;
-  for (; *string; string++) {
-    hash ^= ((hash >> 1) ^ hash_chan_fun_table[(int)DOWNCASE(*string)]);
-  }
-
-  return hash;
-}
-
-/**
- * Clear all channels from hash table
+ * clear_channels - Clear all channel entries
+ * COMPATIBLE: Same signature as original
  */
 void clear_channels(void)
 {
-  int i;
-  struct pl_elt *e, *next;
-
-  for (i = 0; i < CHANNEL_LIST_SIZE; i++) {
-    if (pl_used) {
-      for (e = channel_list[i]; e; e = next) {
-        next = e->next;
-        SMART_FREE(e);
-      }
+    if (!channel_hash) {
+        init_channel_hash();
     }
-    channel_list[i] = NULL;
-  }
-  pl_used = 1;
+    hash_clear(channel_hash);
 }
 
 /**
- * Add channel to hash table
+ * add_channel - Add channel to hash table
+ * COMPATIBLE: Same signature as original
  */
 void add_channel(dbref channel)
 {
-  dbref hash;
-  struct pl_elt *e;
+    const char *name;
 
-  if (!GoodObject(channel)) {
-    return;
-  }
+    if (!GoodObject(channel)) {
+        return;
+    }
 
-  if (strchr(db[channel].name, ' ')) {
-    log_error(tprintf("Channel (%s) with a space in its name? Inconceivable!",
-                     db[channel].name));
-    return;
-  }
+    if (!channel_hash) {
+        init_channel_hash();
+    }
 
-  hash = hash_chan_function(db[channel].name);
+    name = db[channel].name;
 
-//  e = (struct pl_elt *)malloc(sizeof(struct pl_elt));
-//  SAFE_MALLOC(result, type, number)
-  SAFE_MALLOC(e, struct pl_elt*, 1);
-  if (!e) {
-    log_error("Out of memory in add_channel!");
-    return;
-  }
+    /* Skip names with spaces */
+    if (strchr(name, ' ')) {
+        log_error(tprintf("Channel (%s) with a space in its name? Inconceivable!",
+                         name));
+        return;
+    }
 
-  e->channel = channel;
-  e->prev = NULL;
-  e->next = channel_list[hash];
-
-  if (channel_list[hash]) {
-    channel_list[hash]->prev = e;
-  }
-
-  channel_list[hash] = e;
+    hash_insert(channel_hash, name, (void*)(intptr_t)channel);
 }
 
 /**
- * Look up channel by name
- * @return Channel dbref or NOTHING
+ * lookup_channel - Find channel by name
+ * COMPATIBLE: Same signature as original
+ *
+ * Returns channel dbref or NOTHING
  */
 dbref lookup_channel(const char *name)
 {
-  struct pl_elt *e;
-  dbref a;
+    void *result;
+    dbref channel;
 
-  if (!name || !*name) {
+    if (!name || !*name) {
+        return NOTHING;
+    }
+
+    if (!channel_hash) {
+        init_channel_hash();
+    }
+
+    /* Look up in hash table */
+    result = hash_lookup(channel_hash, name);
+    if (result) {
+        return (dbref)(intptr_t)result;
+    }
+
+    /* Handle #dbref format */
+    if (name[0] == '#' && name[1]) {
+        channel = (dbref)atol(name + 1);
+        if (channel >= 0 && channel < db_top) {
+            return channel;
+        }
+    }
+
     return NOTHING;
-  }
-
-  /* Try hash table lookup */
-  for (e = channel_list[hash_chan_function(name)]; e; e = e->next) {
-    if (!string_compare(db[e->channel].name, name)) {
-      return e->channel;
-    }
-  }
-
-  /* Try dbref lookup */
-  if (name[0] == '#' && name[1]) {
-    a = atol(name + 1);
-    if (a >= 0 && a < db_top) {
-      return a;
-    }
-  }
-
-  return NOTHING;
 }
 
 /**
- * Delete channel from hash table
+ * delete_channel - Remove channel from hash table
+ * COMPATIBLE: Same signature as original
  */
 void delete_channel(dbref channel)
 {
-  dbref hash;
-  struct pl_elt *prev, *e;
+    const char *name;
 
-  if (!GoodObject(channel)) {
-    return;
-  }
-
-  if (strchr(db[channel].name, ' ')) {
-    log_error(tprintf("Channel (%s) with a space in its name? Inconceivable!",
-                     db[channel].name));
-    return;
-  }
-
-  hash = hash_chan_function(db[channel].name);
-
-  e = channel_list[hash];
-  if (!e) {
-    return;
-  }
-
-  if (e->channel == channel) {
-    /* It's the first one */
-    channel_list[hash] = e->next;
-    if (e->next) {
-      e->next->prev = NULL;
+    if (!GoodObject(channel)) {
+        return;
     }
-    SMART_FREE(e);
-    return;
-  }
 
-  /* Search for it */
-  for (prev = e, e = e->next; e; prev = e, e = e->next) {
-    if (e->channel == channel) {
-      prev->next = e->next;
-      if (e->next) {
-        e->next->prev = prev;
-      }
-      SMART_FREE(e);
-      return;
+    if (!channel_hash) {
+        return;
     }
-  }
+
+    name = db[channel].name;
+
+    if (strchr(name, ' ')) {
+        log_error(tprintf("Channel (%s) with a space in its name? Inconceivable!",
+                         name));
+        return;
+    }
+
+    hash_remove(channel_hash, name);
 }
+
+
+///**
+// * Populate channel hash from database
+// * MUST be called after database load to make channels visible
+// * 
+// * This function scans the entire database for TYPE_CHANNEL objects
+// * and adds them to the channel hash table. Without this, all channels
+// * will show as "Invalid Channel" because lookup_channel() can't find them.
+// * 
+// * Call this from:
+// * - Database load completion
+// * - After @dbck or database repair
+// * - Any time channels seem "lost"
+// */
+//void populate_channel_hash(void)
+//{
+//    dbref i;
+//    int count = 0;
+//    
+//    if (!channel_hash) {
+//        init_channel_hash();
+//    }
+//    
+//    /* Clear existing entries to avoid duplicates */
+//    ht_clear(channel_hash);
+//    
+//    log_status("Populating channel hash table...");
+//    
+//    /* Scan database for all channels */
+//    for (i = 0; i < db_top; i++) {
+//        if (GoodObject(i) && Typeof(i) == TYPE_CHANNEL) {
+//            add_channel(i);
+//            count++;
+//        }
+//    }
+//    
+//    log_status("Channel hash populated with %d channels.", count);
+//}
+//
+///**
+// * Debug callback for showing channel hash contents
+// */
+//static void debug_channel_callback(const char *key, void *value, void *user_data)
+//{
+//    dbref *player_ptr = (dbref *)user_data;
+//    dbref channel = (dbref)(intptr_t)value;
+//    
+//    if (!GoodObject(channel)) {
+//        notify(*player_ptr, tprintf("  %s -> INVALID DBREF #" DBREF_FMT, key, channel));
+//    } else if (Typeof(channel) != TYPE_CHANNEL) {
+//        notify(*player_ptr, tprintf("  %s -> #" DBREF_FMT " (NOT A CHANNEL!)", key, channel));
+//    } else {
+//        notify(*player_ptr, tprintf("  %s -> %s(#" DBREF_FMT ")", 
+//                                   key, db[channel].name, channel));
+//    }
+//}
+//
+///**
+// * Debug command to show channel hash contents
+// * Usage: @channelhash
+// */
+//void do_channelhash_debug(dbref player)
+//{
+//    size_t count, size, collisions;
+//    
+//    if (!channel_hash) {
+//        notify(player, "Channel hash table not initialized!");
+//        return;
+//    }
+//    
+//    ht_stats(channel_hash, &count, &size, &collisions);
+//    
+//    notify(player, "=== Channel Hash Table Debug ===");
+//    notify(player, tprintf("Entries: %lu", (unsigned long)count));
+//    notify(player, tprintf("Buckets: %lu", (unsigned long)size));
+//    notify(player, tprintf("Collisions: %lu", (unsigned long)collisions));
+//    
+//    if (size > 0) {
+//        float load = (float)count / (float)size;
+//        notify(player, tprintf("Load factor: %.2f%%", load * 100.0f));
+//    }
+//    
+//    notify(player, "");
+//    notify(player, "Hash table contents:");
+//    
+//    if (count == 0) {
+//        notify(player, "  (empty - run @populate_channels)");
+//    } else {
+//        ht_foreach(channel_hash, debug_channel_callback, &player);
+//    }
+//    
+//    notify(player, "=== End Debug ===");
+//}
+//
+///**
+// * Wrapper for populate_channel_hash that can be called as a command
+// */
+//void do_populate_channels(dbref player)
+//{
+//    notify(player, "Repopulating channel hash table from database...");
+//    populate_channel_hash();
+//    notify(player, "Done. Use @channelhash to verify.");
+//}
+//
+
 
 /* ===================================================================
  * Channel Communication Wrappers

@@ -29,9 +29,11 @@ char *dc_chan = "*dc";
 /* allow people to create new characters themselves */
 int allow_create = 0;
 
+#ifdef USE_COMBAT
 /* combat-related stuff */
 dbref paradox[] = { 0, 59, 1140, 1152, 1136, 55, 1164, 1169, 1173, 1177, -1};
 static int combat = 3;
+#endif
 
 
 dbref player_start = 30;

@@ -1,11 +1,11 @@
-11/16 04:19:50| Caused by office(#31RIJf), office(#31RIJf) in office(#31RIJf) executes: _@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
-11/16 04:19:57| Queue processing: @chemit connections=* Connect: %n - [time()] (pri: 0)
-11/16 09:19:57| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @chemit connections=* Connect: Bobb|W!+y New|mark - 2013:05 PM
-11/16 09:19:59| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @info memory
-11/16 09:20:04| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: [A
-11/16 09:20:12| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @info memory
-11/16 09:20:32| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @info memory
-11/16 09:20:41| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: w
-11/16 09:23:49| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @dump
-11/16 09:39:51| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @info memory
-11/16 09:40:13| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @shutdown YourMUSE
+11/17 01:29:05| Caused by office(#31RIJf), office(#31RIJf) in office(#31RIJf) executes: _@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
+11/17 01:29:12| Queue processing: @chemit connections=* Connect: %n - [time()] (pri: 0)
+11/17 06:29:12| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @chemit connections=* Connect: Bobb|W!+y New|mark - 2013:05 PM
+11/17 06:29:18| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: ex me
+11/17 06:29:36| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: hug wizard
+11/17 06:29:36| Queue processing: na hug %0 (pri: 0)
+11/17 06:29:36| Caused by Bobb|W!+y New|mark(#43PcNa), Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) executes: na hug wizard
+11/17 06:29:36| Queue processing: [s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_room)] (pri: 0)
+11/17 06:29:39| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @swi 1=0,{@pemit #43=what action?},0,{@pemit #43=Wizard(#2Pv) doesn't respond to that.},{@remit #39=%[na_make_message(#43,hug,#2)%];@swi #39=#30,,{@remit #30=%%%[na_make_message(#43,hug,#2)%%%]};@wait 5=@tr_as strcat(#2,strcat(/,strcat(naa_,hug)))=#43,hug}
+11/17 06:29:39| Queue processing: @remit #39=%[na_make_message(#43,hug,#2)%] (pri: 0)
+11/17 06:29:39| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @remit #39=[na_make_message(#43,hug,#2)]

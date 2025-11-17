@@ -5,6 +5,7 @@
 *.bak2
 *-backup
 *-old
+*-works
 run/logs/*
 !run/logs/.gitkeep
 bin/*

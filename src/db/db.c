@@ -21,6 +21,12 @@
  * - Added comprehensive section headers with === markers
  * - Improved inline documentation
  * - Added security notes for critical operations
+ * - Migrated from old hash.h system to unified hash_table.h system
+ * - Now registered in global hash table list (visible via @showhash)
+ * - Uses FNV-1a hash function instead of legacy hash_name()
+ * - Size increased from 207 to 256 (power of 2 for better performance)
+ * - Explicitly populates hash table with hash_insert() calls
+ * - Added error logging for initialization failures
  *
  * MEMORY MANAGEMENT:
  * - All allocations tracked through safe_malloc system
@@ -37,6 +43,16 @@
  * - String buffers sized appropriately (DB_MSGLEN, BUFFER_LEN)
  * - Array indices bounds-checked
  * - File I/O errors handled gracefully
+ * - Uses unified hash table with proper bounds checking
+ * - Case-insensitive lookups (attribute names are case-insensitive)
+ * - NULL-safe (returns NULL for NULL input)
+ * - Thread-unsafe (uses static variable)
+ *
+ * PERFORMANCE:
+ * - O(1) average lookup time with FNV-1a hash
+ * - One-time initialization cost
+ * - Load factor ~0.4 for ~100 attributes in 256 buckets
+ * - Average chain length ~1.0, max chain length ~2-3
  */
 
 #include "credits.h"
@@ -53,7 +69,7 @@
 #include "externs.h"
 
 #include "interface.h"
-#include "hash.h"
+#include "hash_table.h"
 #undef __DO_DB_C__
 
 /* ============================================================================
@@ -1259,24 +1275,72 @@ static char *attr_disp(void *atr)
  * SECURITY: Uses hash table for fast, safe lookup
  * RETURNS: Attribute pointer or NULL
  */
+//ATTR *builtin_atr_str(char *str)
+//{
+//    static struct hashtab *attrhash = NULL;
+//    struct builtinattr *result;
+//    
+//    if (!str) {
+//        return NULL;
+//    }
+//    
+//    if (!attrhash) {
+//        attrhash = make_hashtab(207, attr, sizeof(struct builtinattr),
+//                              "attr", attr_disp);
+//    }
+//    
+//    result = (struct builtinattr *)lookup_hash(attrhash, 
+//                                              hash_name(str), str);
+//    if (result)
+//        return &(result->definition);
+//    return NULL;
+//}
+
+/* @param str Attribute name to look up (case-insensitive)
+ * @return Pointer to ATTR structure, or NULL if not found
+ */
 ATTR *builtin_atr_str(char *str)
 {
-    static struct hashtab *attrhash = NULL;
+    static hash_table_t *attrhash = NULL;
     struct builtinattr *result;
+    int i;
     
+    /* Validate input */
     if (!str) {
         return NULL;
     }
     
+    /* Initialize hash table on first use */
     if (!attrhash) {
-        attrhash = make_hashtab(207, attr, sizeof(struct builtinattr),
-                              "attr", attr_disp);
+        /* 
+         * Create case-insensitive hash table for attributes
+         * Size 256 is a power of 2, adequate for ~100 builtin attributes
+         * with low load factor (< 0.5) for good performance
+         * No destructor needed - attr[] entries are static
+         */
+        attrhash = hash_create("builtin_attributes", 256, 0, NULL);
+        if (!attrhash) {
+            log_error("builtin_atr_str: Failed to create attribute hash table");
+            return NULL;
+        }
+        
+        /* Populate hash table with all builtin attributes from attr[] array */
+        for (i = 0; attr[i].definition.name; i++) {
+            if (!hash_insert(attrhash, attr[i].definition.name, &attr[i])) {
+                log_error(tprintf("builtin_atr_str: Failed to insert attribute '%s'",
+                                 attr[i].definition.name));
+            }
+        }
+        
+        log_important(tprintf("Initialized builtin attribute hash with %d entries", i));
     }
     
-    result = (struct builtinattr *)lookup_hash(attrhash, 
-                                              hash_name(str), str);
-    if (result)
+    /* Look up the attribute (case-insensitive) */
+    result = (struct builtinattr *)hash_lookup(attrhash, str);
+    if (result) {
         return &(result->definition);
+    }
+    
     return NULL;
 }
 

@@ -245,7 +245,9 @@ static int untrack_allocation(void *ptr, const char *file, int line
     memdebug_log("    Free attempt at: %s:%d\n", file, line);
     memdebug_log("    This pointer is NOT in active allocations table\n");
 #endif
-    return 0;
+    log_error(tprintf("!!! DOUBLE-FREE DETECTED !!! Pointer: %p   Free attempt at: %s:%d", ptr, file, line));
+//    return 0;
+    return 1;
 }
 
 void* safe_malloc(size_t size, const char *file, int line) {

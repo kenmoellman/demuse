@@ -25,8 +25,8 @@ LIBS =
 LIB = libprog.a
 
 # Source files
-SRCS = ctrl.c hash.c eval.c
-OBJS = ctrl.o hash.o eval.o
+SRCS = ctrl.c hash_table.c hash.c eval.c
+OBJS = ctrl.o hash_table.o hash.o eval.o
 
 # Build rules
 all: $(LIB)
@@ -42,6 +42,9 @@ eval.o: eval.c
 
 ctrl.o: ctrl.c
 	$(CC) $(CFLAGS) -c ctrl.c
+
+hash_table.o: hash_table.c
+	$(CC) $(CFLAGS) -c hash_table.c
 
 hash.o: hash.c
 	$(CC) $(CFLAGS) -c hash.c
