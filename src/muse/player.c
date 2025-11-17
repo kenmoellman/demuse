@@ -28,6 +28,7 @@
 #include "credits.h"
 #include "player.h"
 #include "admin.h"
+#include "hash_table.h"
 
 #define MAX_PLAYER_MATCHES 10
 
@@ -2181,504 +2182,177 @@ dbref create_player(const char *name, const char *password, int class, dbref sta
     return player;
 }
 
-/* player_list.c */
-/* $Id: players.c,v 1.8 1993/09/07 18:24:42 nils Exp $ */
+/* ===================================================================
+ * Player Hash Table - Modern Implementation
+ * =================================================================== */
 
-/*
- * ============================================================================
- * MODERNIZATION NOTES (2025)
- * ============================================================================
- * This file has been extensively modernized with the following improvements:
- *
- * ANSI C COMPLIANCE:
- * - Converted all K&R style function declarations to ANSI C prototypes
- * - Added proper parameter types and return types
- * - Removed old-style function definitions
- * - Added const qualifiers where appropriate
- *
- * SAFETY IMPROVEMENTS:
- * - Replaced malloc/free with SAFE_MALLOC/SMART_FREE for tracking
- * - Added GoodObject() validation before all database accesses
- * - Added buffer overflow protection with size checks
- * - Input validation on all string operations
- * - Null pointer checks throughout
- *
- * CODE QUALITY:
- * - Added comprehensive inline comments explaining security concerns
- * - Organized into clear sections with === markers
- * - Improved error handling and logging
- * - Better variable naming for clarity
- * - Enhanced documentation of hash table operations
- *
- * HASH TABLE IMPROVEMENTS:
- * - Added initialization check to hash function table
- * - Better collision handling documentation
- * - Clear explanation of hash algorithm
- * - Memory safety in hash table operations
- *
- * SECURITY NOTES:
- * - Hash table prevents player name collisions
- * - Alias support with proper tracking
- * - Safe memory allocation and deallocation
- * - Protection against double-free errors
- */
-
-/* ============================================================================
- * INCLUDES
- * ============================================================================ */
-
-/* ============================================================================
- * HASH TABLE CONFIGURATION
- * ============================================================================ */
+/* Global player hash table (replaces player_list array) */
+static hash_table_t *player_hash = NULL;
 
 /**
- * PLAYER_LIST_SIZE - Size of the hash table
- *
- * Must be a power of 2 for efficient modulo operation using bitwise AND.
- * Larger size = fewer collisions but more memory usage.
- *
- * Current size (4096) provides good balance for typical MUSE installations.
+ * init_player_hash - Initialize player hash table
+ * Call this at startup instead of init_hft()
  */
-#define PLAYER_LIST_SIZE (1 << 12)  /* 4096 entries */
-
-/**
- * DOWNCASE - Convert character to lowercase for case-insensitive hashing
- */
-#define DOWNCASE(x) to_lower(x)
-
-/* ============================================================================
- * DATA STRUCTURES
- * ============================================================================ */
-
-/**
- * pl_elt - Player list element structure
- *
- * Each element represents a player or player alias in the hash table.
- * Forms a linked list to handle hash collisions.
- *
- * SECURITY: Uses SMART_FREE for proper memory tracking and leak detection
- */
-struct pl_elt {
-  dbref player;           /* Database reference to player object */
-  struct pl_elt *next;    /* Next element in collision chain */
-};
-
-/* ============================================================================
- * GLOBAL VARIABLES
- * ============================================================================ */
-
-/**
- * hash_function_table - Random values for hash function
- *
- * Initialized once at startup with random values to create a good
- * hash distribution. Each byte value maps to a random offset.
- */
-static dbref hash_function_table[256];
-
-/**
- * hft_initialized - Flag indicating hash function table is ready
- */
-static int hft_initialized = 0;
-
-/**
- * player_list - Main hash table array
- *
- * Each entry is the head of a linked list of players whose names
- * hash to that index. NULL indicates no players at that index.
- */
-static struct pl_elt *player_list[PLAYER_LIST_SIZE];
-
-/**
- * pl_used - Flag indicating player list has been initialized
- */
-static int pl_used = 0;
-
-/* ============================================================================
- * HASH FUNCTION INITIALIZATION
- * ============================================================================ */
-
-/**
- * init_hft - Initialize the hash function table
- *
- * Fills the hash function table with random values to ensure good
- * distribution of player names across the hash table. Should be called
- * once at startup.
- *
- * SECURITY:
- * - Uses random() for unpredictable distribution
- * - Masks result to valid table index
- * - Only initializes once
- *
- * ALGORITHM:
- * - For each possible byte value (0-255)
- * - Generate a random number
- * - Mask it to valid hash table size
- * - Store in lookup table
- */
-static void init_hft(void)
+void init_player_hash(void)
 {
-  int i;
-
-  /* Generate random hash values for each byte */
-  for (i = 0; i < 256; i++) {
-    hash_function_table[i] = (dbref)(random() & (PLAYER_LIST_SIZE - 1));
-  }
-
-  hft_initialized = 1;
+    if (!player_hash) {
+        player_hash = hash_create("players", HASH_SIZE_LARGE, 0, NULL);
+        if (!player_hash) {
+            log_error("Failed to create player hash table!");
+            exit_nicely(1);
+        }
+    }
 }
 
-/* ============================================================================
- * HASH FUNCTION
- * ============================================================================ */
-
 /**
- * hash_function - Compute hash value for a string
- *
- * Computes a hash value for a player name using a rolling XOR with
- * random table lookups. This provides good distribution and handles
- * case-insensitive matching.
- *
- * SECURITY:
- * - Ensures hash table is initialized before use
- * - Handles NULL strings safely
- * - Case-insensitive to prevent duplicate registrations
- *
- * ALGORITHM:
- * 1. Initialize hash to 0
- * 2. For each character in string:
- *    a. Convert to lowercase
- *    b. XOR hash with (hash >> 1)
- *    c. XOR with random table value for character
- * 3. Result is hash value in range [0, PLAYER_LIST_SIZE)
- *
- * @param string The string to hash (player name or alias)
- * @return Hash value in range [0, PLAYER_LIST_SIZE)
- */
-static dbref hash_function(const char *string)
-{
-  dbref hash;
-
-  /* Ensure hash table is initialized */
-  if (!hft_initialized) {
-    init_hft();
-  }
-
-  /* Handle NULL string */
-  if (!string) {
-    return 0;
-  }
-
-  /* Compute rolling XOR hash */
-  hash = 0;
-  for (; *string; string++) {
-    /* XOR current hash with shifted hash and table lookup */
-    hash ^= ((hash >> 1) ^
-             hash_function_table[(int)DOWNCASE((unsigned char)*string)]);
-  }
-
-  return hash;
-}
-
-/* ============================================================================
- * PLAYER LIST MANAGEMENT
- * ============================================================================ */
-
-/**
- * clear_players - Clear and free the entire player list
- *
- * Removes all entries from the hash table and frees associated memory.
- * Should be called during database reload or shutdown.
- *
- * SECURITY:
- * - Uses SMART_FREE for proper memory tracking
- * - Properly walks linked lists to avoid leaks
- * - Handles empty lists safely
- *
- * MEMORY: Frees all pl_elt structures but not the player objects themselves
+ * clear_players - Clear all player entries
+ * COMPATIBLE: Same signature as original
  */
 void clear_players(void)
 {
-  int i;
-  struct pl_elt *e;
-  struct pl_elt *next;
-
-  /* Iterate through all hash table buckets */
-  for (i = 0; i < PLAYER_LIST_SIZE; i++) {
-    if (pl_used) {
-      /* Free entire collision chain */
-      for (e = player_list[i]; e; e = next) {
-        next = e->next;
-        SMART_FREE(e);
-      }
+    if (!player_hash) {
+        init_player_hash();
     }
-    player_list[i] = NULL;
-  }
-
-  pl_used = 1;
+    hash_clear(player_hash);
 }
 
 /**
- * add_player - Add a player to the hash table
- *
- * Adds both the player's name and alias (if present) to the hash table.
- * Both entries point to the same player object.
- *
- * SECURITY:
- * - Validates player reference with GoodObject()
- * - Uses SAFE_MALLOC for memory tracking
- * - Handles names with spaces (skips them)
- * - Safe string operations
- *
- * COLLISION HANDLING:
- * - New entries added at head of collision chain
- * - O(1) insertion time
- *
- * @param player The player object to add to the hash table
+ * add_player - Add player to hash table
+ * COMPATIBLE: Same signature as original
+ * 
+ * Adds both name and alias if present
  */
 void add_player(dbref player)
 {
-  dbref hash;
-  struct pl_elt *e;
-
-  /* Validate player reference */
-  if (!GoodObject(player)) {
-    log_error("add_player: Invalid player object");
-    return;
-  }
-
-  /* Add main name (skip if contains spaces) */
-  if (!strchr(db[player].name, ' ')) {
-    hash = hash_function(db[player].name);
-
-    /* Allocate new list element */
-    SAFE_MALLOC(e, struct pl_elt, 1);
-
-    e->player = player;
-    e->next = player_list[hash];
-    player_list[hash] = e;
-  }
-
-  /* Add alias if present */
-  if (*atr_get(player, A_ALIAS)) {
-    hash = hash_function(atr_get(player, A_ALIAS));
-
-    /* Allocate new list element for alias */
-    SAFE_MALLOC(e, struct pl_elt, 1);
-
-    e->player = player;
-    e->next = player_list[hash];
-    player_list[hash] = e;
-  }
+    const char *name;
+    const char *alias;
+    
+    if (!GoodObject(player)) {
+        log_error("add_player: Invalid player object");
+        return;
+    }
+    
+    if (!player_hash) {
+        init_player_hash();
+    }
+    
+    /* Add by name (skip if has spaces) */
+    name = db[player].name;
+    if (name && !strchr(name, ' ')) {
+        hash_insert(player_hash, name, (void*)(intptr_t)player);
+    }
+    
+    /* Add by alias if present */
+    alias = atr_get(player, A_ALIAS);
+    if (alias && *alias) {
+        hash_insert(player_hash, alias, (void*)(intptr_t)player);
+    }
 }
 
 /**
- * lookup_player - Find a player by name or alias
- *
- * Searches the hash table for a player matching the given name.
- * Handles special cases like * prefix and #dbref format.
- *
- * SECURITY:
- * - Safe string comparison
- * - Validates dbref range for # format
- * - Case-insensitive matching
- * - NULL-safe
- *
- * ALGORITHM:
- * 1. Strip leading * characters (for channel names)
- * 2. Compute hash of name
- * 3. Walk collision chain checking names and aliases
- * 4. If name starts with #, try parsing as dbref
- * 5. Return player dbref or NOTHING if not found
- *
- * @param name The name or alias to search for
- * @return Player dbref if found, NOTHING otherwise
+ * lookup_player - Find player by name or alias
+ * COMPATIBLE: Same signature as original
+ * 
+ * Returns player dbref or NOTHING
  */
 dbref lookup_player(const char *name)
 {
-  struct pl_elt *e;
-  dbref a;
-
-  /* Validate input */
-  if (!name) {
+    void *result;
+    dbref player;
+    
+    if (!name) {
+        return NOTHING;
+    }
+    
+    if (!player_hash) {
+        init_player_hash();
+    }
+    
+    /* Strip leading * characters (for channel names) */
+    while (*name == '*') {
+        name++;
+    }
+    
+    if (!*name) {
+        return NOTHING;
+    }
+    
+    /* Look up in hash table */
+    result = hash_lookup(player_hash, name);
+    if (result) {
+        return (dbref)(intptr_t)result;
+    }
+    
+    /* Handle #dbref format */
+    if (name[0] == '#' && name[1]) {
+        player = (dbref)atol(name + 1);
+        if (player >= 0 && player < db_top) {
+            return player;
+        }
+    }
+    
     return NOTHING;
-  }
-
-  /* Strip leading * characters */
-  while (name[0] == '*') {
-    name++;
-  }
-
-  /* Check if anything left after stripping */
-  if (!*name) {
-    return NOTHING;
-  }
-
-  /* Search hash table collision chain */
-  for (e = player_list[hash_function(name)]; e; e = e->next) {
-    /* Validate player object */
-    if (!GoodObject(e->player)) {
-      continue;
-    }
-
-#ifdef DEBUG
-    notify(root, tprintf("%s %s", db[e->player].name, name));
-#endif
-
-    /* Check both name and alias (case-insensitive) */
-    if (!string_compare(db[e->player].name, name) ||
-        !string_compare(atr_get(e->player, A_ALIAS), name)) {
-      return e->player;
-    }
-  }
-
-  /* Handle #dbref format */
-  if (name[0] == '#' && name[1]) {
-    a = (dbref)atol(name + 1);
-
-    /* Validate dbref range */
-    if (a >= 0 && a < db_top) {
-      return a;
-    }
-  }
-
-  return NOTHING;
 }
 
 /**
- * delete_player - Remove a player from the hash table
- *
- * Removes both the player's name and alias entries from the hash table.
- * Frees the associated list elements but not the player object itself.
- *
- * SECURITY:
- * - Validates player reference
- * - Uses SMART_FREE for memory tracking
- * - Properly maintains linked list structure
- * - Handles missing entries gracefully
- *
- * ALGORITHM:
- * For both name and alias:
- * 1. Compute hash
- * 2. Search collision chain
- * 3. If found at head: update head pointer
- * 4. If found in middle: update previous element's next pointer
- * 5. Free the list element
- *
- * @param player The player to remove from the hash table
+ * delete_player - Remove player from hash table
+ * COMPATIBLE: Same signature as original
+ * 
+ * Removes both name and alias entries
  */
 void delete_player(dbref player)
 {
-  dbref hash;
-  struct pl_elt *prev;
-  struct pl_elt *e;
-
-  /* Validate player reference */
-  if (!GoodObject(player)) {
-    log_error("delete_player: Invalid player object");
-    return;
-  }
-
-  /* Delete main name entry (if no spaces) */
-  if (!strchr(db[player].name, ' ')) {
-    hash = hash_function(db[player].name);
-
-    if ((e = player_list[hash]) == NULL) {
-      /* No entries at this hash - nothing to delete */
-      return;
-    } else if (e->player == player) {
-      /* Found at head of list */
-      player_list[hash] = e->next;
-      SMART_FREE(e);
-    } else {
-      /* Search rest of collision chain */
-      for (prev = e, e = e->next; e; prev = e, e = e->next) {
-        if (e->player == player) {
-          /* Found in middle of chain */
-          prev->next = e->next;
-          SMART_FREE(e);
-          break;
-        }
-      }
+    const char *name;
+    const char *alias;
+    
+    if (!GoodObject(player)) {
+        log_error("delete_player: Invalid player object");
+        return;
     }
-  }
-
-  /* Delete alias entry if present */
-  if (*atr_get(player, A_ALIAS)) {
-    hash = hash_function(atr_get(player, A_ALIAS));
-
-    if ((e = player_list[hash]) == NULL) {
-      /* No entries at this hash */
-      return;
-    } else if (e->player == player) {
-      /* Found at head of list */
-      player_list[hash] = e->next;
-      SMART_FREE(e);
-    } else {
-      /* Search rest of collision chain */
-      for (prev = e, e = e->next; e; prev = e, e = e->next) {
-        if (e->player == player) {
-          /* Found in middle of chain */
-          prev->next = e->next;
-          SMART_FREE(e);
-          break;
-        }
-      }
+    
+    if (!player_hash) {
+        return;
     }
-  }
+    
+    /* Remove by name (if no spaces) */
+    name = db[player].name;
+    if (name && !strchr(name, ' ')) {
+        hash_remove(player_hash, name);
+    }
+    
+    /* Remove by alias if present */
+    alias = atr_get(player, A_ALIAS);
+    if (alias && *alias) {
+        hash_remove(player_hash, alias);
+    }
 }
 
-/* ============================================================================
- * HASH TABLE STATISTICS (DEBUG)
- * ============================================================================ */
 
-#ifdef DEBUG
-/**
- * player_list_stats - Print hash table statistics
- *
- * DEBUG ONLY: Analyzes hash table distribution and collision chains.
- * Useful for tuning hash function and table size.
- *
- * Prints:
- * - Number of used buckets
- * - Average chain length
- * - Maximum chain length
- * - Distribution histogram
- */
-void player_list_stats(void)
-{
-  int i;
-  int used_buckets = 0;
-  int total_entries = 0;
-  int max_chain = 0;
-  int chain_len;
-  struct pl_elt *e;
+//#ifdef DEBUG
+///**
+// * player_list_stats - Print hash table statistics
+// */
+//void player_list_stats(void)
+//{
+//    size_t count, size, collisions;
+//
+//    if (!player_hash) {
+//        log_important("Player hash table not initialized.");
+//        return;
+//    }
+//
+//    ht_stats(player_hash, &count, &size, &collisions);
+//
+//    log_important("Player hash table statistics:");
+//    log_important(tprintf("  Total entries: %lu", (unsigned long)count));
+//    log_important(tprintf("  Table size: %lu", (unsigned long)size));
+//    log_important(tprintf("  Collisions: %lu", (unsigned long)collisions));
+//
+//    if (size > 0) {
+//        float load = (float)count / size;
+//        log_important(tprintf("  Load factor: %.2f%%", load * 100));
+//    }
+//}
+//#endif
 
-  for (i = 0; i < PLAYER_LIST_SIZE; i++) {
-    if (player_list[i]) {
-      used_buckets++;
-      chain_len = 0;
-
-      for (e = player_list[i]; e; e = e->next) {
-        chain_len++;
-        total_entries++;
-      }
-
-      if (chain_len > max_chain) {
-        max_chain = chain_len;
-      }
-    }
-  }
-
-  log_important(tprintf("Player hash table statistics:"));
-  log_important(tprintf("  Total entries: %d", total_entries));
-  log_important(tprintf("  Used buckets: %d / %d (%.1f%%)",
-                        used_buckets, PLAYER_LIST_SIZE,
-                        (100.0 * used_buckets) / PLAYER_LIST_SIZE));
-  log_important(tprintf("  Average chain length: %.2f",
-                        used_buckets ?
-                        (double)total_entries / used_buckets : 0.0));
-  log_important(tprintf("  Maximum chain length: %d", max_chain));
-}
-#endif
-
-/* End of player_list.c */
+/* End of player hash implementation */

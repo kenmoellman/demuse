@@ -74,7 +74,7 @@ multi-homing either.) -wm 05/08/2000 */
 
 /* Define whether memory debug is turned on or not. You want this diabled    *
  * unless your game is crashing with memory errors.                          */
-#undef MEMORY_DEBUG_LOG
+#define MEMORY_DEBUG_LOG
 #ifdef MEMORY_DEBUG_LOG
 #define MEMORY_DEBUG_FILE "./logs/malloc-debug.log"
 #define MEMORY_DEBUG_SIZE 128
