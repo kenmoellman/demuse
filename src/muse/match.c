@@ -67,6 +67,7 @@ static dbref last_match = NOTHING;       /* holds result of last match */
 static int match_count;                  /* holds total number of inexact matches */
 static dbref match_who;                  /* player who is being matched around */
 static int preferred_type = NOTYPE;      /* preferred type */
+static int match_allow_deleted = 0;      /* if non-zero, allow matching deleted objects */
 
 /* Global variables (defined in header) */
 dbref exact_match = NOTHING;             /* holds result of exact match */
@@ -202,6 +203,7 @@ void init_match(dbref player, const char *name, int type)
     match_name = NULL;
     check_keys = 0;
     preferred_type = NOTYPE;
+    match_allow_deleted = 0;
     it = NOTHING;
     return;
   }
@@ -212,6 +214,7 @@ void init_match(dbref player, const char *name, int type)
   match_name = strip_color(name);
   check_keys = 0;
   preferred_type = type;
+  match_allow_deleted = 0;
 
   /* Handle "it" reference */
   if ((!string_compare(name, "it")) && *atr_get(player, A_IT))
@@ -227,6 +230,20 @@ void init_match(dbref player, const char *name, int type)
   {
     it = NOTHING;
   }
+}
+
+/**
+ * set_match_allow_deleted - Allow matching deleted objects
+ *
+ * @param value If non-zero, matching will use ValidObject() instead of GoodObject()
+ *              allowing deleted objects to be matched
+ *
+ * Use this for commands like @swap, @undestroy, etc. that need to work with
+ * deleted objects. Must be called after init_match() and before match functions.
+ */
+void set_match_allow_deleted(int value)
+{
+  match_allow_deleted = value;
 }
 
 /**
@@ -330,11 +347,17 @@ static dbref absolute_name(void)
     return NOTHING;
 
   match = parse_dbref(match_name + 1);
-  
-  /* Validate the parsed dbref */
-  if (!GoodObject(match))
-    return NOTHING;
-    
+
+  /* Validate the parsed dbref
+   * Use ValidObject() if match_allow_deleted is set, otherwise GoodObject() */
+  if (match_allow_deleted) {
+    if (!ValidObject(match))
+      return NOTHING;
+  } else {
+    if (!GoodObject(match))
+      return NOTHING;
+  }
+
   return match;
 }
 
@@ -712,27 +735,33 @@ void match_everything(void)
  */
 dbref match_result(void)
 {
-  if (exact_match != NOTHING && GoodObject(exact_match))
-  {
-    store_it(exact_match);
-    return exact_match;
-  }
-  else
-  {
-    switch (match_count)
+  /* Check exact match - use ValidObject() if match_allow_deleted is set */
+  if (exact_match != NOTHING) {
+    int is_valid = match_allow_deleted ? ValidObject(exact_match) : GoodObject(exact_match);
+    if (is_valid)
     {
-    case 0:
-      return NOTHING;
-    case 1:
-      if (GoodObject(last_match))
+      store_it(exact_match);
+      return exact_match;
+    }
+  }
+
+  /* Check partial matches */
+  switch (match_count)
+  {
+  case 0:
+    return NOTHING;
+  case 1:
+    {
+      int is_valid = match_allow_deleted ? ValidObject(last_match) : GoodObject(last_match);
+      if (is_valid)
       {
         store_it(last_match);
         return last_match;
       }
       return NOTHING;
-    default:
-      return AMBIGUOUS;
     }
+  default:
+    return AMBIGUOUS;
   }
 }
 
@@ -745,17 +774,21 @@ dbref match_result(void)
  */
 dbref last_match_result(void)
 {
-  if (exact_match != NOTHING && GoodObject(exact_match))
-  {
-    store_it(exact_match);
-    return exact_match;
+  /* Check exact match - use ValidObject() if match_allow_deleted is set */
+  if (exact_match != NOTHING) {
+    int is_valid = match_allow_deleted ? ValidObject(exact_match) : GoodObject(exact_match);
+    if (is_valid)
+    {
+      store_it(exact_match);
+      return exact_match;
+    }
   }
-  else
-  {
-    if (GoodObject(last_match))
-      store_it(last_match);
-    return last_match;
-  }
+
+  /* Return last match regardless of ambiguity */
+  int is_valid = match_allow_deleted ? ValidObject(last_match) : GoodObject(last_match);
+  if (is_valid)
+    store_it(last_match);
+  return last_match;
 }
 
 /**

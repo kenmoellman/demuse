@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(nm:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)",
+      "Bash(comm:*)",
+      "Bash(tee:*)",
+      "Bash(paste:*)",
+      "Bash(/tmp/phase4_insert.txt)",
+      "Bash(/tmp/generate_registrations.sh:*)",
+      "Bash(/tmp/phase4_registrations.txt)",
+      "Bash(awk:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

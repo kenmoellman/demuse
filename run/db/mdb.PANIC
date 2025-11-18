@@ -1,5 +1,5 @@
 @14
-~47
+~52
 &0
 Login
 Login
@@ -38,63 +38,63 @@ root
 870406745
 0
 10/40/y/2/y/3/y/4/y/5/=/6/</7/y/8/y/9/y/10/y/11/y/12/y/13/y/15/y/16/</17/y/18/y/19/</20/y/22/y/23/y/25/</27/y/28/y/29/</26/y/30/y/31/y/32/y/33/y/34/y/35/y/36/y/38/y/39/y/41/y/0
->25
+>1020
 -1
-1632100574
->30
+10790470
+>1022
 -1
-1630544507
->100
+ ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
+>50
 -1
-$poo *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=poo [add(1,v(0))]},{dtw 0}
->39
+public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
+>1110
 -1
-whee
->6
+39
+>101
 -1
-this is the root..
->42
+1366
+>102
 -1
-r
->52
--1
-3000
->38
--1
-56
->140
--1
-nafoichp
->5
--1
-XXjTP3nvQXZf2
->129
+$dtw *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=dtw [add(1,v(0))]},{@echo ALL DUN!!}
+>159
 -1
 #1
 >158
 -1
 #1
->159
+>129
 -1
 #1
->102
+>5
 -1
-$dtw *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=dtw [add(1,v(0))]},{@echo ALL DUN!!}
->101
+XXjTP3nvQXZf2
+>140
 -1
-1366
->1110
+nafoichp
+>38
 -1
-39
->50
+56
+>52
 -1
-public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
->1022
+3000
+>42
 -1
- ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
->1020
+r
+>6
 -1
-10790470
+this is the root..
+>39
+-1
+whee
+>100
+-1
+$poo *:@vb me=%0;@swi lt(%0,5186)=1,{@decompile #%0=#%0;@wait add(1,wcount(lattr(#%0)))=poo [add(1,v(0))]},{dtw 0}
+>30
+-1
+1630544507
+>25
+-1
+1632100574
 <
 0
 0
@@ -116,42 +116,45 @@ Wizard
 913693545
 894306263
 10/2/y/3/y/4/y/5/y/6/=/7/</8/y/9/y/10/y/12/y/13/y/16/y/17/y/18/=/19/y/21/</22/y/23/y/24/</26/y/28/y/29/y/30/y/31/y/32/</33/y/34/y/35/y/36/y/37/</39/y/40/y/41/y/42/y/43/y/44/y/45/y/0
->1020
--1
-158
->25
--1
-1630141913
->30
--1
-1630141807
->50
--1
-public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
->6
-42
-#4
->8
-42
-llama
->9
-42
-llama
->7
-42
-894306263
->38
--1
-93
->52
--1
-2010
->5
--1
-XXgnEgxSD8eMs
 >42
 -1
 god
+>5
+-1
+XXgnEgxSD8eMs
+>52
+-1
+2010
+>38
+-1
+93
+>7
+42
+894306263
+>9
+42
+llama
+>8
+42
+llama
+>6
+42
+#4
+>50
+-1
+public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
+>30
+-1
+1763435933
+>25
+-1
+1763435945
+>1020
+-1
+431
+>1022
+-1
+ ???@localhost
 <
 1
 42
@@ -989,15 +992,15 @@ log_gripe
 1048580
 0
 1630266822
->50
--1
-1
->1110
--1
-49
 >52
 -1
 19
+>1110
+-1
+49
+>50
+-1
+1
 <
 0
 0
@@ -1018,15 +1021,15 @@ log_gripe
 1048580
 0
 1630262591
->52
--1
-19
->1110
--1
-364
 >50
 -1
 1
+>1110
+-1
+364
+>52
+-1
+19
 <
 0
 0
@@ -1047,15 +1050,15 @@ log_prayer
 1048580
 0
 1630266913
->50
--1
-1
->1110
--1
-55
 >52
 -1
 19
+>1110
+-1
+55
+>50
+-1
+1
 <
 0
 0
@@ -1163,12 +1166,12 @@ log_imp
 1048580
 0
 1630140266
->1110
--1
-363
 >52
 -1
 19
+>1110
+-1
+363
 <
 0
 0
@@ -1189,12 +1192,12 @@ dbinfo
 1048580
 0
 1630139257
->1110
--1
-15
 >52
 -1
 19
+>1110
+-1
+15
 <
 0
 0
@@ -1215,12 +1218,12 @@ dbinfo
 1048580
 0
 1630139362
->52
--1
-19
 >1110
 -1
 46
+>52
+-1
+19
 <
 0
 0
@@ -1241,12 +1244,12 @@ dbinfo
 1048580
 0
 1630140188
->52
--1
-19
 >1110
 -1
 362
+>52
+-1
+19
 <
 0
 0
@@ -1267,15 +1270,15 @@ dbinfo
 1048580
 0
 1630490925
->50
--1
-1
->1110
--1
-42
 >52
 -1
 19
+>1110
+-1
+42
+>50
+-1
+1
 <
 0
 0
@@ -1296,18 +1299,18 @@ Reg Checker
 1089537
 766647048
 766646691
->29
--1
-@swi is_a(%0,#42)=0,{+com reg=uh, %[unparse(v(0))%] isn't registered.},{@swi get(%0,reg_email)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have an email address set.};@swi get(%0,reg_name)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have a real name set.};@swi get(%0,reg_date)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have a registration date set! setting it to now.;@reg_date %0=xtime()}
->26
--1
-connect: *
->128
--1
-@swi loc(me)=link(me),,home
 >52
 -1
 1
+>128
+-1
+@swi loc(me)=link(me),,home
+>26
+-1
+connect: *
+>29
+-1
+@swi is_a(%0,#42)=0,{+com reg=uh, %[unparse(v(0))%] isn't registered.},{@swi get(%0,reg_email)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have an email address set.};@swi get(%0,reg_name)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have a real name set.};@swi get(%0,reg_date)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have a registration date set! setting it to now.;@reg_date %0=xtime()}
 <
 0
 0
@@ -1491,12 +1494,12 @@ Login Area
 40960
 799108491
 0
->6
--1
-Welcome to your new MUSE. Welcome. Please take a moment to read the news. You can do this by typing 'news', without the ''s
 >52
 -1
 0
+>6
+-1
+Welcome to your new MUSE. Welcome. Please take a moment to read the news. You can do this by typing 'news', without the ''s
 <
 0
 0
@@ -1517,15 +1520,15 @@ office
 12800
 890856037
 799468950
->119
--1
-@chemit time=* The time is now: [rtime()]
->6
--1
-home sweet home.
 >19
 -1
 _@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
+>6
+-1
+home sweet home.
+>119
+-1
+@chemit time=* The time is now: [rtime()]
 <
 0
 0
@@ -1546,21 +1549,21 @@ Neat Commands Parent
 1188865
 849053528
 849051822
->52
--1
-1
->3
-32
-$ls:@pemit %#=drwxr--r-- .12 flipside muse . . . .512 [time()] .
->2
-32
-$quit:@pe %#=Try /quit or QUIT.
->1
-32
-$exit:@pe %#=Try /quit or QUIT if you're trying to leave,;@pe %#=Try leave if you're trying to exit an object.
 >0
 32
 $register *--*--*--*:@force #4342=+mail wm=Please Register %0, Real Name: %2, password %1, email %3
+>1
+32
+$exit:@pe %#=Try /quit or QUIT if you're trying to leave,;@pe %#=Try leave if you're trying to exit an object.
+>2
+32
+$quit:@pe %#=Try /quit or QUIT.
+>3
+32
+$ls:@pemit %#=drwxr--r-- .12 flipside muse . . . .512 [time()] .
+>52
+-1
+1
 <
 0
 0
@@ -1782,21 +1785,21 @@ ATM Card
 9217
 894678970
 894678970
->4
-34
-#5431
->2
-34
-0
->1
-34
-894678970_S_#1111
->3
-34
-3009
 >52
 -1
 1
+>3
+34
+3009
+>1
+34
+894678970_S_#1111
+>2
+34
+0
+>4
+34
+#5431
 <
 1
 34
@@ -1818,21 +1821,21 @@ Automated Teller
 8193
 799480976
 799480108
->9
-33
-0
->8
-33
-0
->11
-33
+>52
+-1
 1
 >129
 -1
 #128
->52
--1
+>11
+33
 1
+>8
+33
+0
+>9
+33
+0
 <
 1
 33
@@ -1854,15 +1857,15 @@ exit_organizer
 8193
 840293415
 840292010
->100
--1
-$organize:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=n
->52
--1
-1
 >101
 -1
 $org2:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=s
+>52
+-1
+1
+>100
+-1
+$organize:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=n
 <
 0
 0
@@ -1947,32 +1950,29 @@ Registered Character Parent
 -1
 2
 41985
-890688843
+1763359233
 766620780
->131
--1
-[v(!)]
->3
-42
-00000000000000000000000000000000
->11
--1
-#2&!#2
->129
--1
-#2
->6
--1
-You see someone special and unique.
->52
--1
-1
->1
-42
-$+mc:+mail check
 >0
 42
 $+mc *:+mail check=v(0)
+>1
+42
+$+mc:+mail check
+>52
+-1
+1
+>6
+-1
+You see someone special and unique.
+>11
+-1
+#2&!#2
+>3
+42
+00000000000000000000000000000000
+>131
+-1
+[v(!)]
 <
 0
 2
@@ -2016,151 +2016,151 @@ Bobby Newmark
 |R!+Bobb||W!+y New||B!+mark|
 39
 -1
-38
+51
 -1
 -1
 39
 -1
 43
 33554952
-913745826
+1763376573
 794113020
 10/38/y/2/y/3/y/4/y/5/y/6/=/7/</8/y/9/y/10/y/12/y/13/y/16/y/17/y/18/=/19/y/21/</22/y/23/y/24/</26/y/28/y/29/y/30/y/31/y/32/</33/y/34/y/35/y/36/y/37/</39/y/40/y/41/y/42/y/43/y/44/y/45/y/20/y/0
->50
+>25
 -1
-public:public:1 *dc *players *log_force dbinfo log_imp *log_space *log_io *dc*players free *log_root ML-microsux ML-programmers warn_security *character log_crime log_combat log_ioerr garden security warn reg log_sens log_err log_gripe _ocu garden log_root *log_sens *log_imp log_gripe root:root:1
->1110
--1
-17
->30
--1
-1632109680
->181
--1
-!coke
->0
-43
-$prtyxnonsense:npemit me=Huh? %(Type "help" for help.)
->169
--1
-http://www.mu-net.org/
->125
--1
-$ch *:@chown #%0=*nyc
->124
--1
-$g *:%0;@poof out;@wait 3={home}
->121
--1
-So, so you think you can tell. Heaven from hell. Blue skies from pain. Can you tell a green field, full of cold steel rail.. a smile from a veil.. do you think you can tell. did they get you to train. your heros were ghosts. hot ashes for trees. hot air full of cool breeze. cold confort for change. did you exchange, a walk on part in the war, for a leave home in a cage? How I wish, how I wish you were here. We're just two lost souls swimmin in a fish bowl, year after year. Running over the same old ground, and have we found.. the same old fears, wish you were here.
->39
--1
-idle
->270
--1
-|!R+Bxyb||W!+y New||!B+mark|
->104
--1
-$free *:+com free=[v(0)]
->8
-42
-newmark@mu-net.org
->1001
--1
-10000
->1
-43
-$bigwho:who NaiofDcHP
->2
-43
-$public:+ch -public;+ch +public
->36
--1
-@pe me=%# just looked at you.}
->103
--1
-$chess:@foreach lwho()=@pemit %0={%[log_io] * CHECKPOINTING: Chess}
->122
--1
-People say it's better to have loved and lost, than to have never loved at all. Which is a fine theory in thought. But people always say that to you right at the end of a relaitonship... 'Yeah, and I guess it's better to have driven off a cliff than to have never driven at all..'
->100
--1
-$hug *:na hug %0
->4
-42
-#1236
->38
--1
-891
->172
--1
-none
->5
--1
-XXixsxwJmuXEU
->52
--1
-2009
->7
-42
-794113020
->9
-42
-Ken Moellman
->6
-42
-#2
->42
--1
-wm
->7
--1
-male
->1000
--1
-10000
->6
--1
-standing 5'8", the frame of Bobby Newmark, the shell of what was a man, stands before you in the most peculiar fashion. as one of the original liberators of flipside, you see that he is very modest, despite the exspanse the place has grown to. He is very wise, and a good source of information, for this world and the real one.
->40
--1
-tired of screwin up, tired of goin down, tired of myself, tired of this town
->3
-42
-10000000000000000000000000000000
->54
--1
-leave me alone
->1015
--1
-450
->102
--1
-$idle:=:idles;:idles
->112
--1
-1
->1064
--1
-0 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
->140
--1
-naihd
->1020
--1
--1044445896
->57
--1
-0:Y
->1022
--1
- newmark@master.mu-net.org newmark@master.mu-net.org newmark@master.mu-net.org ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
+1763436008
 >116
 -1
 @wait 10={@dbck;@tr me/vq}
->25
+>1022
 -1
-1760067082
+ ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
+>57
+-1
+0:Y
+>1020
+-1
+-1042682926
+>140
+-1
+naihd
+>1064
+-1
+0 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+>112
+-1
+1
+>102
+-1
+$idle:=:idles;:idles
+>1015
+-1
+450
+>54
+-1
+leave me alone
+>3
+42
+10000000000000000000000000000000
+>40
+-1
+tired of screwin up, tired of goin down, tired of myself, tired of this town
+>6
+-1
+standing 5'8", the frame of Bobby Newmark, the shell of what was a man, stands before you in the most peculiar fashion. as one of the original liberators of flipside, you see that he is very modest, despite the exspanse the place has grown to. He is very wise, and a good source of information, for this world and the real one.
+>1000
+-1
+10000
+>7
+-1
+male
+>42
+-1
+wm
+>6
+42
+#2
+>9
+42
+Ken Moellman
+>7
+42
+794113020
+>52
+-1
+2009
+>5
+-1
+XXjTP3nvQXZf2
+>172
+-1
+none
+>38
+-1
+891
+>4
+42
+#1236
+>100
+-1
+$hug *:na hug %0
+>122
+-1
+People say it's better to have loved and lost, than to have never loved at all. Which is a fine theory in thought. But people always say that to you right at the end of a relaitonship... 'Yeah, and I guess it's better to have driven off a cliff than to have never driven at all..'
+>103
+-1
+$chess:@foreach lwho()=@pemit %0={%[log_io] * CHECKPOINTING: Chess}
+>36
+-1
+@pe me=%# just looked at you.}
+>2
+43
+$public:+ch -public;+ch +public
+>1
+43
+$bigwho:who NaiofDcHP
+>1001
+-1
+10000
+>8
+42
+newmark@mu-net.org
+>104
+-1
+$free *:+com free=[v(0)]
+>270
+-1
+|!R+Bxyb||W!+y New||!B+mark|
+>39
+-1
+idle
+>121
+-1
+So, so you think you can tell. Heaven from hell. Blue skies from pain. Can you tell a green field, full of cold steel rail.. a smile from a veil.. do you think you can tell. did they get you to train. your heros were ghosts. hot ashes for trees. hot air full of cool breeze. cold confort for change. did you exchange, a walk on part in the war, for a leave home in a cage? How I wish, how I wish you were here. We're just two lost souls swimmin in a fish bowl, year after year. Running over the same old ground, and have we found.. the same old fears, wish you were here.
+>124
+-1
+$g *:%0;@poof out;@wait 3={home}
+>125
+-1
+$ch *:@chown #%0=*nyc
+>169
+-1
+http://www.mu-net.org/
+>0
+43
+$prtyxnonsense:npemit me=Huh? %(Type "help" for help.)
+>181
+-1
+!coke
+>30
+-1
+1763435945
+>1110
+-1
+30
+>50
+-1
+|R!+public|:public:1 *players:*players:1 *log_force dbinfo log_imp *log_space *log_io free *log_root ML-microsux ML-programmers warn_security *character log_crime log_combat log_ioerr garden security warn reg log_sens log_err log_gripe _ocu garden log_root *log_sens *log_imp log_gripe root:root:1 *dc:*dc:1 testchan:testchan:1
 <
 2
 24
@@ -2192,9 +2192,6 @@ turd
 16385
 0
 1630536195
->52
--1
-0
 <
 0
 0
@@ -2215,9 +2212,6 @@ llama
 16385
 0
 1632100736
->52
--1
-0
 <
 0
 0
@@ -2238,12 +2232,145 @@ llama
 1048580
 0
 1632100811
+>1110
+-1
+46
+>52
+-1
+19
+<
+0
+0
+\
+>5
+\
+&47
+public
+public
+47
+-1
+47
+-1
+-1
+47
+-1
+43
+1048580
+0
+1763294959
+>1110
+-1
+47
+>52
+-1
+19
+<
+0
+0
+\
+>5
+\
+&48
+*dc
+*dc
+48
+-1
+48
+-1
+-1
+48
+-1
+43
+1048580
+0
+1763295764
+>50
+-1
+ld
+>1110
+-1
+48
+>52
+-1
+19
+<
+0
+0
+\
+>5
+\
+&49
+*players
+*players
+49
+-1
+49
+-1
+-1
+49
+-1
+43
+1048580
+0
+1763298581
 >52
 -1
 19
 >1110
 -1
-46
+49
+<
+0
+0
+\
+>5
+\
+&50
+testchan
+testchan
+50
+-1
+50
+-1
+-1
+50
+-1
+43
+1048580
+0
+1763354958
+>50
+-1
+43
+>1110
+-1
+50
+>52
+-1
+19
+<
+0
+0
+\
+>5
+\
+&51
+TestObject
+TestObject
+43
+-1
+-1
+-1
+-1
+39
+38
+43
+1
+0
+1763382092
+>52
+-1
+9
 <
 0
 0

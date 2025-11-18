@@ -76,10 +76,14 @@ typedef long dbref;
 #include "universe.h"
 #endif
 
-/* Macro for checking valid dbrefs - potentially add to db.h eventually */
+/* Macros for checking valid dbrefs */
+#ifndef ValidObject
+#define ValidObject(x) ((x) >= 0 && (x) < db_top && \
+                        (Typeof(x) != NOTYPE))
+#endif
+
 #ifndef GoodObject
-#define GoodObject(x) ((x) >= 0 && (x) < db_top && \
-                      (Typeof(x) != NOTYPE) && \
+#define GoodObject(x) (ValidObject(x) && \
                       !(db[x].flags & GOING))
 #endif
 

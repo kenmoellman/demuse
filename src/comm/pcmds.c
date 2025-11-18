@@ -41,9 +41,9 @@ extern time_t muse_reboot_time;
 
 
 
-char *upgrade_date;
-char *base_date;
-int day_release;
+char *upgrade_date = "01/01/25";  /* MM/DD/YY format - current modernization date */
+char *base_date = "01/01/91";     /* MM/DD/YY format - original TinyMUSE base */
+int day_release = 1;
 dbref as_from = NOTHING;
 dbref as_to = NOTHING;
 

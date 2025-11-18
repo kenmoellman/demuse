@@ -709,12 +709,24 @@ void do_examine(dbref player, char *name, char *arg2)
         
         match_here();
         match_me();
-        
+
         if ((thing = noisy_match_result()) == NOTHING) {
-            return;
+            /* Special case: if input is a direct dbref (e.g., #123),
+             * try to examine it even if it's marked for deletion.
+             * This allows @undestroy and examining deleted objects. */
+            if (name && *name == NUMBER_TOKEN) {
+                thing = parse_dbref(name + 1);
+                if (!ValidObject(thing)) {
+                    notify(player, "Invalid object reference.");
+                    return;
+                }
+                /* Found a valid (possibly deleted) object - continue examining it */
+            } else {
+                return;  /* Normal match failed, nothing to examine */
+            }
         }
     }
-    
+
     if ((!can_link(player, thing, POW_EXAMINE) &&
          !(db[thing].flags & SEE_OK))) {
         char buf2[BUFFER_LEN];

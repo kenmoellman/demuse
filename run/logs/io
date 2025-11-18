@@ -1,307 +1,230 @@
-10/27 00:46:23| Starting up on port 4208
-10/27 00:46:23| Binding to all interfaces (INADDR_ANY)
-10/27 00:46:23| Successfully opened socket on port 4208
-10/27 00:46:29| Connection from: localhost
-10/27 00:46:29| USER CONNECT: concid: 1 host ???@localhost time: Mon Oct 27 00:46:29 2025
-10/27 00:46:36| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/27 00:47:09| Starting up on port 4208
-10/27 00:47:09| Binding to all interfaces (INADDR_ANY)
-10/27 00:47:09| Successfully opened socket on port 4208
-10/27 00:48:41| Connection from: localhost
-10/27 00:48:41| USER CONNECT: concid: 1 host ???@localhost time: Mon Oct 27 00:48:41 2025
-10/27 00:48:48| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/27 00:59:40| Starting up on port 4208
-10/27 00:59:40| Binding to all interfaces (INADDR_ANY)
-10/27 00:59:40| Successfully opened socket on port 4208
-10/27 01:00:03| Connection from: localhost
-10/27 01:00:03| USER CONNECT: concid: 1 host ???@localhost time: Mon Oct 27 01:00:03 2025
-10/27 01:00:14| FAILED CONNECT: wm on concid 1 (bad password)
-10/27 01:00:25| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/27 01:51:56| Starting up on port 4208
-10/27 01:51:56| Binding to all interfaces (INADDR_ANY)
-10/27 01:51:56| Successfully opened socket on port 4208
-10/27 01:52:02| Connection from: localhost
-10/27 01:52:02| USER CONNECT: concid: 1 host ???@localhost time: Mon Oct 27 01:52:02 2025
-10/27 01:52:09| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/27 05:56:56| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Oct 27 05:56:56 2025
-10/27 05:56:58| Connection from: localhost
-10/27 05:56:58| USER CONNECT: concid: 2 host ???@localhost time: Mon Oct 27 05:56:58 2025
-10/27 05:57:04| CONNECTED: root(#1PvqNa) on concid 2
-10/27 06:36:49| CHECKPOINTING: db/mdb.#1#
-10/27 06:40:21| DISCONNECT concid 2 player root(#1PvqcNa) at Mon Oct 27 06:40:20 2025
-10/27 06:40:21| DUMPING: db/mdb.#2#
-10/27 06:40:21| DUMPING: db/mdb.#2# (done)
-10/28 03:16:02| Starting up on port 4208
-10/28 03:16:02| Binding to all interfaces (INADDR_ANY)
-10/28 03:16:02| Successfully opened socket on port 4208
-10/28 03:16:06| Connection from: localhost
-10/28 03:16:06| USER CONNECT: concid: 1 host ???@localhost time: Tue Oct 28 03:16:06 2025
-10/28 03:16:08| FAILED CONNECT: root on concid 1 (bad password)
-10/28 03:16:16| CONNECTED: root(#1PvqNa) on concid 1
-10/28 03:16:16| CHECKPOINTING: db/mdb.#1#
-10/28 07:17:29| DISCONNECT concid 1 player root(#1PvqcNa) at Tue Oct 28 07:17:29 2025
-10/28 07:17:29| DUMPING: db/mdb.#2#
-10/28 07:17:29| DUMPING: db/mdb.#2# (done)
-10/29 02:38:10| Starting up on port 4208
-10/29 02:38:10| Binding to all interfaces (INADDR_ANY)
-10/29 02:38:10| Successfully opened socket on port 4208
-10/29 02:45:58| Starting up on port 4208
-10/29 02:45:58| Binding to all interfaces (INADDR_ANY)
-10/29 02:45:58| Successfully opened socket on port 4208
-10/29 02:46:06| Connection from: localhost
-10/29 02:46:06| USER CONNECT: concid: 1 host ???@localhost time: Wed Oct 29 02:46:06 2025
-10/29 02:46:12| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/29 02:46:12| CHECKPOINTING: db/mdb.#1#
-10/29 06:47:16| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Wed Oct 29 06:47:16 2025
-10/29 06:47:16| DUMPING: db/mdb.#2#
-10/29 06:47:16| DUMPING: db/mdb.#2# (done)
-10/29 23:48:30| Starting up on port 4208
-10/29 23:48:30| Binding to all interfaces (INADDR_ANY)
-10/29 23:48:30| Successfully opened socket on port 4208
-10/29 23:49:25| Starting up on port 4208
-10/29 23:49:25| Binding to all interfaces (INADDR_ANY)
-10/29 23:49:25| Successfully opened socket on port 4208
-10/30 03:49:33| Connection from: localhost
-10/30 03:49:33| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 03:49:33 2025
-10/30 03:50:01| CONNECTED: Root(#1PNa) on concid 1
-10/30 03:50:01| CHECKPOINTING: db/mdb.#1#
-10/30 04:34:57| CHECKPOINTING: db/mdb.#2#
-10/30 04:50:06| (|R!+HIDDEN|) Root idled after 60 minutes inactivity
-10/30 05:20:39| CHECKPOINTING: db/mdb.#3#
-10/30 06:06:21| CHECKPOINTING: db/mdb.#4#
-10/30 06:16:26| (|R!+HIDDEN|) Root(#1PcNa) unidled after 2 hours and 26 minutes.
-10/30 06:51:48| CHECKPOINTING: db/mdb.#5#
-10/30 06:59:46| DISCONNECT concid 1 player Root(#1PcNa) at Thu Oct 30 06:59:46 2025
-10/30 06:59:46| DUMPING: db/mdb.#6#
-10/30 06:59:46| DUMPING: db/mdb.#6# (done)
-10/30 03:00:13| Starting up on port 4208
-10/30 03:00:13| Binding to all interfaces (INADDR_ANY)
-10/30 03:00:13| Successfully opened socket on port 4208
-10/30 07:00:21| Connection from: localhost
-10/30 07:00:21| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 07:00:21 2025
-10/30 07:00:25| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/30 07:00:57| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:00:57 2025
-10/30 07:00:57| DUMPING: db/mdb.#1#
-10/30 07:00:57| DUMPING: db/mdb.#1# (done)
-10/30 03:01:01| Starting up on port 4208
-10/30 03:01:01| Binding to all interfaces (INADDR_ANY)
-10/30 03:01:01| Successfully opened socket on port 4208
-10/30 03:09:19| Starting up on port 4208
-10/30 03:09:19| Binding to all interfaces (INADDR_ANY)
-10/30 03:09:19| Successfully opened socket on port 4208
-10/30 07:09:25| Connection from: localhost
-10/30 07:09:25| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 07:09:25 2025
-10/30 07:09:29| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/30 07:11:48| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:11:48 2025
-10/30 07:11:48| DUMPING: db/mdb.#1#
-10/30 07:11:48| DUMPING: db/mdb.#1# (done)
-10/30 03:27:05| Starting up on port 4208
-10/30 03:27:05| Binding to all interfaces (INADDR_ANY)
-10/30 03:27:05| Successfully opened socket on port 4208
-10/30 07:27:08| Connection from: localhost
-10/30 07:27:08| USER CONNECT: concid: 1 host ???@localhost time: Thu Oct 30 07:27:08 2025
-10/30 07:27:12| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/30 07:27:36| CHECKPOINTING: db/mdb.#1#
-10/30 07:28:11| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Thu Oct 30 07:28:11 2025
-10/30 07:28:11| DUMPING: db/mdb.#2#
-10/30 07:28:11| DUMPING: db/mdb.#2# (done)
-10/31 22:53:28| Starting up on port 4208
-10/31 22:53:28| Binding to all interfaces (INADDR_ANY)
-10/31 22:53:28| Successfully opened socket on port 4208
-10/31 22:53:34| Connection from: localhost
-10/31 22:53:34| USER CONNECT: concid: 1 host ???@localhost time: Fri Oct 31 22:53:34 2025
-10/31 22:53:39| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-10/31 22:53:39| CHECKPOINTING: db/mdb.#1#
-11/01 02:55:02| CHECKPOINTING: db/mdb.#2#
-11/01 02:56:43| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sat Nov  1 02:56:43 2025
-11/01 02:56:43| DUMPING: db/mdb.#3#
-11/01 02:56:43| DUMPING: db/mdb.#3# (done)
-11/01 15:46:34| Starting up on port 4208
-11/01 15:46:34| Binding to all interfaces (INADDR_ANY)
-11/01 15:46:34| Successfully opened socket on port 4208
-11/01 15:46:40| Connection from: localhost
-11/01 15:46:40| USER CONNECT: concid: 1 host ???@localhost time: Sat Nov  1 15:46:40 2025
-11/01 15:46:44| FAILED CONNECT: wm on concid 1 (bad password)
-11/01 15:46:51| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/01 15:46:51| CHECKPOINTING: db/mdb.#1#
-11/01 19:47:30| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sat Nov  1 19:47:30 2025
-11/01 19:47:30| DUMPING: db/mdb.#2#
-11/01 19:47:30| DUMPING: db/mdb.#2# (done)
-11/14 19:06:18| Starting up on port 4208
-11/14 19:06:18| Binding to all interfaces (INADDR_ANY)
-11/14 19:06:18| Successfully opened socket on port 4208
-11/14 19:07:18| CHECKPOINTING: db/mdb.#1#
-11/14 19:07:27| Connection from: localhost
-11/14 19:07:27| USER CONNECT: concid: 1 host ???@localhost time: Fri Nov 14 19:07:27 2025
-11/14 19:07:31| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/15 00:08:19| CHECKPOINTING: db/mdb.#2#
-11/15 00:08:43| CHECKPOINTING: db/mdb.#3#
-11/15 00:28:44| Bobby Newmark idled after 20 minutes inactivity
-11/15 00:51:54| CHECKPOINTING: db/mdb.#4#
-11/15 01:06:21| Bobb|W!+y New|mark(#43PcNa) unidled after 57 minutes.
-11/15 01:06:21| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sat Nov 15 01:06:21 2025
-11/15 01:06:21| DUMPING: db/mdb.#5#
-11/15 01:06:21| DUMPING: db/mdb.#5# (done)
-11/16 04:10:43| Starting up on port 4208
-11/16 04:10:43| Binding to all interfaces (INADDR_ANY)
-11/16 04:10:43| Successfully opened socket on port 4208
-11/16 04:10:51| Connection from: localhost
-11/16 04:10:51| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 04:10:51 2025
-11/16 04:10:56| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/16 04:10:56| CHECKPOINTING: db/mdb.#1#
-11/16 09:12:49| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sun Nov 16 09:12:49 2025
-11/16 09:12:50| DUMPING: db/mdb.#2#
-11/16 09:12:50| DUMPING: db/mdb.#2# (done)
-11/16 04:15:13| Starting up on port 4208
-11/16 04:15:13| Binding to all interfaces (INADDR_ANY)
-11/16 04:15:13| Successfully opened socket on port 4208
-11/16 04:15:16| Connection from: localhost
-11/16 04:15:16| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 04:15:16 2025
-11/16 04:15:21| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/16 09:16:24| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sun Nov 16 09:16:24 2025
-11/16 09:16:24| DUMPING: db/mdb.#1#
-11/16 09:16:24| DUMPING: db/mdb.#1# (done)
-11/16 04:17:01| Starting up on port 4208
-11/16 04:17:01| Binding to all interfaces (INADDR_ANY)
-11/16 04:17:01| Successfully opened socket on port 4208
-11/16 04:17:03| Connection from: localhost
-11/16 04:17:03| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 04:17:03 2025
-11/16 04:17:10| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/16 09:18:17| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sun Nov 16 09:18:17 2025
-11/16 09:18:17| DUMPING: db/mdb.#1#
-11/16 09:18:17| DUMPING: db/mdb.#1# (done)
-11/16 04:19:50| Starting up on port 4208
-11/16 04:19:50| Binding to all interfaces (INADDR_ANY)
-11/16 04:19:50| Successfully opened socket on port 4208
-11/16 04:19:53| Connection from: localhost
-11/16 04:19:53| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 04:19:53 2025
-11/16 04:19:57| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/16 09:23:49| CHECKPOINTING: db/mdb.#1#
-11/16 09:40:13| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sun Nov 16 09:40:13 2025
-11/16 09:40:13| DUMPING: db/mdb.#2#
-11/16 09:40:13| DUMPING: db/mdb.#2# (done)
-11/16 07:04:14| Starting up on port 4208
-11/16 07:04:14| Binding to all interfaces (INADDR_ANY)
-11/16 07:04:14| Successfully opened socket on port 4208
-11/16 07:04:19| Connection from: localhost
-11/16 07:04:19| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 07:04:19 2025
-11/16 07:04:26| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/16 12:24:05| CHECKPOINTING: db/mdb.#1#
-11/16 12:49:28| CHECKPOINTING: db/mdb.#2#
-11/16 12:56:47| Bobby Newmark idled after 20 minutes inactivity
-11/16 13:05:30| Bobb|W!+y New|mark(#43PcNa) unidled after 28 minutes.
-11/16 13:05:30| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sun Nov 16 13:05:30 2025
-11/16 13:05:30| DUMPING: db/mdb.#3#
-11/16 13:05:30| DUMPING: db/mdb.#3# (done)
-11/16 08:08:39| Starting up on port 4208
-11/16 08:08:39| Binding to all interfaces (INADDR_ANY)
-11/16 08:08:39| Successfully opened socket on port 4208
-11/16 08:08:45| Connection from: localhost
-11/16 08:08:45| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 08:08:45 2025
-11/16 08:08:48| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/16 13:14:54| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Sun Nov 16 13:14:54 2025
-11/16 13:14:54| DUMPING: db/mdb.#1#
-11/16 13:14:54| DUMPING: db/mdb.#1# (done)
-11/16 23:08:56| Starting up on port 4208
-11/16 23:08:56| Binding to all interfaces (INADDR_ANY)
-11/16 23:08:56| Successfully opened socket on port 4208
-11/16 23:09:01| Connection from: localhost
-11/16 23:09:01| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 23:09:01 2025
-11/16 23:09:08| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 04:09:23| CHECKPOINTING: db/mdb.#1#
-11/17 04:09:56| CHECKPOINTING: db/mdb.#2#
-11/17 04:29:29| Bobby Newmark idled after 20 minutes inactivity
-11/17 04:46:52| Bobb|W!+y New|mark(#43PcNa) unidled after 37 minutes.
-11/17 04:54:10| CHECKPOINTING: db/mdb.#3#
-11/17 04:58:20| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 04:58:20 2025
-11/17 04:58:20| DUMPING: db/mdb.#4#
-11/17 04:58:20| DUMPING: db/mdb.#4# (done)
-11/16 23:59:08| Starting up on port 4208
-11/16 23:59:08| Binding to all interfaces (INADDR_ANY)
-11/16 23:59:08| Successfully opened socket on port 4208
-11/16 23:59:11| Connection from: localhost
-11/16 23:59:11| USER CONNECT: concid: 1 host ???@localhost time: Sun Nov 16 23:59:11 2025
-11/16 23:59:15| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 05:00:10| CHECKPOINTING: db/mdb.#1#
-11/17 05:05:22| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 05:05:22 2025
-11/17 05:05:22| DUMPING: db/mdb.#2#
-11/17 05:05:22| DUMPING: db/mdb.#2# (done)
-11/17 00:06:19| Starting up on port 4208
-11/17 00:06:19| Binding to all interfaces (INADDR_ANY)
-11/17 00:06:19| Successfully opened socket on port 4208
-11/17 00:06:22| Connection from: localhost
-11/17 00:06:22| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:06:22 2025
-11/17 00:06:29| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 05:22:25| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 05:22:25 2025
-11/17 05:22:25| DUMPING: db/mdb.#1#
-11/17 05:22:25| DUMPING: db/mdb.#1# (done)
-11/17 00:23:23| Starting up on port 4208
-11/17 00:23:23| Binding to all interfaces (INADDR_ANY)
-11/17 00:23:23| Successfully opened socket on port 4208
-11/17 00:23:26| Connection from: localhost
-11/17 00:23:26| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:23:26 2025
-11/17 00:23:31| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 05:24:05| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 05:24:05 2025
-11/17 05:24:05| DUMPING: db/mdb.#1#
-11/17 05:24:05| DUMPING: db/mdb.#1# (done)
-11/17 00:48:14| Starting up on port 4208
-11/17 00:48:14| Binding to all interfaces (INADDR_ANY)
-11/17 00:48:14| Successfully opened socket on port 4208
-11/17 00:48:17| Connection from: localhost
-11/17 00:48:17| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:48:17 2025
-11/17 00:48:24| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 00:49:35| Starting up on port 4208
-11/17 00:49:35| Binding to all interfaces (INADDR_ANY)
-11/17 00:49:35| Successfully opened socket on port 4208
-11/17 00:49:38| Connection from: localhost
-11/17 00:49:38| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:49:38 2025
-11/17 00:49:44| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 00:51:31| Starting up on port 4208
-11/17 00:51:31| Binding to all interfaces (INADDR_ANY)
-11/17 00:51:31| Successfully opened socket on port 4208
-11/17 00:51:36| Connection from: localhost
-11/17 00:51:36| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:51:36 2025
-11/17 00:51:41| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 00:55:30| Starting up on port 4208
-11/17 00:55:30| Binding to all interfaces (INADDR_ANY)
-11/17 00:55:30| Successfully opened socket on port 4208
-11/17 00:55:33| Connection from: localhost
-11/17 00:55:33| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:55:33 2025
-11/17 00:55:39| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 00:58:55| Starting up on port 4208
-11/17 00:58:55| Binding to all interfaces (INADDR_ANY)
-11/17 00:58:55| Successfully opened socket on port 4208
-11/17 00:58:58| Connection from: localhost
-11/17 00:58:58| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 00:58:58 2025
-11/17 00:59:01| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 06:00:09| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 06:00:09 2025
-11/17 06:00:10| Connection from: localhost
-11/17 06:00:10| USER CONNECT: concid: 2 host ???@localhost time: Mon Nov 17 06:00:10 2025
-11/17 06:00:16| CONNECTED: Wizard(#2Pv) on concid 2
-11/17 06:04:37| DISCONNECT concid 2 player Wizard(#2Pvc) at Mon Nov 17 06:04:37 2025
-11/17 06:04:37| DUMPING: db/mdb.#1#
-11/17 06:04:37| DUMPING: db/mdb.#1# (done)
-11/17 01:19:16| Starting up on port 4208
-11/17 01:19:16| Binding to all interfaces (INADDR_ANY)
-11/17 01:19:16| Successfully opened socket on port 4208
-11/17 01:19:19| Connection from: localhost
-11/17 01:19:19| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 01:19:19 2025
-11/17 01:19:28| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 06:20:10| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 06:20:10 2025
-11/17 06:20:10| DUMPING: db/mdb.#1#
-11/17 06:20:10| DUMPING: db/mdb.#1# (done)
-11/17 01:21:29| Starting up on port 4208
-11/17 01:21:29| Binding to all interfaces (INADDR_ANY)
-11/17 01:21:29| Successfully opened socket on port 4208
-11/17 01:21:31| Connection from: localhost
-11/17 01:21:31| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 01:21:31 2025
-11/17 01:21:35| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
-11/17 06:22:15| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 06:22:15 2025
-11/17 06:22:15| DUMPING: db/mdb.#1#
-11/17 06:22:15| DUMPING: db/mdb.#1# (done)
-11/17 01:29:05| Starting up on port 4208
-11/17 01:29:05| Binding to all interfaces (INADDR_ANY)
-11/17 01:29:05| Successfully opened socket on port 4208
-11/17 01:29:08| Connection from: localhost
-11/17 01:29:08| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 01:29:08 2025
-11/17 01:29:12| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 11:03:21| Starting up on port 4208
+11/17 11:03:21| Binding to all interfaces (INADDR_ANY)
+11/17 11:03:21| Successfully opened socket on port 4208
+11/17 11:03:27| Connection from: localhost
+11/17 11:03:27| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 11:03:27 2025
+11/17 11:03:31| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 11:06:14| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 11:04:51 2025
+11/17 11:06:18| DUMPING: db/mdb.PANIC
+11/17 11:06:18| DUMPING: db/mdb.PANIC (done)
+11/17 11:07:41| Starting up on port 4208
+11/17 11:07:41| Binding to all interfaces (INADDR_ANY)
+11/17 11:07:41| Successfully opened socket on port 4208
+11/17 11:07:45| Connection from: localhost
+11/17 11:07:45| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 11:07:45 2025
+11/17 11:07:50| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 11:11:34| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 11:11:31 2025
+11/17 11:11:34| DUMPING: db/mdb.#1#
+11/17 11:11:34| DUMPING: db/mdb.#1# (done)
+11/17 11:12:35| Starting up on port 4208
+11/17 11:12:35| Binding to all interfaces (INADDR_ANY)
+11/17 11:12:35| Successfully opened socket on port 4208
+11/17 11:12:39| Connection from: localhost
+11/17 11:12:39| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 11:12:39 2025
+11/17 11:12:44| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 11:33:16| Bobby Newmark idled after 20 minutes inactivity
+11/17 11:38:23| Bobb|W!+y New|mark(#43PcNa) unidled after 25 minutes.
+11/17 11:38:23| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 11:38:23 2025
+11/17 11:38:23| DUMPING: db/mdb.#1#
+11/17 11:38:23| DUMPING: db/mdb.#1# (done)
+11/17 11:39:43| Starting up on port 4208
+11/17 11:39:43| Binding to all interfaces (INADDR_ANY)
+11/17 11:39:43| Successfully opened socket on port 4208
+11/17 11:39:46| Connection from: localhost
+11/17 11:39:46| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 11:39:46 2025
+11/17 11:39:51| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 11:47:01| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 11:47:01 2025
+11/17 11:47:01| DUMPING: db/mdb.#1#
+11/17 11:47:01| DUMPING: db/mdb.#1# (done)
+11/17 12:05:48| Starting up on port 4208
+11/17 12:05:48| Binding to all interfaces (INADDR_ANY)
+11/17 12:05:48| Successfully opened socket on port 4208
+11/17 12:05:53| Connection from: localhost
+11/17 12:05:53| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:05:53 2025
+11/17 12:05:57| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:13:43| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 12:13:43 2025
+11/17 12:19:42| Connection from: localhost
+11/17 12:19:42| USER CONNECT: concid: 2 host ???@localhost time: Mon Nov 17 12:19:42 2025
+11/17 12:19:47| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 2
+11/17 12:20:36| Starting up on port 4208
+11/17 12:20:36| Binding to all interfaces (INADDR_ANY)
+11/17 12:20:36| Successfully opened socket on port 4208
+11/17 12:20:41| Connection from: localhost
+11/17 12:20:41| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:20:41 2025
+11/17 12:20:48| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:21:12| Starting up on port 4208
+11/17 12:21:12| Binding to all interfaces (INADDR_ANY)
+11/17 12:21:12| Successfully opened socket on port 4208
+11/17 12:21:14| Connection from: localhost
+11/17 12:21:14| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:21:14 2025
+11/17 12:21:18| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:23:01| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 12:23:01 2025
+11/17 12:23:01| DUMPING: db/mdb.#1#
+11/17 12:23:01| DUMPING: db/mdb.#1# (done)
+11/17 12:28:41| Starting up on port 4208
+11/17 12:28:41| Binding to all interfaces (INADDR_ANY)
+11/17 12:28:41| Successfully opened socket on port 4208
+11/17 12:28:42| Connection from: localhost
+11/17 12:28:42| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:28:42 2025
+11/17 12:28:47| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:28:58| Starting up on port 4208
+11/17 12:28:58| Binding to all interfaces (INADDR_ANY)
+11/17 12:28:58| Successfully opened socket on port 4208
+11/17 12:28:59| Connection from: localhost
+11/17 12:28:59| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:28:59 2025
+11/17 12:29:03| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:32:24| Starting up on port 4208
+11/17 12:32:24| Binding to all interfaces (INADDR_ANY)
+11/17 12:32:24| Successfully opened socket on port 4208
+11/17 12:32:41| Connection from: localhost
+11/17 12:32:41| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:32:41 2025
+11/17 12:32:45| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:35:30| Starting up on port 4208
+11/17 12:35:30| Binding to all interfaces (INADDR_ANY)
+11/17 12:35:30| Successfully opened socket on port 4208
+11/17 12:35:36| Connection from: localhost
+11/17 12:35:36| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 12:35:36 2025
+11/17 12:35:40| FAILED CONNECT: wm on concid 1 (bad password)
+11/17 12:35:45| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 12:55:49| Bobby Newmark idled after 20 minutes inactivity
+11/17 13:19:38| Bobb|W!+y New|mark(#43PcNa) unidled after 43 minutes.
+11/17 13:19:38| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 13:19:38 2025
+11/17 13:19:38| DUMPING: db/mdb.#1#
+11/17 13:19:38| DUMPING: db/mdb.#1# (done)
+11/17 13:26:31| Starting up on port 4208
+11/17 13:26:31| Binding to all interfaces (INADDR_ANY)
+11/17 13:26:31| Successfully opened socket on port 4208
+11/17 13:26:37| Connection from: localhost
+11/17 13:26:37| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 13:26:37 2025
+11/17 13:26:42| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/17 13:27:06| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Mon Nov 17 13:27:06 2025
+11/17 13:27:06| DUMPING: db/mdb.#1#
+11/17 13:27:06| DUMPING: db/mdb.#1# (done)
+11/18 03:02:36| Starting up on port 4208
+11/18 03:02:36| Binding to all interfaces (INADDR_ANY)
+11/18 03:02:36| Successfully opened socket on port 4208
+11/18 03:02:39| Connection from: localhost
+11/18 03:02:39| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 03:02:39 2025
+11/18 03:02:43| FAILED CONNECT: wm on concid 1 (bad password)
+11/18 03:02:47| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 03:02:47| CHECKPOINTING: db/mdb.#1#
+11/18 03:20:09| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 03:20:08 2025
+11/18 03:20:11| DUMPING: db/mdb.PANIC
+11/18 03:20:11| DUMPING: db/mdb.PANIC (done)
+11/18 04:00:34| Starting up on port 4208
+11/18 04:00:34| Binding to all interfaces (INADDR_ANY)
+11/18 04:00:34| Successfully opened socket on port 4208
+11/18 04:00:38| Connection from: localhost
+11/18 04:00:38| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 04:00:38 2025
+11/18 04:00:43| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:00:52| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:00:52 2025
+11/18 04:00:52| DUMPING: db/mdb.#1#
+11/18 04:00:52| DUMPING: db/mdb.#1# (done)
+11/18 04:06:12| Starting up on port 4208
+11/18 04:06:12| Binding to all interfaces (INADDR_ANY)
+11/18 04:06:12| Successfully opened socket on port 4208
+11/18 04:06:14| Connection from: localhost
+11/18 04:06:14| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 04:06:14 2025
+11/18 04:06:22| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:18:13| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:18:13 2025
+11/18 04:18:14| DUMPING: db/mdb.#1#
+11/18 04:18:14| DUMPING: db/mdb.#1# (done)
+11/18 04:27:52| Starting up on port 4208
+11/18 04:27:52| Binding to all interfaces (INADDR_ANY)
+11/18 04:27:52| Successfully opened socket on port 4208
+11/18 04:27:58| Connection from: localhost
+11/18 04:27:58| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 04:27:58 2025
+11/18 04:28:04| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:33:33| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:33:33 2025
+11/18 04:33:33| DUMPING: db/mdb.#1#
+11/18 04:33:33| DUMPING: db/mdb.#1# (done)
+11/18 04:34:09| Starting up on port 4208
+11/18 04:34:09| Binding to all interfaces (INADDR_ANY)
+11/18 04:34:09| Successfully opened socket on port 4208
+11/18 04:34:13| Connection from: localhost
+11/18 04:34:13| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 04:34:13 2025
+11/18 04:34:17| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:48:35| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:48:35 2025
+11/18 04:48:35| DUMPING: db/mdb.#1#
+11/18 04:48:35| DUMPING: db/mdb.#1# (done)
+11/18 04:48:42| Starting up on port 4208
+11/18 04:48:42| Binding to all interfaces (INADDR_ANY)
+11/18 04:48:42| Successfully opened socket on port 4208
+11/18 04:48:43| Connection from: localhost
+11/18 04:48:43| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 04:48:43 2025
+11/18 04:48:46| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:49:20| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:49:20 2025
+11/18 04:49:20| DUMPING: db/mdb.#1#
+11/18 04:49:20| DUMPING: db/mdb.#1# (done)
+11/18 04:50:12| Starting up on port 4208
+11/18 04:50:12| Binding to all interfaces (INADDR_ANY)
+11/18 04:50:12| Successfully opened socket on port 4208
+11/18 04:50:13| Connection from: localhost
+11/18 04:50:13| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 04:50:13 2025
+11/18 04:50:18| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:54:22| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:54:22 2025
+11/18 04:54:22| DUMPING: db/mdb.#1#
+11/18 04:54:22| DUMPING: db/mdb.#1# (done)
+11/17 23:55:20| Starting up on port 4208
+11/17 23:55:20| Binding to all interfaces (INADDR_ANY)
+11/17 23:55:20| Successfully opened socket on port 4208
+11/17 23:55:22| Connection from: localhost
+11/17 23:55:22| USER CONNECT: concid: 1 host ???@localhost time: Mon Nov 17 23:55:22 2025
+11/17 23:55:27| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 04:56:20| CHECKPOINTING: db/mdb.#1#
+11/18 04:56:42| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 04:56:42 2025
+11/18 04:56:42| DUMPING: db/mdb.#2#
+11/18 04:56:42| DUMPING: db/mdb.#2# (done)
+11/18 00:46:32| Starting up on port 4208
+11/18 00:46:32| Binding to all interfaces (INADDR_ANY)
+11/18 00:46:32| Successfully opened socket on port 4208
+11/18 00:46:32| Connection from: localhost
+11/18 00:46:32| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 00:46:32 2025
+11/18 00:46:39| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 00:46:39| CHECKPOINTING: db/mdb.#1#
+11/18 05:54:45| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 05:54:45 2025
+11/18 05:54:45| DUMPING: db/mdb.#2#
+11/18 05:54:45| DUMPING: db/mdb.#2# (done)
+11/18 00:54:50| Starting up on port 4208
+11/18 00:54:50| Binding to all interfaces (INADDR_ANY)
+11/18 00:54:50| Successfully opened socket on port 4208
+11/18 00:54:51| Connection from: localhost
+11/18 00:54:51| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 00:54:51 2025
+11/18 00:54:59| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 06:02:07| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 06:02:07 2025
+11/18 06:02:07| DUMPING: db/mdb.#1#
+11/18 06:02:07| DUMPING: db/mdb.#1# (done)
+11/18 01:04:22| Starting up on port 4208
+11/18 01:04:22| Binding to all interfaces (INADDR_ANY)
+11/18 01:04:22| Successfully opened socket on port 4208
+11/18 01:04:23| Connection from: localhost
+11/18 01:04:23| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 01:04:23 2025
+11/18 01:04:29| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 06:13:58| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 06:13:58 2025
+11/18 06:13:58| DUMPING: db/mdb.#1#
+11/18 06:13:58| DUMPING: db/mdb.#1# (done)
+11/18 01:14:02| Starting up on port 4208
+11/18 01:14:02| Binding to all interfaces (INADDR_ANY)
+11/18 01:14:02| Successfully opened socket on port 4208
+11/18 01:14:03| Connection from: localhost
+11/18 01:14:03| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 01:14:03 2025
+11/18 01:14:08| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 01:18:09| Starting up on port 4208
+11/18 01:18:09| Binding to all interfaces (INADDR_ANY)
+11/18 01:18:09| Successfully opened socket on port 4208
+11/18 01:18:11| Connection from: localhost
+11/18 01:18:11| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 01:18:11 2025
+11/18 01:18:15| FAILED CONNECT: wm on concid 1 (bad password)
+11/18 01:18:23| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 06:19:48| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 06:19:48 2025
+11/18 06:19:48| DUMPING: db/mdb.#1#
+11/18 06:19:48| DUMPING: db/mdb.#1# (done)
+11/18 01:23:43| Starting up on port 4208
+11/18 01:23:43| Binding to all interfaces (INADDR_ANY)
+11/18 01:23:43| Successfully opened socket on port 4208
+11/18 01:23:46| Connection from: localhost
+11/18 01:23:46| USER CONNECT: concid: 1 host ???@localhost time: Tue Nov 18 01:23:46 2025
+11/18 01:23:50| CONNECTED: Bobb|W!+y New|mark(#43PNa) on concid 1
+11/18 06:24:22| DISCONNECT concid 1 player Bobb|W!+y New|mark(#43PcNa) at Tue Nov 18 06:24:22 2025
+11/18 06:24:22| DUMPING: db/mdb.#1#
+11/18 06:24:22| DUMPING: db/mdb.#1# (done)

@@ -8,7 +8,7 @@
 #include <errno.h>
 #endif
 
-#define MAX_ALLOCATIONS 10000
+#define MAX_ALLOCATIONS 1000000
 #ifdef MEMORY_DEBUG_LOG
 #define DEFAULT_CONTENT_LOG_SIZE 64
 #endif

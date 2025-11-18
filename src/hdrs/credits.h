@@ -31,15 +31,15 @@
 /* Base version of this code.  In v<maj>.<min>, the major number reflects
    major code changes and major redesign.  The minor number reflects
    important code changes. */
-#define BASE_VERSION	"|W+DeMUSE 2.0|"
+#define BASE_VERSION	"|W+DeMUSE 2.26|"
 #define BETA
-#define BASE_REVISION   " 3"
+#define BASE_REVISION   " 1"
 
 /* These dates must be of the form MM/DD/YY */
 /* BASE_DATE...: Date from last change to the value of BASE_VERSION */
 /* UPGRADE_DATE: This is the release of this code. */
-#define  BASE_DATE	"12/31/2000"
-#define  UPGRADE_DATE	"12/31/2000"
+#define  BASE_DATE	"01/01/2026"
+#define  UPGRADE_DATE	"01/01/2026"
 
 /* This is the release number for a particular day.  If this is the third */
 /* time mods have been released in a day, then this number should be 3    */

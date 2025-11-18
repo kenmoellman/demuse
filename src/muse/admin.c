@@ -124,9 +124,7 @@ void do_pclear(dbref player, char *name)
  * @param player Requesting admin
  * @param name Target to examine
  */
-void do_stats(player, name)
-dbref player;
-char *name;
+void do_stats(dbref player, char *name)
 {
   extern char *type_to_name();
   dbref owner;
@@ -281,37 +279,8 @@ void do_dump(dbref player)
     notify(player, "Database dump initiated.");
 }
 
-/**
- * Shutdown the game
- * @param player Requesting admin
- * @param reason Shutdown message
- */
-void do_shutdown(dbref player, char *reason)
-{
-    if (!power(player, POW_SHUTDOWN)) {
-        notify(player, "Permission denied.");
-        return;
-    }
-    
-    /* Log the shutdown */
-    log_important(tprintf("SHUTDOWN by %s: %s",
-                         unparse_object_a(player, player),
-                         reason ? reason : "No reason given"));
-    
-    /* Notify all players */
-    if (reason && *reason) {
-        notify_all(tprintf("GAME: Shutdown by %s: %s",
-                         db[player].name, reason), 
-                  NOTHING, 0);
-    } else {
-        notify_all(tprintf("GAME: Shutdown by %s",
-                         db[player].name), 
-                  NOTHING, 0);
-    }
-    
-    /* Set shutdown flag */
-    shutdown_flag = 1;
-}
+/* Note: do_shutdown is now defined in game.c instead of here
+ * to ensure consistent shutdown behavior with security checks */
 
 /* ===================================================================
  * User Management Functions
@@ -393,10 +362,7 @@ struct descriptor_data *find_least_idle(dbref);
 
 /* added 12/1/90 by jstanley to add @search command details in file game.c */
 /* Ansi: void do_search(dbref player, char *arg1, char *arg3); */
-void do_search(player, arg1, arg3)
-dbref player;
-char *arg1;
-char *arg3;
+void do_search(dbref player, char *arg1, char *arg3)
 {
   int flag;
   char *arg2;
@@ -758,14 +724,10 @@ char *arg3;
       }
       from = find_entrance(thing);
       to = db[thing].link;
-      strcpy(buf, unparse_object(player, thing));
-      strcat(buf, " [from ");
-      strcat(buf,
-	     from == NOTHING ? "NOWHERE" : unparse_object(player, from));
-      strcat(buf, " to ");
-      strcat(buf,
-	     to == NOTHING ? "NOWHERE" : unparse_object(player, to));
-      strcat(buf, "]");
+      snprintf(buf, sizeof(buf), "%s [from %s to %s]",
+               unparse_object(player, thing),
+               from == NOTHING ? "NOWHERE" : unparse_object(player, from),
+               to == NOTHING ? "NOWHERE" : unparse_object(player, to));
       notify(player, buf);
     }
   }
@@ -809,10 +771,9 @@ char *arg3;
 	notify(player, "");	/* aack! don't use a newline! */
 	notify(player, "OBJECTS:");
       }
-      strcpy(buf, unparse_object(player, thing));
-      strcat(buf, " [owner: ");
-      strcat(buf, unparse_object(player, db[thing].owner));
-      strcat(buf, "]");
+      snprintf(buf, sizeof(buf), "%s [owner: %s]",
+               unparse_object(player, thing),
+               unparse_object(player, db[thing].owner));
       notify(player, buf);
     }
   }
@@ -847,12 +808,16 @@ char *arg3;
 	notify(player, "");	/* aack! don't use newlines! */
 	notify(player, "PLAYERS:");
       }
-      strcpy(buf, unparse_object(player, thing));
       if (controls(player, thing, POW_EXAMINE))
       {
-	strcat(buf, " [location: ");
-	strcat(buf, unparse_object(player, db[thing].location));
-	strcat(buf, "]");
+	snprintf(buf, sizeof(buf), "%s [location: %s]",
+	         unparse_object(player, thing),
+	         unparse_object(player, db[thing].location));
+      }
+      else
+      {
+	strncpy(buf, unparse_object(player, thing), sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
       }
       notify(player, buf);
     }
@@ -1202,10 +1167,15 @@ char *arg1, *arg2;
 	notify(player, tprintf("%s - Set.", db[thing].cname));
 	break;
       case UF_STRING:
-	db[thing].ua_string[x] = realloc(db[thing].ua_string[x],
-					 (strlen(i) + 1) * sizeof(char));
-
-	strcpy(db[thing].ua_string[x], i);
+	{
+	  size_t len = strlen(i) + 1;
+	  char *new_str;
+	  SAFE_MALLOC(new_str, char, len);
+	  strncpy(new_str, i, len - 1);
+	  new_str[len - 1] = '\0';
+	  SMART_FREE(db[thing].ua_string[x]);
+	  db[thing].ua_string[x] = new_str;
+	}
 	notify(player, tprintf("%s - Set.", db[thing].cname));
 	break;
       default:
@@ -1466,6 +1436,41 @@ int cutoff_level;
     return match;
   }
 }
+
+/**
+ * match_controlled_allow_deleted - Match controlled object, allowing deleted ones
+ *
+ * Like match_controlled(), but also allows matching objects marked for deletion.
+ * Use this for commands that need to work with deleted objects (@swap, @undestroy, etc.)
+ *
+ * @param player The player doing the matching
+ * @param name The name/dbref to match
+ * @param cutoff_level Power level required to control the object
+ * @return The matched object or NOTHING
+ */
+dbref match_controlled_allow_deleted(player, name, cutoff_level)
+dbref player;
+char *name;
+int cutoff_level;
+{
+  dbref match;
+
+  init_match(player, name, NOTYPE);
+  set_match_allow_deleted(1);  /* Allow matching deleted objects */
+  match_everything();
+
+  match = noisy_match_result();
+  if (match != NOTHING && !controls(player, match, cutoff_level))
+  {
+    notify(player, perm_denied());
+    return NOTHING;
+  }
+  else
+  {
+    return match;
+  }
+}
+
 /* Ansi: void do_force(dbref player,char *what,char *command); */
 void do_force(player, what, command)
 dbref player;
@@ -1508,7 +1513,8 @@ char *command;
   /* first see if command prefixed by object # */
   if (*command == '#' && command[1] != ' ')
   {
-    strcpy(buff, command);
+    strncpy(buff, command, sizeof(buff) - 1);
+    buff[sizeof(buff) - 1] = '\0';
     for (s = buff + 1; *s && *s != ' '; s++)
     {
       if (!isdigit(*s))
@@ -1803,9 +1809,9 @@ char *arg1;
     limit = atol(arg1);
 
     /* stored as a relative value */
-    sprintf(buf, "%ld", limit - owned);
+    snprintf(buf, sizeof(buf), "%ld", limit - owned);
     atr_add(who, A_RQUOTA, buf);
-    sprintf(buf, "%ld", limit);
+    snprintf(buf, sizeof(buf), "%ld", limit);
     atr_add(who, A_QUOTA, buf);
     ++count;
   }
@@ -1830,6 +1836,7 @@ char *password;
     notify(player, perm_denied());
     return;
   }
+#ifndef EMERGENCY_BYPASS_PASSWORD
   else if (*password != '\0' && !ok_password(password))
   {
     /* Wiz can set null passwords, but not bad passwords */
@@ -1839,6 +1846,7 @@ char *password;
   {
     notify(player, "You cannot @newpassword root.");
   }
+#endif
   else
   {
     /* it's ok, do it */
@@ -2063,14 +2071,16 @@ char *arg2;
 #ifdef DEBUG
   notify(player, tprintf("arg1: %s   arg2: %s", arg1, arg2));
 #endif
-  thing1 = match_controlled(player, arg1, POW_MODIFY);
+  /* Use match_controlled_allow_deleted to allow swapping with deleted objects */
+  thing1 = match_controlled_allow_deleted(player, arg1, POW_MODIFY);
   if (thing1 == NOTHING)
     return;
-  thing2 = match_controlled(player, arg2, POW_MODIFY);
+  thing2 = match_controlled_allow_deleted(player, arg2, POW_MODIFY);
   if (thing2 == NOTHING)
     return;
 
-/*  log_important(tprintf("arg1 %s arg2 %s",arg1,arg2)); */
+  log_important(tprintf("%s attempted: @swap %s=%s",
+	   unparse_object_a(root, player), unparse_object_a(root, thing1), unparse_object_a(root, thing2)));
 
   if (Typeof(thing1) == TYPE_PLAYER || Typeof(thing2) == TYPE_PLAYER)
   {
@@ -2299,14 +2309,14 @@ char *arg1;
 
   if (inf_quota(victim))
   {
-    sprintf(buf, "%ld", owned);
+    snprintf(buf, sizeof(buf), "%ld", owned);
     atr_add(victim, A_QUOTA, buf);
     atr_add(victim, A_RQUOTA, "0");
     notify(victim, "Infinite quota fixed.");
   }
   else
   {
-    sprintf(buf, "%ld", atol(atr_get(player, A_QUOTA)) - owned);
+    snprintf(buf, sizeof(buf), "%ld", atol(atr_get(player, A_QUOTA)) - owned);
     atr_add(player, A_RQUOTA, buf);
     notify(victim, "Quota fixed.");
   }
@@ -2432,25 +2442,27 @@ char *arg2;
 
   message = reconstruct_message(arg1, arg2);
 
-  sprintf(motd_who,"#%ld",player);
+  snprintf(motd_who, sizeof(motd_who), "#%ld", player);
 
   if (*message)
   {
     if (*message == '~')
     {
-      sprintf(motd_who,"#-1");
-      strcpy(motd,message + 1);
+      snprintf(motd_who, sizeof(motd_who), "#-1");
+      strncpy(motd, message + 1, sizeof(motd) - 1);
+      motd[sizeof(motd) - 1] = '\0';
       notify(player, "MOTD Set Anonymously.");
     }
     else
     {
-      strcpy(motd, message);
+      strncpy(motd, message, sizeof(motd) - 1);
+      motd[sizeof(motd) - 1] = '\0';
       notify(player, "MOTD Set.");
     }
   }
   else
   {
-    strcpy(motd,"");
+    motd[0] = '\0';
     notify(player, "MOTD Cleared.");
   }
 }

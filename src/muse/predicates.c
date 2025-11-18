@@ -751,7 +751,8 @@ int controls_a_zone(dbref who, dbref what, int cutoff_level)
 {
   dbref zon;
 
-  if (!GoodObject(who) || !GoodObject(what)) {
+  /* Use ValidObject() for what to allow checking zones of deleted objects */
+  if (!GoodObject(who) || !ValidObject(what)) {
     return 0;
   }
 
@@ -798,7 +799,11 @@ int controls(dbref who, dbref what, int cutoff_level)
     return has_pow(who, what, cutoff_level);
   }
 
-  if (!GoodObject(what)) {
+  /* Use ValidObject() instead of GoodObject() to allow controlling deleted objects.
+   * This is necessary for commands like @swap, @undestroy that need to work with
+   * objects marked for deletion. Owners should be able to control their own
+   * deleted objects. */
+  if (!ValidObject(what)) {
     return 0;
   }
 

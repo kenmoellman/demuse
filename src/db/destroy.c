@@ -63,9 +63,10 @@ dbref first_free = NOTHING;
         ((thing) > -1 && !GoodObject(thing)) || \
         ((thing) > -1 && IS_GONE(thing)))
 
-/* Check if object is valid for free list - must be destroyed and properly formatted */
+/* Check if object is valid for free list - must be destroyed and properly formatted
+ * NOTE: Use ValidObject() not GoodObject() - free list objects HAVE the GOING flag! */
 #define NOT_OK(thing) \
-    (!GoodObject(thing) || \
+    (!ValidObject(thing) || \
      (db[thing].location != NOTHING) || \
      ((db[thing].owner != 1) && (db[thing].owner != root)) || \
      ((db[thing].flags & ~(0x8000)) != (TYPE_THING | GOING)))
@@ -108,7 +109,10 @@ static void calc_memstats(void);
  */
 static void free_object(dbref obj)
 {
-    if (!GoodObject(obj)) {
+    /* Use ValidObject() instead of GoodObject() because we're adding
+     * deleted objects (with GOING flag) to the free list - that's the
+     * whole point! We only need to validate structural integrity. */
+    if (!ValidObject(obj)) {
         log_error("free_object: Invalid object reference");
         return;
     }
@@ -149,9 +153,12 @@ dbref free_get(void)
     }
 
     newobj = first_free;
-    
-    /* Validate the object reference */
-    if (!GoodObject(newobj)) {
+
+    /* Validate the object reference
+     * Use ValidObject() instead of GoodObject() because the free list
+     * SHOULD contain deleted objects (GOING flag set) - that's the whole
+     * point of reusing them! We only need to check structural validity. */
+    if (!ValidObject(newobj)) {
         log_error("free_get: Invalid first_free object");
         first_free = NOTHING;
         report();
@@ -303,8 +310,11 @@ void fix_free_list(void)
      */
     iteration_count = 0;
     for (thing = db_top - 1; thing >= 0 && iteration_count < MAX_LOOP_ITERATIONS; thing--, iteration_count++) {
-        if (!GoodObject(thing) || IS_GONE(thing)) {
-            if (GoodObject(thing) && IS_GONE(thing)) {
+        /* Check for deleted objects and add to free list
+         * Use ValidObject() instead of GoodObject() since deleted objects
+         * (with GOING flag) need to be added to free list */
+        if (!ValidObject(thing) || IS_GONE(thing)) {
+            if (ValidObject(thing) && IS_GONE(thing)) {
                 free_object(thing);
             }
             continue;
@@ -745,8 +755,8 @@ static void calc_memstats(void)
     snprintf(newbuf, sizeof(newbuf),
              "|Y!+*| There are %d bytes being used in memory for the database.", j);
 
-//    if (first_free != NOTHING && GoodObject(first_free)) {
-    if (first_free != NOTHING && GoodObject(first_free)) {
+    /* Use ValidObject() for free list - deleted objects are expected */
+    if (first_free != NOTHING && ValidObject(first_free)) {
         char tempbuf[128];
         snprintf(tempbuf, sizeof(tempbuf),
                  " The first object in the free list is #%ld.", first_free);
@@ -1102,7 +1112,9 @@ void do_undestroy(dbref player, char *arg1)
         return;
     }
 
-    if (!GoodObject(object)) {
+    /* Use ValidObject() instead of GoodObject() since we NEED to access
+     * objects marked for deletion - that's the whole point of @undestroy */
+    if (!ValidObject(object)) {
         notify(player, "Invalid object reference.");
         return;
     }
@@ -1588,7 +1600,8 @@ void do_upfront(dbref player, char *arg1)
         return;
     }
 
-    if (!GoodObject(target)) {
+    /* Use ValidObject() for free list - deleted objects are expected */
+    if (!ValidObject(target)) {
         notify(player, "Invalid object reference.");
         return;
     }
@@ -1598,10 +1611,11 @@ void do_upfront(dbref player, char *arg1)
         return;
     }
 
-    /* Find the object in the free list */
+    /* Find the object in the free list - use ValidObject() since
+     * free list contains deleted objects */
     for (object = first_free;
-         object != NOTHING && 
-         GoodObject(object) && 
+         object != NOTHING &&
+         ValidObject(object) &&
          db[object].next != target &&
          iteration_count < MAX_LOOP_ITERATIONS;
          object = db[object].next, iteration_count++) {
@@ -1619,7 +1633,7 @@ void do_upfront(dbref player, char *arg1)
         return;
     }
 
-    if (!GoodObject(object)) {
+    if (!ValidObject(object)) {
         notify(player, "Error: Corrupted free list.");
         return;
     }
