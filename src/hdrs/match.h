@@ -14,6 +14,7 @@
 /* initialize matcher */
 extern void init_match();
 extern void init_match_check_keys();
+extern void set_match_allow_deleted();  /* allow matching deleted objects */
 
 
 /* match (NUMBER_TOKEN)number */

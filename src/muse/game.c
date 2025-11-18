@@ -74,6 +74,7 @@
 #include "match.h"
 #include "admin.h"
 #include "credits.h"
+#include "parser.h"
 
 /* ============================================================================
  * BUFFER SIZE CONSTANTS
@@ -110,9 +111,10 @@ static void snotify(dbref player, char *msg);
 static void notify_except(dbref first, dbref exception, char *msg);
 static void notify_except2(dbref first, dbref exception1, dbref exception2, char *msg);
 static void do_dump(dbref player);
-static void do_purge(dbref player);
-static void do_shutdown(dbref player, char *arg1);
-static void do_reload(dbref player, char *arg1);
+/* Note: do_purge, do_shutdown, and do_reload are no longer static - they're called from parser.c wrappers */
+void do_purge(dbref player);
+void do_shutdown(dbref player, char *arg1);
+void do_reload(dbref player, char *arg1);
 static void dump_database_internal(void);
 static char *do_argtwo(dbref player, char *rest, dbref cause, char *buff);
 static char **do_argbee(dbref player, char *rest, dbref cause, char *arge[], char *buff);
@@ -183,10 +185,11 @@ void report(void)
 
 /**
  * do_purge - Purge the free list
- * 
+ *
  * SECURITY: Only players with POW_DB power can purge
+ * NOTE: Non-static so it can be called from parser.c wrapper
  */
-static void do_purge(dbref player)
+void do_purge(dbref player)
 {
   if (!GoodObject(player)) {
     log_error("do_purge: Invalid player object");
@@ -614,16 +617,18 @@ void notify_in2(dbref room, dbref exception1, dbref exception2, char *msg)
 
 /**
  * do_shutdown - Shutdown the server
- * 
- * SECURITY: 
+ *
+ * SECURITY:
  * - Requires POW_SHUTDOWN power
  * - Requires exact MUSE name to prevent accidents
  * - Logs all shutdown attempts
- * 
+ *
  * @param player The player requesting shutdown
  * @param arg1   Must match muse_name exactly
+ *
+ * NOTE: Non-static so it can be called from parser.c wrapper
  */
-static void do_shutdown(dbref player, char *arg1)
+void do_shutdown(dbref player, char *arg1)
 {
   extern int exit_status;
 
@@ -664,11 +669,13 @@ static void do_shutdown(dbref player, char *arg1)
  * - Requires POW_SHUTDOWN power
  * - Requires exact MUSE name
  * - Logs all reload attempts
- * 
+ *
  * @param player The player requesting reload
  * @param arg1   Must match muse_name exactly
+ *
+ * NOTE: Non-static so it can be called from parser.c wrapper
  */
-static void do_reload(dbref player, char *arg1)
+void do_reload(dbref player, char *arg1)
 {
   extern int exit_status;
 
@@ -1037,8 +1044,12 @@ int init_game(char *infile, char *outfile)
   /* Set up dump file path */
   strncpy(dumpfile, outfile, sizeof(dumpfile) - 1);
   dumpfile[sizeof(dumpfile) - 1] = '\0';
-  
+
   init_timer();
+
+  /* Initialize parser and universe system */
+  init_parsers();
+  init_universes();
 
   return 0;
 }
@@ -1103,6 +1114,51 @@ static char **do_argbee(dbref player, char *rest, dbref cause,
 /* Convenience macros for argument parsing */
 #define arg2 do_argtwo(player,rest,cause,buff)
 #define argv do_argbee(player,rest,cause,arge,buff)
+
+/**
+ * pack_argv - Pack argv array and cause into a delimited string
+ *
+ * Creates a string with format: "cause\x1Fargv[1]\x1Fargv[2]\x1F..."
+ * Used for commands that need argv[] or cause passed through hash dispatch.
+ *
+ * @param argv_array The argv array from do_argbee()
+ * @param cause      The cause dbref
+ * @param buffer     Output buffer (must be at least MAX_COMMAND_BUFFER)
+ * @param bufsize    Size of output buffer
+ * @return Pointer to buffer
+ */
+static char *pack_argv(char **argv_array, dbref cause, char *buffer, size_t bufsize)
+{
+  size_t offset = 0;
+  int i;
+
+  if (!buffer || bufsize == 0) {
+    return NULL;
+  }
+
+  /* Start with cause dbref */
+  offset = (size_t)snprintf(buffer, bufsize, "%ld", cause);
+
+  /* Pack argv elements (starting from argv[1], as argv[0] is unused) */
+  for (i = 1; i < MAX_ARG && argv_array[i] != NULL; i++) {
+    if (offset + 2 < bufsize) {  /* Room for delimiter + at least 1 char */
+      buffer[offset++] = '\x1F';  /* ASCII Unit Separator */
+
+      /* Copy this argument, leaving room for delimiter/null */
+      size_t arg_len = strlen(argv_array[i]);
+      size_t copy_len = bufsize - offset - 1;  /* Leave room for null */
+      if (arg_len < copy_len) {
+        copy_len = arg_len;
+      }
+
+      strncpy(buffer + offset, argv_array[i], copy_len);
+      offset += copy_len;
+    }
+  }
+
+  buffer[offset] = '\0';
+  return buffer;
+}
 
 /* ============================================================================
  * MAIN COMMAND PROCESSOR
@@ -1280,17 +1336,35 @@ void process_command(dbref player, char *command, dbref cause)
   }
   *q = '\0';
 
-  /* HOME command - always check first */
+  /* ======================================================================
+   * SLAVE RESTRICTION - Check this FIRST before any command processing
+   * ======================================================================
+   * Slaves can ONLY use the 'look' command. No movement, no other commands.
+   * ====================================================================== */
+  slave = IS(player, TYPE_PLAYER, PLAYER_SLAVE);
+
+  if (slave) {
+    /* Slaves can ONLY use 'look' command */
+    if ((command[0] == 'l' || command[0] == 'L') && string_prefix("look", command)) {
+      do_look_at(player, "");  /* Look at current location */
+    } else {
+      notify(player, "Slaves can only use the 'look' command.");
+    }
+    return;
+  }
+
+  /* ======================================================================
+   * NORMAL COMMAND PROCESSING (non-slaves only)
+   * ====================================================================== */
+
+  /* HOME command - check first for non-slaves */
   if (strcmp(command, "home") == 0) {
     do_move(player, command);
     return;
   }
 
-  /* Check slave flag */
-  slave = IS(player, TYPE_PLAYER, PLAYER_SLAVE);
-
   /* Try force command */
-  if (!slave && try_force(player, command)) {
+  if (try_force(player, command)) {
     return;
   }
 
@@ -1310,7 +1384,9 @@ void process_command(dbref player, char *command, dbref cause)
   } else if (can_move(player, command)) {
     /* Command is an exact match for an exit */
     do_move(player, command);
-  } else {
+  } 
+  else 
+  {
     /* Parse arguments for standard commands */
     strncpy(unp, command, sizeof(unp) - 1);
     unp[sizeof(unp) - 1] = '\0';
@@ -1331,1553 +1407,123 @@ void process_command(dbref player, char *command, dbref cause)
     /* Parse first argument (before =) */
     arge[0] = (char *)parse_up(&arg1, '=');
     rest = arg1;
-    
+
     if (arge[0]) {
       museexec(&arge[0], buff2, player, cause, 0);
     }
     arg1 = (arge[0]) ? buff2 : "";
+  }  
 
-    /* Slave restrictions - only allow 'look' */
-    if (slave) {
-      switch (command[0]) {
-        case 'l':
-          Matched("look");
-          do_look_at(player, arg1);
-          break;
+  /* ======================================================================
+   * HASH TABLE COMMAND DISPATCH 
+   * ======================================================================
+   * Will abort after 200 iterations to prevent infinite loop
+   */
+  {
+    universe_t *universe;
+    parser_t *parser;
+    const command_entry_t *cmd;
+
+    /* Get player's universe and parser */
+    universe = get_universe(get_player_universe(player));
+    parser = universe->parser;
+
+    /* Try hash lookup */
+    if (parser && parser->commands) 
+    {
+      cmd = find_command(parser, command);
+
+      if (cmd) {
+        /* Found command in hash table! */
+
+        /* Check direct execution requirement */
+        if (cmd->requires_direct && !is_direct) {
+          /* Command requires direct execution (not @forced) */
+          goto end_hashlookup;
+        }
+
+        /* Execute command via hash dispatch */
+        /* Check if command needs argv/cause packing */
+        if (strcmp(cmd->name, "@cycle") == 0 ||
+            strcmp(cmd->name, "@dig") == 0 ||
+            strcmp(cmd->name, "@edit") == 0 ||
+            strcmp(cmd->name, "@switch") == 0 ||
+            strcmp(cmd->name, "@trigger") == 0 ||
+            strcmp(cmd->name, "@tr_as") == 0) {
+          /* These commands need argv array packed */
+          char packed_args[MAX_COMMAND_BUFFER];
+          char **argv_ptr = argv;  /* Expand macro to build argv */
+          pack_argv(argv_ptr, cause, packed_args, sizeof(packed_args));
+          cmd->handler(player, arg1, packed_args);
+        }
+        else if (strcmp(cmd->name, "@foreach") == 0 ||
+                 strcmp(cmd->name, "@su") == 0 ||
+                 strcmp(cmd->name, "@wait") == 0) {
+          /* These commands need cause and arg2 packed */
+          char packed_args[MAX_COMMAND_BUFFER];
+          char *argv_ptr[MAX_ARG];
+          /* Build a minimal argv with just arg2 at [0] */
+          char *arg2_eval = arg2;  /* Evaluate arg2 macro */
+          int i;
+          for (i = 0; i < MAX_ARG; i++) {
+            argv_ptr[i] = NULL;
+          }
+          argv_ptr[0] = arg2_eval;
+          pack_argv(argv_ptr, cause, packed_args, sizeof(packed_args));
+          cmd->handler(player, arg1, packed_args);
+        }
+        else {
+          /* Normal command - evaluate arg2 and call handler */
+          char *arg2_eval = arg2;  /* Macro expansion happens here */
+          cmd->handler(player, arg1, arg2_eval);
+        }
+
+        /* Clean up and return - command handled */
+        {
+          int a;
+          for (a = 0; a < 10; a++) {
+            wptr[a] = NULL;
+          }
+        }
+        return;
       }
-    } else {
-      /* Main command switch - organized alphabetically */
-      switch (command[0]) {
-        case '+':
-          /* Plus commands */
-          switch (command[1]) {
-            case 'a':
-            case 'A':
-              Matched("+away");
-              do_away(player, arg1);
-              break;
-            case 'b':
-            case 'B':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("+ban");
-                  do_ban(player, arg1, arg2);
-                  break;
-                case '\0':
-                case 'o':
-                case 'O':
-                  Matched("+board");
-                  do_board(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-            case 'c':
-            case 'C':
-              switch (command[2]) {
-                case 'o':
-                case 'O':
-                case '\0':
-                  Matched("+com");
-                  do_com(player, arg1, arg2);
-                  break;
-                case 'm':
-                case 'M':
-                  Matched("+cmdav");
-                  do_cmdav(player);
-                  break;
-                case 'h':
-                case 'H':
-                  Matched("+channel");
-                  do_channel(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-            case 'h':
-            case 'H':
-              Matched("+haven");
-              do_haven(player, arg1);
-              break;
-            case 'i':
-            case 'I':
-              Matched("+idle");
-              do_idle(player, arg1);
-              break;
-            case 'l':
-            case 'L':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("+laston");
-                  do_laston(player, arg1);
-                  break;
-                case 'o':
-                case 'O':
-                  Matched("+loginstats");
-                  do_loginstats(player);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-            case 'm':
-            case 'M':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("+mail");
-                  do_mail(player, arg1, arg2);
-                  break;
-                case 'o':
-                case 'O':
-                  Matched("+motd");
-                  do_plusmotd(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-#ifdef USE_COMBAT_TM97
-            case 's':
-            case 'S':
-              switch (command[2]) {
-                case 'k':
-                case 'K':
-                  Matched("+skills");
-                  do_skills(player, arg1, arg2);
-                  break;
-                case 't':
-                case 'T':
-                  Matched("+status");
-                  do_status(player, arg1);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-#endif
-            case 'u':
-            case 'U':
-              switch (command[2]) {
-                case 'n':
-                case 'N':
-                  Matched("+unban");
-                  do_unban(player, arg1, arg2);
-                  break;
-                case 'p':
-                case 'P':
-                  Matched("+uptime");
-                  do_uptime(player);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-            case 'v':
-            case 'V':
-              Matched("+version");
-              do_version(player);
-              break;
-            default:
-              goto bad;
-          }
-          break;
+    }
 
-        case '@':
-          /* @ commands - administrative */
-          switch (command[1]) {
-            case 'a':
-            case 'A':
-              switch (command[2]) {
-                case 'd':
-                case 'D':
-                  Matched("@addparent");
-                  do_addparent(player, arg1, arg2);
-                  break;
-                case 'l':
-                case 'L':
-                  Matched("@allquota");
-                  if (!is_direct) goto bad;
-                  do_allquota(player, arg1);
-                  break;
-                case 'n':
-                case 'N':
-                  Matched("@announce");
-                  do_announce(player, arg1, arg2);
-                  break;
-                case 't':
-                case 'T':
-                  Matched("@at");
-                  do_at(player, arg1, arg2);
-                  break;
-                case 's':
-                case 'S':
-                  Matched("@as");
-                  do_as(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
+    /* Command not found in hash table - fall through to deferred/fallback */
+    end_hashlookup:
+    ;  /* Empty statement for label */
+  }
 
-            case 'b':
-            case 'B':
-              switch (command[2]) {
-                case 'r':
-                case 'R':
-                  Matched("@broadcast");
-                  do_broadcast(player, arg1, arg2);
-                  break;
-                case 'o':
-                case 'O':
-                  Matched("@boot");
-                  do_boot(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
+  /* Check user-defined attributes first */
+  if (!test_set(player, command, arg1, arg2, is_direct)) 
+  {
+    /* Try matching user-defined functions ($commands) */
+    match = list_check(db[db[player].location].contents, player, '$', unp)
+         || list_check(db[player].contents, player, '$', unp)
+         || atr_match(db[player].location, player, '$', unp)
+         || list_check(db[db[player].location].exits, player, '$', unp);
 
-            case 'c':
-            case 'C':
-              switch (command[2]) {
-                case 'b':
-                case 'B':
-                  Matched("@cboot");
-                  do_cboot(player, arg1);
-                  break;
-                case 'e':
-                case 'E':
-                  Matched("@cemit");
-                  do_cemit(player, arg1, arg2);
-                  break;
-                case 'h':
-                case 'H':
-                  if (string_compare(command, "@chownall") == 0) {
-                    do_chownall(player, arg1, arg2);
-                  } else {
-                    switch (command[3]) {
-                      case 'o':
-                      case 'O':
-                        Matched("@chown");
-                        do_chown(player, arg1, arg2);
-                        break;
-                      case 'e':
-                      case 'E':
-                        switch (command[4]) {
-                          case 'c':
-                          case 'C':
-                            Matched("@check");
-                            do_check(player, arg1);
-                            break;
-                          case 'm':
-                          case 'M':
-                            Matched("@chemit");
-                            do_chemit(player, arg1, arg2);
-                            break;
-                          default:
-                            goto bad;
-                        }
-                        break;
-                      default:
-                        goto bad;
-                    }
-                  }
-                  break;
-                case 'l':
-                case 'L':
-                  switch (command[3]) {
-                    case 'a':
-                    case 'A':
-                      Matched("@class");
-                      do_class(player, arg1, arg2);
-                      break;
-                    case 'o':
-                    case 'O':
-                      Matched("@clone");
-                      do_clone(player, arg1, arg2);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'n':
-                case 'N':
-                  Matched("@cname");
-                  do_cname(player, arg1, arg2);
-                  break;
-                case 'o':
-                case 'O':
-                  Matched("@config");
-                  do_config(player, arg1, arg2);
-                  break;
-                case 'p':
-                case 'P':
-                  Matched("@cpaste");
-                  notify(player, "WARNING: @cpaste antiquated. Use '@paste channel=<channel>'");
-                  do_paste(player, "channel", arg1);
-                  break;
-                case 'r':
-                case 'R':
-                  Matched("@create");
-                  /* Add explicit cast to resolve conversion warning */
-                  do_create(player, arg1, (int)atol(arg2));
-                  break;
-                case 's':
-                case 'S':
-                  Matched("@cset");
-                  do_set(player, arg1, arg2, 1);
-                  break;
-                case 't':
-                case 'T':
-                  Matched("@ctrace");
-                  do_ctrace(player);
-                  break;
-                case 'y':
-                case 'Y':
-                  Matched("@cycle");
-                  do_cycle(player, arg1, argv);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
+    /* Check zone objects */
+    DOZONE(zon, player) {
+      /* Add explicit cast to resolve conversion warning */
+      match = list_check((z = zon), player, '$', unp) || match;
+    }
 
-            case 'd':
-            case 'D':
-              switch (command[2]) {
-                case 'b':
-                case 'B':
-                  switch (command[3]) {
-                    case 'c':
-                    case 'C':
-                      Matched("@dbck");
-                      do_dbck(player);
-                      break;
-                    case 't':
-                    case 'T':
-                      Matched("@dbtop");
-                      do_dbtop(player, arg1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'e':
-                case 'E':
-                  switch (command[3]) {
-                    case 'c':
-                    case 'C':
-                      Matched("@decompile");
-                      do_decompile(player, arg1, arg2);
-                      break;
-                    case 's':
-                    case 'S':
-                      switch (command[4]) {
-                        case 'c':
-                        case 'C':
-                          Matched("@describe");
-                          do_describe(player, arg1, arg2);
-                          break;
-                        case 't':
-                        case 'T':
-                          Matched("@destroy");
-                          do_destroy(player, arg1);
-                          break;
-                        default:
-                          goto bad;
-                      }
-                      break;
-                    case 'f':
-                    case 'F':
-                      Matched("@defattr");
-                      do_defattr(player, arg1, arg2);
-                      break;
-                    case 'l':
-                    case 'L':
-                      Matched("@delparent");
-                      do_delparent(player, arg1, arg2);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'i':
-                case 'I':
-                  Matched("@dig");
-                  do_dig(player, arg1, argv);
-                  break;
-                case 'u':
-                case 'U':
-                  Matched("@dump");
-                  do_dump(player);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'e':
-            case 'E':
-              switch (command[2]) {
-                case 'c':
-                case 'C':
-                  Matched("@echo");
-                  do_echo(player, arg1, arg2, 0);
-                  break;
-                case 'd':
-                case 'D':
-                  Matched("@edit");
-                  do_edit(player, arg1, argv);
-                  break;
-                case 'm':
-                case 'M':
-                  switch (command[3]) {
-                    case 'i':
-                    case 'I':
-                      Matched("@emit");
-                      do_emit(player, arg1, arg2, 0);
-                      break;
-                    case 'p':
-                    case 'P':
-                      Matched("@empower");
-                      if (!is_direct) goto bad;
-                      do_empower(player, arg1, arg2);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-#ifdef ALLOW_EXEC
-                case 'x':
-                case 'X':
-                  Matched("@exec");
-                  do_exec(player, arg1, arg2);
-                  break;
-#endif
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'f':
-            case 'F':
-              switch (command[2]) {
-                case 'i':
-                case 'I':
-                  switch (command[3]) {
-                    case 'n':
-                    case 'N':
-                      Matched("@find");
-                      do_find(player, arg1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'o':
-                case 'O':
-                  if (string_prefix("@foreach", command) && strlen(command) > 4) {
-                    Matched("@foreach");
-                    do_foreach(player, arg1, arg2, cause);
-                  } else {
-                    Matched("@force");
-                    do_force(player, arg1, arg2);
-                  }
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'g':
-            case 'G':
-              switch (command[2]) {
-                case 'i':
-                case 'I':
-                  Matched("@giveto");
-                  do_giveto(player, arg1, arg2);
-                  break;
-#ifdef USE_UNIV
-                case 'u':
-                case 'U':
-                  Matched("@guniverse");
-                  do_guniverse(player, arg1);
-                  break;
-#endif
-                case 'z':
-                case 'Z':
-                  Matched("@gzone");
-                  do_gzone(player, arg1);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'h':
-            case 'H':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("@halt");
-                  do_halt(player, arg1, arg2);
-                  break;
-                case 'i':
-                case 'I':
-                  Matched("@hide");
-                  do_hide(player);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'i':
-            case 'I':
-              Matched("@info");
-              do_info(player, arg1);
-              break;
-
-            case 'l':
-            case 'L':
-              switch (command[2]) {
-                case 'i':
-                case 'I':
-                  switch (command[3]) {
-#ifdef USE_COMBAT
-                    case 's':
-                    case 'S':
-                      Matched("@listarea");
-                      do_listarea(player, arg1);
-                      break;
-#endif
-                    default:
-                      Matched("@link");
-                      if (Guest(player)) {
-                        notify(player, perm_denied());
-                      } else {
-                        do_link(player, arg1, arg2);
-                      }
-                      break;
-                  }
-                  break;
-                case 'o':
-                case 'O':
-                  switch (command[5]) {
-                    case 'o':
-                    case 'O':
-                      Matched("@lockout");
-                      if (!is_direct) goto bad;
-                      do_lockout(player, arg1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'm':
-            case 'M':
-              switch (command[2]) {
-                case 'i':
-                case 'I':
-                  Matched("@misc");
-                  do_misc(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'n':
-            case 'N':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("@name");
-                  do_name(player, arg1, arg2, is_direct);
-                  break;
-                case 'c':
-                case 'C':
-                  Matched("@ncset");
-                  do_set(player, arg1, pure2, 1);
-                  break;
-                case 'e':
-                case 'E':
-                  switch (command[3]) {
-                    case 'c':
-                    case 'C':
-                      Matched("@necho");
-                      do_echo(player, pure, NULL, 1);
-                      break;
-                    case 'w':
-                      if (strcmp(command, "@newpassword")) goto bad;
-                      if (!is_direct) goto bad;
-                      do_newpassword(player, arg1, arg2);
-                      break;
-                    case 'm':
-                    case 'M':
-                      Matched("@nemit");
-                      do_emit(player, pure, NULL, 1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'o':
-                case 'O':
-                  switch (command[3]) {
-                    case 'o':
-                    case 'O':
-                      Matched("@noop");
-                      break;
-                    case 'l':
-                    case 'L':
-                      Matched("@nologins");
-                      if (!is_direct) goto bad;
-                      do_nologins(player, arg1);
-                      break;
-                    case 'p':
-                    case 'P':
-                      Matched("@nopow_class");
-                      if (!is_direct) goto bad;
-                      do_nopow_class(player, arg1, arg2);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'p':
-                case 'P':
-                  switch (command[3]) {
-                    case 'e':
-                    case 'E':
-                      Matched("@npemit");
-                      do_general_emit(player, arg1, pure, 4);
-                      break;
-                    case 'a':
-                    case 'A':
-                      switch (command[4]) {
-                        case 'g':
-                        case 'G':
-                          Matched("@npage");
-                          do_page(player, arg1, pure2);
-                          break;
-                        case 's':
-                        case 'S':
-                          Matched("@npaste");
-                          do_pastecode(player, arg1, arg2);
-                          break;
-                        default:
-                          goto bad;
-                      }
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 's':
-                case 'S':
-                  Matched("@nset");
-                  do_set(player, arg1, pure2, is_direct);
-                  break;
-                case 'u':
-                case 'U':
-                  Matched("@nuke");
-                  if (!is_direct) goto bad;
-                  do_nuke(player, arg1);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'o':
-            case 'O':
-              switch (command[2]) {
-                case 'e':
-                case 'E':
-                  Matched("@oemit");
-                  do_general_emit(player, arg1, arg2, 2);
-                  break;
-                case 'p':
-                case 'P':
-                  Matched("@open");
-                  do_open(player, arg1, arg2, NOTHING);
-                  break;
-                case 'u':
-                case 'U':
-                  Matched("@outgoing");
-#ifdef USE_OUTGOING
-                  do_outgoing(player, arg1, arg2);
-#else
-                  snprintf(buff, sizeof(buff), "@outgoing disabled - ");
-                  goto bad;
-#endif
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'p':
-            case 'P':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  switch (command[3]) {
-                    case 's':
-                    case 'S':
-                      switch (command[4]) {
-                        case 's':
-                        case 'S':
-                          Matched("@password");
-                          do_password(player, arg1, arg2);
-                          break;
-                        case 't':
-                        case 'T':
-                          switch (command[6]) {
-                            case '\0':
-                              Matched("@paste");
-                              do_paste(player, arg1, arg2);
-                              break;
-                            case 'c':
-                            case 'C':
-                              Matched("@pastecode");
-                              do_pastecode(player, arg1, arg2);
-                              break;
-                            case 's':
-                            case 'S':
-                              Matched("@pastestats");
-                              do_pastestats(player, arg1);
-                              break;
-                            default:
-                              goto bad;
-                          }
-                          break;
-                        default:
-                          goto bad;
-                      }
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'b':
-                case 'B':
-                  Matched("@pbreak");
-                  do_pstats(player, arg1);
-                  break;
-                case 'c':
-                case 'C':
-                  Matched("@pcreate");
-                  do_pcreate(player, arg1, arg2);
-                  break;
-                case 'e':
-                case 'E':
-                  Matched("@pemit");
-                  do_general_emit(player, arg1, arg2, 0);
-                  break;
-                case 'o':
-                case 'O':
-                  switch (command[3]) {
-                    case 'o':
-                    case 'O':
-                      Matched("@Poor");
-                      if (!is_direct) goto bad;
-                      do_poor(player, arg1);
-                      break;
-                    case 'w':
-                    case 'W':
-                      Matched("@powers");
-                      do_powers(player, arg1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 's':
-                case 'S':
-                  Matched("@ps");
-                  do_queue(player);
-                  break;
-                case 'u':
-                case 'U':
-                  Matched("@purge");
-                  do_purge(player);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'q':
-            case 'Q':
-              Matched("@quota");
-              do_quota(player, arg1, arg2);
-              break;
-
-            case 'r':
-            case 'R':
-              switch (command[2]) {
-#ifdef USE_COMBAT
-                case 'a':
-                case 'A':
-                  Matched("@racelist");
-                  do_racelist(player, arg1);
-                  break;
-#endif
-                case 'e':
-                case 'E':
-                  switch (command[3]) {
-                    case 'b':
-                    case 'B':
-                      Matched("@reboot");
-                      notify(player, "It's no longer @reboot. It's @reload.");
-                      do_reload(player, arg1);
-                      break;
-                    case 'l':
-                    case 'L':
-                      Matched("@reload");
-                      do_reload(player, arg1);
-                      break;
-                    case 'm':
-                    case 'M':
-                      Matched("@remit");
-                      do_general_emit(player, arg1, arg2, 1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'o':
-                case 'O':
-                  Matched("@robot");
-                  do_robot(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 's':
-            case 'S':
-              switch (command[2]) {
-                case 'e':
-                case 'E':
-                  switch (command[3]) {
-                    case 'a':
-                    case 'A':
-                      Matched("@search");
-                      if (Guest(player)) {
-                        notify(player, perm_denied());
-                      } else {
-                        do_search(player, arg1, arg2);
-                      }
-                      break;
-                    case 't':
-                    case 'T':
-                      switch (command[4]) {
-                        case '\0':
-                          Matched("@set");
-                          if (Guest(player)) {
-                            notify(player, perm_denied());
-                          } else {
-                            do_set(player, arg1, arg2, is_direct);
-                          }
-                          break;
-#ifdef USE_COMBAT
-                        case 'b':
-                        case 'B':
-                          Matched("@setbit");
-                          do_setbit(player, arg1, arg2);
-                          break;
-#endif
-                        default:
-                          goto bad;
-                      }
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'h':
-                case 'H':
-                  switch (command[3]) {
-#ifdef SHRINK_DB
-                    case 'r':
-                      Matched("@shrink");
-                      do_shrinkdbuse(player, arg1);
-                      break;
-#endif
-                    case 'u':
-                      if (strcmp(command, "@shutdown")) goto bad;
-                      do_shutdown(player, arg1);
-                      break;
-                    case 'o':
-                    case 'O':
-                      Matched("@showhash");
-                      do_showhash(player, arg1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-#ifdef USE_COMBAT_TM97
-                case 'k':
-                case 'K':
-                  Matched("@skillset");
-                  do_skillset(player, arg1, arg2);
-                  break;
-#endif
-#ifdef USE_COMBAT
-                case 'p':
-                case 'P':
-                  switch (command[3]) {
-                    case 'a':
-                    case 'A':
-                      Matched("@spawn");
-                      do_spawn(player, arg1, arg2);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-#endif
-                case 't':
-                case 'T':
-                  Matched("@stats");
-                  do_stats(player, arg1);
-                  break;
-                case 'u':
-                case 'U':
-                  Matched("@su");
-                  do_su(player, arg1, arg2, cause);
-                  break;
-                case 'w':
-                case 'W':
-                  switch (command[3]) {
-                    case 'a':
-                    case 'A':
-                      Matched("@swap");
-                      do_swap(player, arg1, arg2);
-                      break;
-                    case 'e':
-                    case 'E':
-                      Matched("@sweep");
-                      do_sweep(player, pure);
-                      break;
-                    case 'i':
-                    case 'I':
-                      Matched("@switch");
-                      do_switch(player, arg1, argv, cause);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 't':
-            case 'T':
-              switch (command[2]) {
-                case 'e':
-                case 'E':
-                  switch (command[3]) {
-                    case 'l':
-                    case 'L':
-                    case '\0':
-                      Matched("@teleport");
-                      do_teleport(player, arg1, arg2);
-                      break;
-                    case 'x':
-                    case 'X':
-                      Matched("@text");
-                      do_text(player, arg1, arg2, NULL);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'r':
-                case 'R':
-                  switch (command[3]) {
-                    case 'i':
-                    case 'I':
-                    case '\0':
-                      Matched("@trigger");
-                      do_trigger(player, arg1, argv);
-                      break;
-                    case '_':
-                      Matched("@tr_as");
-                      do_trigger_as(player, arg1, argv);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'u':
-            case 'U':
-              switch (command[2]) {
-#ifdef USE_UNIV
-                case 'c':
-                case 'C':
-                  switch (command[3]) {
-                    case 'o':
-                    case 'O':
-                      Matched("@uconfig");
-                      do_uconfig(player, arg1, arg2);
-                      break;
-                    case 'r':
-                    case 'R':
-                      Matched("@ucreate");
-                      /* Add explicit cast */
-                      do_ucreate(player, arg1, (int)atol(arg2));
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'i':
-                case 'I':
-                  Matched("@uinfo");
-                  do_uinfo(player, arg1);
-                  break;
-                case 'l':
-                case 'L':
-                  Matched("@ulink");
-                  do_ulink(player, arg1, arg2);
-                  break;
-#endif
-                case 'n':
-                case 'N':
-                  switch (command[3]) {
-                    case 'd':
-                    case 'D':
-                      switch (command[4]) {
-                        case 'e':
-                        case 'E':
-                          switch (command[5]) {
-                            case 's':
-                            case 'S':
-                              Matched("@undestroy");
-                              do_undestroy(player, arg1);
-                              break;
-                            case 'f':
-                            case 'F':
-                              Matched("@undefattr");
-                              do_undefattr(player, arg1);
-                              break;
-                            default:
-                              goto bad;
-                          }
-                          break;
-                        default:
-                          goto bad;
-                      }
-                      break;
-                    case 'l':
-                    case 'L':
-                      switch (command[4]) {
-                        case 'i':
-                        case 'I':
-                          Matched("@unlink");
-                          do_unlink(player, arg1);
-                          break;
-                        case 'o':
-                        case 'O':
-                          Matched("@unlock");
-                          do_unlock(player, arg1);
-                          break;
-                        default:
-                          goto bad;
-                      }
-                      break;
-                    case 'h':
-                    case 'H':
-                      Matched("@unhide");
-                      do_unhide(player);
-                      break;
-#ifdef USE_UNIV
-                    case 'u':
-                    case 'U':
-                      Matched("@unulink");
-                      do_unulink(player, arg1);
-                      break;
-#endif
-                    case 'z':
-                    case 'Z':
-                      Matched("@unzlink");
-                      do_unzlink(player, arg1);
-                      break;
-                    default:
-                      goto bad;
-                  }
-                  break;
-                case 'p':
-                case 'P':
-                  Matched("@upfront");
-                  do_upfront(player, arg1);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'w':
-            case 'W':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("@wait");
-                  wait_que(player, atoi(arg1), arg2, cause);
-                  break;
-                case 'e':
-                case 'E':
-                  Matched("@wemit");
-                  do_wemit(player, arg1, arg2);
-                  break;
-                case 'h':
-                case 'H':
-                  Matched("@whereis");
-                  do_whereis(player, arg1);
-                  break;
-                case 'i':
-                case 'I':
-                  Matched("@wipeout");
-                  if (!is_direct) goto bad;
-                  do_wipeout(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            case 'z':
-            case 'Z':
-              switch (command[2]) {
-                case 'e':
-                case 'E':
-                  Matched("@zemit");
-                  do_general_emit(player, arg1, arg2, 3);
-                  break;
-                case 'l':
-                case 'L':
-                  Matched("@zlink");
-                  do_zlink(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'd':
-        case 'D':
-          Matched("drop");
-          do_drop(player, arg1);
-          break;
-
-        case 'e':
-        case 'E':
-          switch (command[1]) {
-            case 'x':
-            case 'X':
-              Matched("examine");
-              do_examine(player, arg1, arg2);
-              break;
-            case 'n':
-            case 'N':
-              Matched("enter");
-              do_enter(player, arg1);
-              break;
-#ifdef USE_COMBAT
-            case 'q':
-            case 'Q':
-              Matched("equip");
-              do_equip(player, player, arg1);
-              break;
-#endif
-            default:
-              goto bad;
-          }
-          break;
-
-#ifdef USE_COMBAT
-        case 'f':
-        case 'F':
-          switch (command[1]) {
-            case 'i':
-            case 'I':
-            case '\0':
-              Matched("fight");
-              do_fight(player, arg1, arg2);
-              break;
-            case 'l':
-            case 'L':
-              Matched("flee");
-              do_flee(player);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-#endif
-
-        case 'g':
-        case 'G':
-          switch (command[1]) {
-            case 'e':
-            case 'E':
-              Matched("get");
-              do_get(player, arg1);
-              break;
-            case 'i':
-            case 'I':
-              Matched("give");
-              do_give(player, arg1, arg2);
-              break;
-            case 'o':
-            case 'O':
-              Matched("goto");
-              do_move(player, arg1);
-              break;
-            case 'r':
-            case 'R':
-              Matched("gripe");
-              do_gripe(player, arg1, arg2);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'h':
-        case 'H':
-          Matched("help");
-          do_text(player, "help", arg1, NULL);
-          break;
-
-        case 'i':
-        case 'I':
-          switch (command[1]) {
-            case 'd':
-            case 'D':
-              Matched("idle");
-              set_idle_command(player, arg1, arg2);
-              break;
-            default:
-              Matched("inventory");
-              do_inventory(player);
-              break;
-          }
-          break;
-
-        case 'j':
-        case 'J':
-          Matched("join");
-          do_join(player, arg1);
-          break;
-
-        case 'l':
-        case 'L':
-          switch (command[1]) {
-            case 'o':
-            case 'O':
-            case '\0':
-              Matched("look");
-              do_look_at(player, arg1);
-              break;
-            case 'e':
-            case 'E':
-              Matched("leave");
-              do_leave(player);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'm':
-        case 'M':
-          switch (command[1]) {
-            case 'o':
-            case 'O':
-              switch (command[2]) {
-                case 'n':
-                case 'N':
-                  Matched("money");
-                  do_money(player, arg1, arg2);
-                  break;
-                case 't':
-                case 'T':
-                  Matched("motd");
-                  do_motd(player);
-                  break;
-                case 'v':
-                case 'V':
-                  Matched("move");
-                  do_move(player, arg1);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'n':
-        case 'N':
-          if (string_compare(command, "news")) goto bad;
-          do_text(player, "news", arg1, A_ANEWS);
-          break;
-
-        case 'p':
-        case 'P':
-          switch (command[1]) {
-            case 'a':
-            case 'A':
-            case '\0':
-              Matched("page");
-              do_page(player, arg1, arg2);
-              break;
-            case 'o':
-            case 'O':
-              Matched("pose");
-              do_pose(player, arg1, arg2, 0);
-              break;
-            case 'r':
-            case 'R':
-              Matched("pray");
-              do_pray(player, arg1, arg2);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'r':
-        case 'R':
-          switch (command[1]) {
-            case 'e':
-            case 'E':
-              switch (command[2]) {
-                case 'a':
-                case 'A':
-                  Matched("read");
-                  do_look_at(player, arg1);
-                  break;
-#ifdef USE_COMBAT_TM97
-                case 'm':
-                case 'M':
-                  Matched("remove");
-                  do_remove(player);
-                  break;
-#endif
-                default:
-                  goto bad;
-              }
-              break;
-#ifdef USE_RLPAGE
-            case 'l':
-            case 'L':
-              Matched("rlpage");
-              do_rlpage(player, arg1, arg2);
-              break;
-#endif
-            default:
-              goto bad;
-          }
-          break;
-
-        case 's':
-        case 'S':
-          switch (command[1]) {
-            case 'a':
-            case 'A':
-              Matched("say");
-              do_say(player, arg1, arg2);
-              break;
-#ifdef USE_COMBAT_TM97
-            case 'l':
-            case 'L':
-              Matched("slay");
-              do_slay(player, arg1);
-              break;
-#endif
-            case 'u':
-            case 'U':
-              Matched("summon");
-              do_summon(player, arg1);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 't':
-        case 'T':
-          switch (command[1]) {
-            case 'a':
-            case 'A':
-              Matched("take");
-              do_get(player, arg1);
-              break;
-            case 'h':
-            case 'H':
-              switch (command[2]) {
-                case 'r':
-                case 'R':
-                  Matched("throw");
-                  do_drop(player, arg1);
-                  break;
-                case 'i':
-                case 'I':
-                  Matched("think");
-                  do_think(player, arg1, arg2);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-            case 'o':
-            case 'O':
-              Matched("to");
-              do_to(player, arg1, arg2);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'u':
-        case 'U':
-          switch (command[1]) {
-#ifdef USE_COMBAT_TM97
-            case 'n':
-            case 'N':
-              Matched("unwield");
-              do_unwield(player);
-              break;
-#endif
-            case 's':
-            case 'S':
-              Matched("use");
-              do_use(player, arg1);
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        case 'w':
-        case 'W':
-          switch (command[1]) {
-            case 'h':
-            case 'H':
-              switch (command[2]) {
-                case 'i':
-                case 'I':
-                case '\0':
-                  Matched("whisper");
-                  do_whisper(player, arg1, arg2);
-                  break;
-                case 'o':
-                case 'O':
-                  Matched("who");
-                  dump_users(player, arg1, arg2, NULL);
-                  break;
-                default:
-                  goto bad;
-              }
-              break;
-#ifdef USE_COMBAT_TM97
-            case 'e':
-            case 'E':
-              Matched("wear");
-              do_wear(player, arg1);
-              break;
-            case 'i':
-            case 'I':
-              Matched("wield");
-              do_wield(player, arg1);
-              break;
-#endif
-            case '\0':
-              if (*arg1) {
-                do_whisper(player, arg1, arg2);
-              } else {
-                dump_users(player, arg1, arg2, NULL);
-              }
-              break;
-            default:
-              goto bad;
-          }
-          break;
-
-        default:
-          goto bad;
-
-        bad:
-          /* Check user-defined attributes first */
-          if (!slave && test_set(player, command, arg1, arg2, is_direct)) {
-            return;
-          }
-
-          /* Try matching user-defined functions */
-          match = list_check(db[db[player].location].contents, player, '$', unp)
-               || list_check(db[player].contents, player, '$', unp)
-               || atr_match(db[player].location, player, '$', unp)
-               || list_check(db[db[player].location].exits, player, '$', unp);
-
-          /* Check zone objects */
-          DOZONE(zon, player) {
-            /* Add explicit cast to resolve conversion warning */
-            match = list_check((z = zon), player, '$', unp) || match;
-          }
-
-          if (!match) {
-            /* Try channel alias as last resort */
-            channel_result = is_channel_alias(player, command);
-            if (channel_result != NULL) {
-              channel_talk(player, command, arg1, arg2);
-            } else {
-              notify(player, "Huh?  (Type \"help\" for help.)");
-            }
-          }
-          break;
+    if (!match) {
+      /* Try channel alias as last resort */
+      channel_result = is_channel_alias(player, command);
+      if (channel_result != NULL) {
+        channel_talk(player, command, arg1, arg2);
+      } else {
+        notify(player, "Huh?  (Type \"help\" for help.)");
       }
     }
   }
 
-  /* Clean up word pointer array */
-  {
-    int a;
-    for (a = 0; a < 10; a++) {
-      wptr[a] = NULL;
-    }
+/* Clean up and return */
+  int a;
+  for (a = 0; a < 10; a++) {
+    wptr[a] = NULL;
   }
 }
 

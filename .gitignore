@@ -4,6 +4,7 @@
 *.bak
 *.bak2
 *-backup
+*.backup
 *-old
 *-works
 *-saved

@@ -597,31 +597,33 @@ void hash_iterate_init(const hash_table_t *table, hash_iterator_t *iter)
 
 /**
  * hash_iterate_next - Get next entry in iteration
- * 
+ *
  * @param iter Iterator
  * @param key Pointer to receive key (optional)
  * @param value Pointer to receive value (optional)
  * @return 1 if entry returned, 0 if done
+ *
+ * BUG FIX (2025-11-17): Fixed infinite loop where bucket_index was not
+ * incremented after processing entries in a bucket, causing the same
+ * bucket to be processed repeatedly.
  */
 int hash_iterate_next(hash_iterator_t *iter, char **key, void **value)
 {
     if (!iter || !iter->table) {
         return 0;
     }
-    
+
     /* If we have a current entry, move to next in chain */
     if (iter->current) {
         iter->current = iter->current->next;
     }
-    
+
     /* Find next non-empty bucket if needed */
     while (!iter->current && iter->bucket_index < iter->table->size) {
         iter->current = iter->table->buckets[iter->bucket_index];
-        if (!iter->current) {
-            iter->bucket_index++;
-        }
+        iter->bucket_index++;  /* ALWAYS increment - moved outside the if */
     }
-    
+
     /* Return current entry if we have one */
     if (iter->current) {
         if (key) {
@@ -632,7 +634,7 @@ int hash_iterate_next(hash_iterator_t *iter, char **key, void **value)
         }
         return 1;
     }
-    
+
     return 0;
 }
 

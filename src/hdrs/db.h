@@ -238,22 +238,7 @@ extern int dozonetemp;            /* Temporary variable for DOZONE macro */
     } \
 } while(0)
 
-/*
- * GoodObject - Validate a database reference
- * 
- * Checks:
- * 1. dbref is non-negative
- * 2. dbref is within database bounds
- * 3. Object has a valid type
- * 4. Object is not marked for destruction
- *
- * CRITICAL: Use this before any database access to prevent crashes
- */
-#ifndef GoodObject
-#define GoodObject(x) ((x) >= 0 && (x) < db_top && \
-                      (Typeof(x) != NOTYPE) && \
-                      !(db[x].flags & GOING))
-#endif
+/* Note: ValidObject() and GoodObject() are defined in externs.h */
 
 /* ============================================================================
  * OBJECT ACCESS MACROS
