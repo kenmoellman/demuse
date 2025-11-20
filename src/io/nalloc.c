@@ -552,8 +552,8 @@ void __free_hunk(MSTACK *m)
       (m->next)->prev = m->prev;
     }
     
-    fprintf(stderr, "DEBUG: About to modify linked list...\n");
-    fflush(stderr);
+//    fprintf(stderr, "DEBUG: About to modify linked list...\n");
+//    fflush(stderr);
     
     if(m->ptr)
     {

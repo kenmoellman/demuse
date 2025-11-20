@@ -75,6 +75,7 @@
 #include "admin.h"
 #include "credits.h"
 #include "parser.h"
+#include "zones.h"
 
 /* ============================================================================
  * BUFFER SIZE CONSTANTS
@@ -1528,72 +1529,11 @@ void process_command(dbref player, char *command, dbref cause)
 }
 
 /* ============================================================================
- * ZONE MANAGEMENT FUNCTIONS
+ * NOTE: Zone management functions moved to muse/zones.c (2025 reorganization)
+ * - get_zone_first()
+ * - get_zone_next()
+ * See zones.h for declarations
  * ============================================================================ */
-
-/**
- * get_zone_first - Get the first zone object for a player/object
- * 
- * Walks up the location chain to find the first zone object.
- * 
- * SECURITY:
- * - Uses local depth variable to avoid shadowing global
- * - Validates all object references
- * - Prevents infinite loops with depth limit
- * 
- * @param player The object to get the zone for
- * @return The first zone object, or db[0].zone if none found
- */
-dbref get_zone_first(dbref player)
-{
-  int zone_depth = 10;  /* Local variable to avoid shadowing global 'depth' */
-  dbref location;
-
-  for (location = player; 
-       zone_depth && location != NOTHING; 
-       zone_depth--, location = db[location].location) {
-    
-    /* Validate object */
-    if (!GoodObject(location)) {
-      break;
-    }
-    
-    /* Set default zone if needed */
-    if (db[location].zone == NOTHING && 
-        (Typeof(location) == TYPE_THING || Typeof(location) == TYPE_ROOM) &&
-        location != 0 && location != db[0].zone) {
-      db[location].zone = db[0].zone;
-    }
-    
-    /* Return zone if found */
-    if (location == db[0].zone) {
-      return db[0].zone;
-    } else if (db[location].zone != NOTHING) {
-      return db[location].zone;
-    }
-  }
-  
-  return db[0].zone;
-}
-
-/**
- * get_zone_next - Get the next zone in the hierarchy
- * 
- * @param player The current zone object
- * @return The next zone object, or -1 if none
- */
-dbref get_zone_next(dbref player)
-{
-  if (!valid_player(player)) {
-    return -1;
-  }
-  
-  if (db[player].zone == NOTHING && player != db[0].zone) {
-    return db[0].zone;
-  } else {
-    return db[player].zone;
-  }
-}
 
 /* ============================================================================
  * LIST CHECKING FUNCTIONS
