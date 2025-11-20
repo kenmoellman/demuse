@@ -19,11 +19,11 @@ struct hashtab {
   int nbuckets;
   hashbuck *buckets;
   char *name;
-  char *(*display) P((void *));
+  char *(*display) (void *);
   struct hashtab *next;
 };
 
-extern struct hashtab *make_hashtab P((int nbuck, void *ents, int entsize, char *, char *(*)(void *)));
-extern void *lookup_hash P((struct hashtab *tab, int hashvalue, char *name));
-extern int hash_name P((char *name));
+extern struct hashtab *make_hashtab(int nbuck, void *ents, int entsize, char *, char *(*)(void *));
+extern void *lookup_hash (struct hashtab *tab, int hashvalue, char *name);
+extern int hash_name (char *name);
      
