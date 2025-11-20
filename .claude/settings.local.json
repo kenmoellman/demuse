@@ -15,7 +15,8 @@
       "Bash(for dir in src/comm src/db src/io src/muse src/prog src/util)",
       "Bash(do echo \"=== $dir ===\" for file in $dir/*.c)",
       "Bash(do if [ -f \"$file\" ])",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

@@ -36,7 +36,7 @@ TOPDIR = ../..
 # Source files - NEW MODULAR STRUCTURE
 # Refactored from bsd.c into logical modules:
 SRCS = boolexp.c \
-       db.c \
+       db_io.c \
        destroy.c \
        inherit.c \
        warnings.c
