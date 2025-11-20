@@ -126,7 +126,7 @@ extern ident_t * id_open __P((__STRUCT_IN_ADDR_P laddr,
 			   __STRUCT_IN_ADDR_P faddr,
 			   __STRUCT_TIMEVAL_P timeout));
   
-extern int    id_close __P((ident_t *id));
+extern int    id_close __(ident_t *id);
   
 extern int    id_query __P((ident_t *id,
 			    int lport,
@@ -143,20 +143,20 @@ extern int    id_parse __P((ident_t *id,
   
 /* High-level calls */
 
-extern IDENT *ident_lookup __P((int fd, int timeout));
+extern IDENT *ident_lookup __(int fd, int timeout);
 
-extern char  *ident_id __P((int fd, int timeout));
+extern char  *ident_id __(int fd, int timeout);
 
-extern IDENT *ident_query __P(( __STRUCT_IN_ADDR_P laddr, __STRUCT_IN_ADDR_P raddr, int lport, int rport, int timeout));
+extern IDENT *ident_query __( __STRUCT_IN_ADDR_P laddr, __STRUCT_IN_ADDR_P raddr, int lport, int rport, int timeout);
 
-extern void   ident_free __P((IDENT *id));
+extern void   ident_free __(IDENT *id);
 
 extern char  id_version[];
 
 #ifdef IN_LIBIDENT_SRC
 
-extern char *id_strdup __P((char *str));
-extern char *id_strtok __P((char *cp, char *cs, char *dc));
+extern char *id_strdup __(char *str);
+extern char *id_strtok __(char *cp, char *cs, char *dc);
 
 #endif
 

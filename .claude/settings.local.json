@@ -11,7 +11,11 @@
       "Bash(/tmp/phase4_insert.txt)",
       "Bash(/tmp/generate_registrations.sh:*)",
       "Bash(/tmp/phase4_registrations.txt)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(for dir in src/comm src/db src/io src/muse src/prog src/util)",
+      "Bash(do echo \"=== $dir ===\" for file in $dir/*.c)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

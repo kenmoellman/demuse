@@ -357,7 +357,7 @@ extern int user_limit;
 extern int nologins;
 
 /* local function declarations */
-static object_flag_type convert_flags P((dbref player, int is_wizard, char *s, object_flag_type *, object_flag_type *));
+static object_flag_type convert_flags (dbref player, int is_wizard, char *s, object_flag_type *, object_flag_type *);
 struct descriptor_data *find_least_idle(dbref);
 
 /* added 12/1/90 by jstanley to add @search command details in file game.c */

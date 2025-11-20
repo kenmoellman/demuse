@@ -83,7 +83,7 @@ void wd_init_io()
 {
 #ifndef fileno
   /* sometimes stdio.h #defines this */
-  extern int fileno P((FILE *));
+  extern int fileno (FILE *);
 
 #endif
   int fd;

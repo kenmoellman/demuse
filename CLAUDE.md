@@ -177,11 +177,9 @@ The codebase has been significantly modernized with:
 - Change existing function input and output parameters 
 - Add functions to that are already defined in other places in the code (don't duplicate functions)
 
-**Makefile CFLAGS**  
-
 **Converting int to long**
 - In the past dbref was defined as an int, and then later it was changed to be a long, but there are still places in the code where this isn't correctly implemented.
-- Need to utilize recently-created macro DBREF_FMT to replace instances where variables of type dbref are being placed into a string, instead of having a hardcoded %d or %ld 
+- Need to utilize recently-created macro DBREF_FMT defined in config.h to replace instances where variables of type dbref are being placed into a string, instead of having a hardcoded %d or %ld 
 - Need to watch for and fix places where variables were type int that are getting value of strlen which is now a size_t 
 
 ### Working with the Database

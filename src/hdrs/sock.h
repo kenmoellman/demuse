@@ -1,16 +1,16 @@
 #include "externs.h"
 
 /* From sock.c */
-extern void open_sockets P((void));
-extern void close_sockets P((void));
-extern int make_socket P((int));
-extern void shutdownsock P((struct descriptor_data *));
-extern struct descriptor_data *initializesock P((int, struct sockaddr_in *, char *, enum descriptor_state));
-extern void make_nonblocking P((int));
-extern struct descriptor_data *new_connection P((int));
-extern void clearstrings P((struct descriptor_data *));
-extern void freeqs P((struct descriptor_data *));
-extern int check_lockout P((struct descriptor_data *, char *, char *)); 
+extern void open_sockets (void);
+extern void close_sockets (void);
+extern int make_socket (int);
+extern void shutdownsock (struct descriptor_data *);
+extern struct descriptor_data *initializesock (int, struct sockaddr_in *, char *, enum descriptor_state);
+extern void make_nonblocking (int);
+extern struct descriptor_data *new_connection (int);
+extern void clearstrings (struct descriptor_data *);
+extern void freeqs (struct descriptor_data *);
+extern int check_lockout (struct descriptor_data *, char *, char *); 
 
 
 extern int exit_status;

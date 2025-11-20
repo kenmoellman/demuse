@@ -14,3 +14,10 @@ bin/*
 !bin/.gitkeep
 run/db/mdb.#*#
 run/db/mdb.PANIC
+run/logs/sensitive
+src/comm/.depend
+src/muse/.depend
+src/muse/netmuse
+src/util/mkindx
+src/util/mycompress
+src/util/wd
