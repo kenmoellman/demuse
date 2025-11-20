@@ -19,8 +19,9 @@ LIBS = -lm -lcrypt
 TOPDIR = ..
 
 # Source files
+# NOTE: datetime.c, info.c, economy.c, idle.c moved from comm/ directory (2025 reorganization)
 SRCS = admin.c cque.c game.c match.c move.c parser.c player.c powers.c  predicates.c \
-       stringutil.c timer.c unparse.c utils.c wild.c conf.c maze.c zones.c
+       stringutil.c timer.c unparse.c utils.c wild.c conf.c maze.c zones.c datetime.c info.c economy.c idle.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)

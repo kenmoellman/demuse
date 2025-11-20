@@ -57,7 +57,14 @@ SRCS = server_main.c \
        newconc.c \
        rlpage.c \
        nalloc.c \
-       io_globals.c
+       io_globals.c \
+       color.c \
+       lstats.c
+
+# NOTE: color.c and lstats.c moved from comm/ directory (2025 reorganization)
+# These are I/O infrastructure files:
+# - color.c: ANSI/Pueblo color output formatting
+# - lstats.c: Login statistics tracking
 
 # Object files
 OBJS = $(SRCS:.c=.o)

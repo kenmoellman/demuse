@@ -35,11 +35,14 @@ TOPDIR = ../..
 
 # Source files - NEW MODULAR STRUCTURE
 # Refactored from bsd.c into logical modules:
+# NOTE: attr.c added from comm/set.c (2025 reorganization)
 SRCS = boolexp.c \
        db_io.c \
        destroy.c \
        inherit.c \
-       warnings.c
+       object.c \
+       warnings.c \
+       attr.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)

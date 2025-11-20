@@ -37,8 +37,13 @@ LDFLAGS += $(CURL_LIBS)
 TOPDIR = ../..
 
 # Source files
-SRCS = broadcast.c color.c com.c create.c datetime.c dbtop.c email.c emit.c help.c info.c \
-       look.c lstats.c messaging.c page.c paste.c pcmds.c rob.c set.c speech.c
+# NOTE: create.c removed - functions moved to db/object.c and muse/zones.c
+# NOTE: color.c, lstats.c moved to io/ directory (2025 reorganization)
+# NOTE: datetime.c, info.c, dbtop.c moved to muse/ directory (2025 reorganization)
+# NOTE: rob.c moved to muse/economy.c (2025 reorganization)
+# NOTE: set.c split - attributes to db/attr.c, idle to muse/idle.c (2025 reorganization)
+SRCS = broadcast.c com.c email.c emit.c help.c \
+       look.c messaging.c page.c paste.c pcmds.c speech.c
 
 
 # Object files
