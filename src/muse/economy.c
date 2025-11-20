@@ -1,7 +1,11 @@
-/* rob.c - Player currency and item transfer commands
- * 
- * This file implements the @giveto and give commands for transferring
- * credits and objects between players.
+/* economy.c - Economic System (Currency and Item Transfers)
+ *
+ * RELOCATED (2025 reorganization): comm/rob.c → muse/economy.c
+ * Economic functions belong in muse/ as they're game mechanics.
+ *
+ * This file implements currency and item transfer commands:
+ * - @giveto - Administrative currency transfer
+ * - give - Player currency/item transfer
  */
 
 #include <ctype.h>
