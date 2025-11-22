@@ -1,5 +1,5 @@
 @14
-~52
+~57
 &0
 Login
 Login
@@ -145,13 +145,13 @@ llama
 public:public:1 dbinfo:dbinfo:1 *players:*players:1 *log_root:*log_root:1 log_imp:log_imp:1 *log_force:*log_force:1 *log_suspect:*log_suspect:1 log_err:log_err:1 log_gripe:log_gripe:1 log_prayer:log_prayer:1 log_combat:log_combat:1 *dc:*dc:1
 >30
 -1
-1763435933
+1763359216
 >25
 -1
-1763435945
+1763359477
 >1020
 -1
-431
+419
 >1022
 -1
  ???@localhost
@@ -176,21 +176,21 @@ wiz_parent
 1187841
 799855031
 799602294
->3
-3
-$jail *=*:@tel pnum(v(0))=ifelse(match(v(1),{lo*}),{#1375},{#646})
->52
--1
-1
->2
-3
-$boot *:@set %0=slave;@slay %0;@boot %0
->1
-3
-$@slave *:@set %0=slave
 >0
 3
 $@unslave *:@set %0=!slave
+>1
+3
+$@slave *:@set %0=slave
+>2
+3
+$boot *:@set %0=slave;@slay %0;@boot %0
+>52
+-1
+1
+>3
+3
+$jail *=*:@tel pnum(v(0))=ifelse(match(v(1),{lo*}),{#1375},{#646})
 <
 0
 0
@@ -223,144 +223,144 @@ Universal Zone
 17342465
 909785609
 0
->0
-4
-$gimmie the ball:@tel #233=loc([v(#)])
->2
-4
-$ls -al:@npemit %#=total 16;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] .;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] ..;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(9)]19 [time()] dumbass.txt;@npemit %#=master:~/>
->138
--1
-@chemit connections=* Disconnect: %n - [time()]
->136
--1
-@chemit connections=* Connect: %n - [time()]
->50
--1
-public *log_force
->3
-4
-$ls:@npemit %#=dumbass.txt;@npemit %#=master:~/>
->23
-4
-$@selfboot:@swi type(v(#))=Player,{@pemit v(#)=Okay, you will be booted three times in a row, in 5 seconds.;@wait 5={@boot [v(#)]=Selfboot;@boot [v(#)]=Selfboot; @boot [v(#)]=Selfboot}; @wait 30=@pemit v(#)=Welcome back.},@pemit v(#)=Only players can be booted.
->6
-4
-$register *--*--*--*:+com *character=Character Request: %0--%1--%2--%3;@pe %#=Your character request has been sent. expect action within 48 hours. You will be contacted online during this session, or via email.;@force #20=+mail wm=Registration request: %0--%1--%2--%3
->8
-4
-Allquota Announce Boot Broadcast Chown Class Database Examine Free Who Outgoing Join Member Modify Money Newpassword Noslay Noquota Nuke Pcreate Poor Queue Exec Seeatr Setpow Slay Shutdown Summon Slave Spoof Stats Steal Teleport WizAttributes WizFlags Remote Security Incoming Functions Dbtop Setquota
->7
-4
-$think *:%# :. o 0 ( %%%[v(0)%%%] )
->9
-4
-$+queuelag:[s({@pemit %#=Difference of commands: %[tms(sub(xtime(),[xtime()]))] - [rtime()] & %[rtime()]})]
->5
--1
-XXdsfghkj
->11
-4
-$@memory *:@swi num(strcat(*,v(0)))=#-1,@pemit %#=who?,@pemit %#=[name(strcat(*,v(0)))] is using up [playmem(strcat(*,v(0)))] bytes.
->12
-4
-$@memory:@pemit v(#)=You are using up [playmem(v(#))] bytes.
->21
-4
-$@relink *=*:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pe %#=That's not yours to fiddle with.},#-1,{@pe %#=I don't know what that is.},{@swi lor(pos(flags(rmatch(v(#),v(1))),L),controls(v(#),rmatch(v(#),v(1)),modify))=1,{@fo %#={@unlink [rmatch(v(#),v(0))];@link [rmatch(v(#),v(0))]=[rmatch(v(#),v(1))]}},{@pe %#=Permission Denied.}
->14
-4
-[s_as(%s,v(0),v(!))]
->118
--1
-$@unprotect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0));@pe %#=That object is now unprotected.}
->117
--1
-$@protect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0))=-1;@pe %#=That object is now protected.}
->125
--1
-#26
->25
-4
-$@@_* *=*:%# @defattr strcat(v(1),strcat(/,v(0)))=inherit;%# @set v(1)=%[v(0)%]:%[v(2)%]
->120
--1
-$@unprotect:@pemit %#=Unprotect what?
->101
--1
-$&*:@remit loc(%#)=%[v(0)%] --%n.(%#)
->115
--1
-$@poof:@pemit %#=What object do you want to get rid of?
->24
-4
-$@_* *:@swi v(1)=*=*,{%# @@_%%%[v(0)%%%] %%%[v(1)%%%]},{%# @defattr strcat(%%%[v(1)%%%],strcat(/,%%%[v(0)%%%]))}
->52
--1
-1
->57
--1
--5:y
->6
--1
-Universal Zone Object
->119
--1
-$@protect:@pemit %#=Protect what?
->20
-4
-$@searchobj*:@swi v(0)={*=*},,@pe %#=Search what for what?
->16
-4
-[s_as(%p,v(0),v(!))]
->15
-4
-[s_as(%o,v(0),v(!))]
->19
-4
-$@searchobj *=*:@fo %#=@pe me=Found %1 in: %[foreach(lattr(%0),{%[if(match(get(%0,v(0)),%1),v(0))%]})%]
->13
-4
-$@relink *:@swi v(0)={*=*},,{@fo %#=@unlink %0}
->108
--1
-$@getalias *:@pe %#=[s_with({The alias for %[name(%0)] is: %[get(%0,alias)]},pnum(v(0))]
->10
-4
-nihilis
->22
-4
-$@cpattr */*=*/*:%# @%1 %0=%[get(%2,%3)]
->42
-6
-[controls(v(0),#3,v(1))]
->113
--1
-$@poof *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.}
->4
-4
-$quit:@pe %#=Try /quit or QUIT.
->5
-4
-$exit:@pe %#=Try /quit or QUIT to log out, or;@pe %#=try leave if you're trying to exit an object.
->30
--1
-890339469
->25
--1
-890339598
->1020
--1
-694
->11
-6
-thall museum univ mall bugs court history chart
->1
-4
-$date:@pe %#=[time()]
 >17
 4
 $@who:@pemit %#=Duh. try 'who'.
+>1
+4
+$date:@pe %#=[time()]
+>11
+6
+thall museum univ mall bugs court history chart
+>1020
+-1
+694
+>25
+-1
+890339598
+>30
+-1
+890339469
+>5
+4
+$exit:@pe %#=Try /quit or QUIT to log out, or;@pe %#=try leave if you're trying to exit an object.
+>4
+4
+$quit:@pe %#=Try /quit or QUIT.
+>113
+-1
+$@poof *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.}
+>42
+6
+[controls(v(0),#3,v(1))]
+>22
+4
+$@cpattr */*=*/*:%# @%1 %0=%[get(%2,%3)]
+>10
+4
+nihilis
+>108
+-1
+$@getalias *:@pe %#=[s_with({The alias for %[name(%0)] is: %[get(%0,alias)]},pnum(v(0))]
+>13
+4
+$@relink *:@swi v(0)={*=*},,{@fo %#=@unlink %0}
+>19
+4
+$@searchobj *=*:@fo %#=@pe me=Found %1 in: %[foreach(lattr(%0),{%[if(match(get(%0,v(0)),%1),v(0))%]})%]
+>15
+4
+[s_as(%o,v(0),v(!))]
+>16
+4
+[s_as(%p,v(0),v(!))]
+>20
+4
+$@searchobj*:@swi v(0)={*=*},,@pe %#=Search what for what?
+>119
+-1
+$@protect:@pemit %#=Protect what?
+>6
+-1
+Universal Zone Object
+>57
+-1
+-5:y
+>52
+-1
+1
+>24
+4
+$@_* *:@swi v(1)=*=*,{%# @@_%%%[v(0)%%%] %%%[v(1)%%%]},{%# @defattr strcat(%%%[v(1)%%%],strcat(/,%%%[v(0)%%%]))}
+>115
+-1
+$@poof:@pemit %#=What object do you want to get rid of?
+>101
+-1
+$&*:@remit loc(%#)=%[v(0)%] --%n.(%#)
+>120
+-1
+$@unprotect:@pemit %#=Unprotect what?
+>25
+4
+$@@_* *=*:%# @defattr strcat(v(1),strcat(/,v(0)))=inherit;%# @set v(1)=%[v(0)%]:%[v(2)%]
+>125
+-1
+#26
+>117
+-1
+$@protect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0))=-1;@pe %#=That object is now protected.}
+>118
+-1
+$@unprotect *:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@doomsday rmatch(v(#),v(0));@pe %#=That object is now unprotected.}
+>14
+4
+[s_as(%s,v(0),v(!))]
+>21
+4
+$@relink *=*:@swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pe %#=That's not yours to fiddle with.},#-1,{@pe %#=I don't know what that is.},{@swi lor(pos(flags(rmatch(v(#),v(1))),L),controls(v(#),rmatch(v(#),v(1)),modify))=1,{@fo %#={@unlink [rmatch(v(#),v(0))];@link [rmatch(v(#),v(0))]=[rmatch(v(#),v(1))]}},{@pe %#=Permission Denied.}
+>12
+4
+$@memory:@pemit v(#)=You are using up [playmem(v(#))] bytes.
+>11
+4
+$@memory *:@swi num(strcat(*,v(0)))=#-1,@pemit %#=who?,@pemit %#=[name(strcat(*,v(0)))] is using up [playmem(strcat(*,v(0)))] bytes.
+>5
+-1
+XXdsfghkj
+>9
+4
+$+queuelag:[s({@pemit %#=Difference of commands: %[tms(sub(xtime(),[xtime()]))] - [rtime()] & %[rtime()]})]
+>7
+4
+$think *:%# :. o 0 ( %%%[v(0)%%%] )
+>8
+4
+Allquota Announce Boot Broadcast Chown Class Database Examine Free Who Outgoing Join Member Modify Money Newpassword Noslay Noquota Nuke Pcreate Poor Queue Exec Seeatr Setpow Slay Shutdown Summon Slave Spoof Stats Steal Teleport WizAttributes WizFlags Remote Security Incoming Functions Dbtop Setquota
+>6
+4
+$register *--*--*--*:+com *character=Character Request: %0--%1--%2--%3;@pe %#=Your character request has been sent. expect action within 48 hours. You will be contacted online during this session, or via email.;@force #20=+mail wm=Registration request: %0--%1--%2--%3
+>23
+4
+$@selfboot:@swi type(v(#))=Player,{@pemit v(#)=Okay, you will be booted three times in a row, in 5 seconds.;@wait 5={@boot [v(#)]=Selfboot;@boot [v(#)]=Selfboot; @boot [v(#)]=Selfboot}; @wait 30=@pemit v(#)=Welcome back.},@pemit v(#)=Only players can be booted.
+>3
+4
+$ls:@npemit %#=dumbass.txt;@npemit %#=master:~/>
+>50
+-1
+public *log_force
+>136
+-1
+@chemit connections=* Connect: %n - [time()]
+>138
+-1
+@chemit connections=* Disconnect: %n - [time()]
+>2
+4
+$ls -al:@npemit %#=total 16;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] .;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(8)]512 [time()] ..;@npemit %#=drwxr--r-- % 12 master[spc(3)]muse[spc(9)]19 [time()] dumbass.txt;@npemit %#=master:~/>
+>0
+4
+$gimmie the ball:@tel #233=loc([v(#)])
 <
 2
 7
@@ -461,12 +461,12 @@ New Default Universe
 1048579
 0
 913739301
->1110
--1
-1
 >52
 -1
 9
+>1110
+-1
+1
 <
 0
 0
@@ -911,12 +911,12 @@ nacmd
 1048580
 0
 1630139343
->52
--1
-19
 >1110
 -1
 17
+>52
+-1
+19
 <
 0
 0
@@ -937,15 +937,15 @@ log_err
 1048580
 0
 1630266769
->52
--1
-19
->1110
--1
-48
 >50
 -1
 1
+>1110
+-1
+48
+>52
+-1
+19
 <
 0
 0
@@ -966,12 +966,12 @@ log_err
 1048580
 0
 1630138888
->52
--1
-19
 >1110
 -1
 55
+>52
+-1
+19
 <
 0
 0
@@ -992,15 +992,15 @@ log_gripe
 1048580
 0
 1630266822
->52
--1
-19
->1110
--1
-49
 >50
 -1
 1
+>1110
+-1
+49
+>52
+-1
+19
 <
 0
 0
@@ -1021,15 +1021,15 @@ log_gripe
 1048580
 0
 1630262591
->50
--1
-1
->1110
--1
-364
 >52
 -1
 19
+>1110
+-1
+364
+>50
+-1
+1
 <
 0
 0
@@ -1050,15 +1050,15 @@ log_prayer
 1048580
 0
 1630266913
->52
--1
-19
->1110
--1
-55
 >50
 -1
 1
+>1110
+-1
+55
+>52
+-1
+19
 <
 0
 0
@@ -1244,12 +1244,12 @@ dbinfo
 1048580
 0
 1630140188
->1110
--1
-362
 >52
 -1
 19
+>1110
+-1
+362
 <
 0
 0
@@ -1270,15 +1270,15 @@ dbinfo
 1048580
 0
 1630490925
->52
--1
-19
->1110
--1
-42
 >50
 -1
 1
+>1110
+-1
+42
+>52
+-1
+19
 <
 0
 0
@@ -1299,18 +1299,18 @@ Reg Checker
 1089537
 766647048
 766646691
->52
--1
-1
->128
--1
-@swi loc(me)=link(me),,home
->26
--1
-connect: *
 >29
 -1
 @swi is_a(%0,#42)=0,{+com reg=uh, %[unparse(v(0))%] isn't registered.},{@swi get(%0,reg_email)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have an email address set.};@swi get(%0,reg_name)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have a real name set.};@swi get(%0,reg_date)=,{+com reg=uh, %%%[unparse(v(0))%%%] doesn't have a registration date set! setting it to now.;@reg_date %0=xtime()}
+>26
+-1
+connect: *
+>128
+-1
+@swi loc(me)=link(me),,home
+>52
+-1
+1
 <
 0
 0
@@ -1331,15 +1331,15 @@ Regger
 17867777
 894196036
 766646512
->52
--1
-1
->0
-24
-$reg *--*--*--*:@swi [pnum(v(0))]=#-1,{@pcreate %0=%1;@add *%0=#42;@add *%0=#50;@reg_date *%0=[xtime()];@reg_name *%0=%2;@reg_email *%0=%3;@regger *%0=%#},{@pe %#=[name(pnum(v(0)))] already exists.}
 >129
 -1
 #4
+>0
+24
+$reg *--*--*--*:@swi [pnum(v(0))]=#-1,{@pcreate %0=%1;@add *%0=#42;@add *%0=#50;@reg_date *%0=[xtime()];@reg_name *%0=%2;@reg_email *%0=%3;@regger *%0=%#},{@pe %#=[name(pnum(v(0)))] already exists.}
+>52
+-1
+1
 <
 0
 1
@@ -1387,15 +1387,15 @@ Guest Watcher
 1179713
 892569447
 868541601
->1110
--1
-30
->52
--1
-1
 >129
 -1
 #4
+>52
+-1
+1
+>1110
+-1
+30
 <
 0
 0
@@ -1494,12 +1494,12 @@ Login Area
 40960
 799108491
 0
->52
--1
-0
 >6
 -1
 Welcome to your new MUSE. Welcome. Please take a moment to read the news. You can do this by typing 'news', without the ''s
+>52
+-1
+0
 <
 0
 0
@@ -1520,15 +1520,15 @@ office
 12800
 890856037
 799468950
->19
--1
-_@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
->6
--1
-home sweet home.
 >119
 -1
 @chemit time=* The time is now: [rtime()]
+>6
+-1
+home sweet home.
+>19
+-1
+_@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
 <
 0
 0
@@ -1549,21 +1549,21 @@ Neat Commands Parent
 1188865
 849053528
 849051822
->0
-32
-$register *--*--*--*:@force #4342=+mail wm=Please Register %0, Real Name: %2, password %1, email %3
->1
-32
-$exit:@pe %#=Try /quit or QUIT if you're trying to leave,;@pe %#=Try leave if you're trying to exit an object.
->2
-32
-$quit:@pe %#=Try /quit or QUIT.
->3
-32
-$ls:@pemit %#=drwxr--r-- .12 flipside muse . . . .512 [time()] .
 >52
 -1
 1
+>3
+32
+$ls:@pemit %#=drwxr--r-- .12 flipside muse . . . .512 [time()] .
+>2
+32
+$quit:@pe %#=Try /quit or QUIT.
+>1
+32
+$exit:@pe %#=Try /quit or QUIT if you're trying to leave,;@pe %#=Try leave if you're trying to exit an object.
+>0
+32
+$register *--*--*--*:@force #4342=+mail wm=Please Register %0, Real Name: %2, password %1, email %3
 <
 0
 0
@@ -1596,54 +1596,54 @@ bank machine parent
 8397825
 799482346
 799468735
->37
--1
-glances at the [name(me)].
->129
--1
-#128
->6
--1
-A matte-black box, set into one wall. Bright orange lettering reads, "BANK OF BILLBOB, AUTOMATED TELLER". A shatter-proof screen/punchpad combination is located directly above a credit-jack and a magnetocard slot.[if(lnot(v(available)),{ There seems to be a card in the slot.})] Type 'menu' for commands you [ifelse(v(valid_pin),{can use now},s({will be able to use after[if(v(available),{ doing 'insert card <account number>' and then})] typing: PIN <your 4-digit PIN number>}))].
->0
-33
-$balance:/[if(v(valid_pin),v(#))]/@pe %#=*BEEP* Your current balance is: %[get(con(me),cash_balance)] credits.
->10
-33
-$PIN *:/[if(land(lnot(v(available)),lnot(v(valid_pin))),v(#))]/@swi v(0)=get([con(me)]/pin_number),{@pin_tries me=0;@valid_pin me=1;@pe %#=*BEEP* PIN accepted. Type 'menu' to see what you can do from here.},{[switch(v(pin_tries),3,{@pe %#=Too many tries! This card is siezed.;@pin_tries me=0;@available me=1},{@pe %#=Invalid PIN entered! Try again.;@pin_tries me=add(v(pin_tries),1)})]}
->1
-33
-$insert card *:/[if(v(available),v(#))]/@swi loc(#%0)=v(#),{[ifelse(is_a(s(#%0),#1203),ifelse(match(get(s(#%0/status)),STOLEN),{@tel #%0=#%0;@pe %#=*BEEP* Error. This card has been reported stolen. Thank you for returning it.},{@tel #%0=me;@available me=0;@pe %#=Please type: pin <your 4-digit PIN number>}),{@pe %#=The ATM machine buzzes at you as you attempt to force a foreign object into the slot.})]},{@pe %#=You don't have that!}
->6
-33
-$deposit *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),credits(v(#)))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{give %#=sub(0,v(0));@cash_balance con(me)=add(get([con(me)]/cash_balance),v(0));@x_log con(me)=spstrcat({[xtime()]_[num(here)]_D_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Deposit Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]}
->7
-33
-$withdraw *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(0));give %#=add(v(0),0);@x_log con(me)=spstrcat({[xtime()]_[num(here)]_W_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Withdrawal Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]
->3
-33
-[rand(10)][rand(10)][rand(10)][rand(10)]
->9
-33
-0
->8
-33
-0
->52
--1
-1
->11
-33
-1
->4
-33
-$remove card:/[if(v(valid_pin),v(#))]/@valid_pin me=0;give %#=con(me);@pe %#=*BEEP* Thank you for doing business with the Bank of Billbob. Have a nice day!;@available me=1
->5
-33
-$transfer *=*:/[if(v(valid_pin),v(#))]/@swi gt(v(1),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(1),0),ifelse(is_a(s(#%0),#1203),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(1));@cash_balance #%0=add(get(#%0/cash_balance),v(1));@pe %#=*BEEP* Transaction completed. Please remember to 'remove card' when you are done with your transactions.;@x_log con(me)=[xtime()]_TW_[num(here)]_[num(s(#%0))]_[add(v(1),0)];@x_log #%0=[xtime()]_TD_[num(here)]_[con(me)]_[add(v(1),0)]},{@pe %#=*BEEP* Error. No such account number.}),{@pe %#=*BEEP* Error. Positive amounts only.})]}
 >2
 33
 $menu:@npe %#= .[string(-,50)].;@npe %#= |[cjust({Bank of Billbob ATM},50)]|;@npe %#= | <[string(-,46)]> |;@npe %#= |[cjust({deposit <amount>},50)]|;@npe %#= |[cjust({withdraw <amount>},50)]|;@npe %#= |[cjust({balance},50)]|;@npe %#= |[cjust({transfer <account number>=<amount>},50)]|;@npe %#= |[cjust({remove card},50)]|;@npe %#= `[string(-,50)]'
+>5
+33
+$transfer *=*:/[if(v(valid_pin),v(#))]/@swi gt(v(1),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(1),0),ifelse(is_a(s(#%0),#1203),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(1));@cash_balance #%0=add(get(#%0/cash_balance),v(1));@pe %#=*BEEP* Transaction completed. Please remember to 'remove card' when you are done with your transactions.;@x_log con(me)=[xtime()]_TW_[num(here)]_[num(s(#%0))]_[add(v(1),0)];@x_log #%0=[xtime()]_TD_[num(here)]_[con(me)]_[add(v(1),0)]},{@pe %#=*BEEP* Error. No such account number.}),{@pe %#=*BEEP* Error. Positive amounts only.})]}
+>4
+33
+$remove card:/[if(v(valid_pin),v(#))]/@valid_pin me=0;give %#=con(me);@pe %#=*BEEP* Thank you for doing business with the Bank of Billbob. Have a nice day!;@available me=1
+>11
+33
+1
+>52
+-1
+1
+>8
+33
+0
+>9
+33
+0
+>3
+33
+[rand(10)][rand(10)][rand(10)][rand(10)]
+>7
+33
+$withdraw *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),get([con(me)]/cash_balance))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{@cash_balance con(me)=sub(get([con(me)]/cash_balance),v(0));give %#=add(v(0),0);@x_log con(me)=spstrcat({[xtime()]_[num(here)]_W_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Withdrawal Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]
+>6
+33
+$deposit *:/[if(v(valid_pin),v(#))]/@swi gt(v(0),credits(v(#)))=1,{@pe %#=*BEEP* Error. Insufficient funds.},{[ifelse(gt(v(0),0),{give %#=sub(0,v(0));@cash_balance con(me)=add(get([con(me)]/cash_balance),v(0));@x_log con(me)=spstrcat({[xtime()]_[num(here)]_D_[add(v(0),0)]},extract(get([con(me)]/x_log),1,19));@pe %#=*BEEP* Deposit Completed. Please remember to 'remove card' when you are done with your transactions.},{@pe %#=*BEEP* Error. Positive amounts only.})]}
+>1
+33
+$insert card *:/[if(v(available),v(#))]/@swi loc(#%0)=v(#),{[ifelse(is_a(s(#%0),#1203),ifelse(match(get(s(#%0/status)),STOLEN),{@tel #%0=#%0;@pe %#=*BEEP* Error. This card has been reported stolen. Thank you for returning it.},{@tel #%0=me;@available me=0;@pe %#=Please type: pin <your 4-digit PIN number>}),{@pe %#=The ATM machine buzzes at you as you attempt to force a foreign object into the slot.})]},{@pe %#=You don't have that!}
+>10
+33
+$PIN *:/[if(land(lnot(v(available)),lnot(v(valid_pin))),v(#))]/@swi v(0)=get([con(me)]/pin_number),{@pin_tries me=0;@valid_pin me=1;@pe %#=*BEEP* PIN accepted. Type 'menu' to see what you can do from here.},{[switch(v(pin_tries),3,{@pe %#=Too many tries! This card is siezed.;@pin_tries me=0;@available me=1},{@pe %#=Invalid PIN entered! Try again.;@pin_tries me=add(v(pin_tries),1)})]}
+>0
+33
+$balance:/[if(v(valid_pin),v(#))]/@pe %#=*BEEP* Your current balance is: %[get(con(me),cash_balance)] credits.
+>6
+-1
+A matte-black box, set into one wall. Bright orange lettering reads, "BANK OF BILLBOB, AUTOMATED TELLER". A shatter-proof screen/punchpad combination is located directly above a credit-jack and a magnetocard slot.[if(lnot(v(available)),{ There seems to be a card in the slot.})] Type 'menu' for commands you [ifelse(v(valid_pin),{can use now},s({will be able to use after[if(v(available),{ doing 'insert card <account number>' and then})] typing: PIN <your 4-digit PIN number>}))].
+>129
+-1
+#128
+>37
+-1
+glances at the [name(me)].
 <
 0
 1
@@ -1701,21 +1701,21 @@ bank card parent
 9217
 799482374
 799468723
->37
--1
-peers at the gleaming [name(me)] in %p hand.
->129
--1
-#128
->0
-34
-GOOD
->52
--1
-1
 >6
 -1
 A shiny silver plasti-metal card that reads in large letters, "Bank of Billbob: Serving YOUR needs for the 32nd century!", and in smaller letters underneath, the name '[name(v(registered_owner))]', and account number '[delete(num(me),0,1)]'.
+>52
+-1
+1
+>0
+34
+GOOD
+>129
+-1
+#128
+>37
+-1
+peers at the gleaming [name(me)] in %p hand.
 <
 0
 1
@@ -1753,18 +1753,18 @@ Banker
 0
 799479983
 5/13/y/38/y/39/y/32/y/33/y/0
->52
--1
-38656
->50
--1
-public
->38
--1
-91
 >5
 -1
 XXWml8yHjiHRM
+>38
+-1
+91
+>50
+-1
+public
+>52
+-1
+38656
 <
 0
 0
@@ -1785,21 +1785,21 @@ ATM Card
 9217
 894678970
 894678970
->52
--1
-1
->3
-34
-3009
->1
-34
-894678970_S_#1111
->2
-34
-0
 >4
 34
 #5431
+>2
+34
+0
+>1
+34
+894678970_S_#1111
+>3
+34
+3009
+>52
+-1
+1
 <
 1
 34
@@ -1821,21 +1821,21 @@ Automated Teller
 8193
 799480976
 799480108
->52
--1
+>9
+33
+0
+>8
+33
+0
+>11
+33
 1
 >129
 -1
 #128
->11
-33
+>52
+-1
 1
->8
-33
-0
->9
-33
-0
 <
 1
 33
@@ -1857,15 +1857,15 @@ exit_organizer
 8193
 840293415
 840292010
->101
--1
-$org2:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=s
->52
--1
-1
 >100
 -1
 $organize:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=n
+>52
+-1
+1
+>101
+-1
+$org2:leave;@tel e=here;@tel w=here;@tel s=here;@tel n=here;@tel me=*wm;@force *wm=s
 <
 0
 0
@@ -1952,27 +1952,27 @@ Registered Character Parent
 41985
 1763359233
 766620780
->0
-42
-$+mc *:+mail check=v(0)
->1
-42
-$+mc:+mail check
->52
--1
-1
->6
--1
-You see someone special and unique.
->11
--1
-#2&!#2
->3
-42
-00000000000000000000000000000000
 >131
 -1
 [v(!)]
+>3
+42
+00000000000000000000000000000000
+>11
+-1
+#2&!#2
+>6
+-1
+You see someone special and unique.
+>52
+-1
+1
+>1
+42
+$+mc:+mail check
+>0
+42
+$+mc *:+mail check=v(0)
 <
 0
 2
@@ -2026,141 +2026,141 @@ Bobby Newmark
 1763376573
 794113020
 10/38/y/2/y/3/y/4/y/5/y/6/=/7/</8/y/9/y/10/y/12/y/13/y/16/y/17/y/18/=/19/y/21/</22/y/23/y/24/</26/y/28/y/29/y/30/y/31/y/32/</33/y/34/y/35/y/36/y/37/</39/y/40/y/41/y/42/y/43/y/44/y/45/y/20/y/0
->25
--1
-1763436008
->116
--1
-@wait 10={@dbck;@tr me/vq}
->1022
--1
- ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
->57
--1
-0:Y
->1020
--1
--1042682926
->140
--1
-naihd
->1064
--1
-0 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
->112
--1
-1
->102
--1
-$idle:=:idles;:idles
->1015
--1
-450
->54
--1
-leave me alone
->3
-42
-10000000000000000000000000000000
->40
--1
-tired of screwin up, tired of goin down, tired of myself, tired of this town
->6
--1
-standing 5'8", the frame of Bobby Newmark, the shell of what was a man, stands before you in the most peculiar fashion. as one of the original liberators of flipside, you see that he is very modest, despite the exspanse the place has grown to. He is very wise, and a good source of information, for this world and the real one.
->1000
--1
-10000
->7
--1
-male
->42
--1
-wm
->6
-42
-#2
->9
-42
-Ken Moellman
->7
-42
-794113020
->52
--1
-2009
->5
--1
-XXjTP3nvQXZf2
->172
--1
-none
->38
--1
-891
->4
-42
-#1236
->100
--1
-$hug *:na hug %0
->122
--1
-People say it's better to have loved and lost, than to have never loved at all. Which is a fine theory in thought. But people always say that to you right at the end of a relaitonship... 'Yeah, and I guess it's better to have driven off a cliff than to have never driven at all..'
->103
--1
-$chess:@foreach lwho()=@pemit %0={%[log_io] * CHECKPOINTING: Chess}
->36
--1
-@pe me=%# just looked at you.}
->2
-43
-$public:+ch -public;+ch +public
->1
-43
-$bigwho:who NaiofDcHP
->1001
--1
-10000
->8
-42
-newmark@mu-net.org
->104
--1
-$free *:+com free=[v(0)]
->270
--1
-|!R+Bxyb||W!+y New||!B+mark|
->39
--1
-idle
->121
--1
-So, so you think you can tell. Heaven from hell. Blue skies from pain. Can you tell a green field, full of cold steel rail.. a smile from a veil.. do you think you can tell. did they get you to train. your heros were ghosts. hot ashes for trees. hot air full of cool breeze. cold confort for change. did you exchange, a walk on part in the war, for a leave home in a cage? How I wish, how I wish you were here. We're just two lost souls swimmin in a fish bowl, year after year. Running over the same old ground, and have we found.. the same old fears, wish you were here.
->124
--1
-$g *:%0;@poof out;@wait 3={home}
->125
--1
-$ch *:@chown #%0=*nyc
->169
--1
-http://www.mu-net.org/
->0
-43
-$prtyxnonsense:npemit me=Huh? %(Type "help" for help.)
->181
--1
-!coke
->30
--1
-1763435945
->1110
--1
-30
 >50
 -1
 |R!+public|:public:1 *players:*players:1 *log_force dbinfo log_imp *log_space *log_io free *log_root ML-microsux ML-programmers warn_security *character log_crime log_combat log_ioerr garden security warn reg log_sens log_err log_gripe _ocu garden log_root *log_sens *log_imp log_gripe root:root:1 *dc:*dc:1 testchan:testchan:1
+>1110
+-1
+30
+>30
+-1
+1763447030
+>181
+-1
+!coke
+>0
+43
+$prtyxnonsense:npemit me=Huh? %(Type "help" for help.)
+>169
+-1
+http://www.mu-net.org/
+>125
+-1
+$ch *:@chown #%0=*nyc
+>124
+-1
+$g *:%0;@poof out;@wait 3={home}
+>121
+-1
+So, so you think you can tell. Heaven from hell. Blue skies from pain. Can you tell a green field, full of cold steel rail.. a smile from a veil.. do you think you can tell. did they get you to train. your heros were ghosts. hot ashes for trees. hot air full of cool breeze. cold confort for change. did you exchange, a walk on part in the war, for a leave home in a cage? How I wish, how I wish you were here. We're just two lost souls swimmin in a fish bowl, year after year. Running over the same old ground, and have we found.. the same old fears, wish you were here.
+>39
+-1
+idle
+>270
+-1
+|!R+Bxyb||W!+y New||!B+mark|
+>104
+-1
+$free *:+com free=[v(0)]
+>8
+42
+newmark@mu-net.org
+>1001
+-1
+10000
+>1
+43
+$bigwho:who NaiofDcHP
+>2
+43
+$public:+ch -public;+ch +public
+>36
+-1
+@pe me=%# just looked at you.}
+>103
+-1
+$chess:@foreach lwho()=@pemit %0={%[log_io] * CHECKPOINTING: Chess}
+>122
+-1
+People say it's better to have loved and lost, than to have never loved at all. Which is a fine theory in thought. But people always say that to you right at the end of a relaitonship... 'Yeah, and I guess it's better to have driven off a cliff than to have never driven at all..'
+>100
+-1
+$hug *:na hug %0
+>4
+42
+#1236
+>38
+-1
+891
+>172
+-1
+none
+>5
+-1
+XXjTP3nvQXZf2
+>52
+-1
+2009
+>7
+42
+794113020
+>9
+42
+Ken Moellman
+>6
+42
+#2
+>42
+-1
+wm
+>7
+-1
+male
+>1000
+-1
+10000
+>6
+-1
+standing 5'8", the frame of Bobby Newmark, the shell of what was a man, stands before you in the most peculiar fashion. as one of the original liberators of flipside, you see that he is very modest, despite the exspanse the place has grown to. He is very wise, and a good source of information, for this world and the real one.
+>40
+-1
+tired of screwin up, tired of goin down, tired of myself, tired of this town
+>3
+42
+10000000000000000000000000000000
+>54
+-1
+leave me alone
+>1015
+-1
+450
+>102
+-1
+$idle:=:idles;:idles
+>112
+-1
+1
+>1064
+-1
+0 0 0 0 0 0 10 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+>140
+-1
+naihd
+>1020
+-1
+-1042680095
+>57
+-1
+0:Y
+>1022
+-1
+ ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost ???@localhost
+>116
+-1
+@wait 10={@dbck;@tr me/vq}
+>25
+-1
+1763447062
 <
 2
 24
@@ -2179,24 +2179,24 @@ public
 >5
 \
 &44
-turd
-turd
--1
--1
+testroom
+testroom
+44
+4
 -1
 -1
 -1
 -1
 45
-1
-16385
+43
+16384
 0
-1630536195
+1763446747
 <
 0
 0
 \
->-1
+>5
 \
 &45
 llama
@@ -2207,7 +2207,7 @@ llama
 -1
 -1
 -1
--1
+52
 1
 16385
 0
@@ -2371,6 +2371,106 @@ TestObject
 >52
 -1
 9
+<
+0
+0
+\
+>5
+\
+&52
+testroom2
+testroom2
+52
+4
+-1
+-1
+-1
+-1
+53
+43
+16384
+0
+1763440506
+<
+0
+0
+\
+>5
+\
+&53
+testroom
+testroom
+53
+4
+-1
+-1
+-1
+-1
+54
+43
+16384
+0
+1763438789
+<
+0
+0
+\
+>5
+\
+&54
+testroom
+testroom
+54
+4
+-1
+-1
+-1
+-1
+55
+43
+16384
+0
+1763440099
+<
+0
+0
+\
+>5
+\
+&55
+test4
+test4
+55
+4
+-1
+-1
+-1
+-1
+56
+43
+16384
+0
+1763445306
+<
+0
+0
+\
+>5
+\
+&56
+testagain
+testagain
+56
+4
+-1
+-1
+-1
+-1
+-1
+43
+16384
+0
+1763446078
 <
 0
 0

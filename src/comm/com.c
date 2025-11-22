@@ -339,8 +339,16 @@ void do_com(dbref player, char *arg1, char *arg2)
     char *alias;
     char *q;
     char *next;
+    char *default_channel;
 
-    next = curr = buf_local = tprintf("%s ", atr_get(player, A_CHANNEL));
+    /* Get default channel attribute - validate it exists and is not empty */
+    default_channel = atr_get(player, A_CHANNEL);
+    if (!default_channel || !*default_channel) {
+      notify(player, "+channel: You don't have a default channel set. Use '+channel default <channel>' to set one.");
+      return;
+    }
+
+    next = curr = buf_local = tprintf("%s ", default_channel);
 
     next = strchr(curr, ' ');
     if (next) {

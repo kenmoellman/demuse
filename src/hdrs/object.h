@@ -173,6 +173,14 @@ extern void destroy_obj(dbref obj, int no_seconds);
 extern void do_undestroy(dbref player, char *arg1);
 
 /**
+ * @poof - Mark object for immediate destruction (no delay)
+ * Sets GOING flag without A_DOOMSDAY, causing cleanup on next @dbck
+ * @param player Player executing command
+ * @param name Object to mark for destruction
+ */
+extern void do_poof(dbref player, char *name);
+
+/**
  * free_get - Get an object from the free list
  * @return Database reference of free object, or NOTHING
  */

@@ -320,6 +320,17 @@ static void cmd_destroy(dbref player, char *arg1, char *arg2)
 }
 
 /**
+ * cmd_poof - Wrapper for @poof command
+ *
+ * Core: do_poof(dbref player, char *name)
+ */
+static void cmd_poof(dbref player, char *arg1, char *arg2)
+{
+    (void)arg2;  /* Unused */
+    do_poof(player, arg1);
+}
+
+/**
  * cmd_teleport - Wrapper for @teleport command
  *
  * Core: do_teleport(dbref player, char *arg1, char *arg2)
@@ -2487,6 +2498,7 @@ static void register_demuse_commands(parser_t *parser)
         {"@link",       cmd_link,      2, 0, 0, 0, 0},
         {"@name",       cmd_name,      2, 0, 0, 0, 0},
         {"@open",       cmd_open,      2, 0, 0, 0, 0},
+        {"@poof",       cmd_poof,      2, 0, 0, 0, 0},
         {"@set",        cmd_set,       2, 0, 0, 0, 0},
         {"@unlink",     cmd_unlink,    2, 0, 0, 0, 0},
         {"@unlock",     cmd_unlock,    2, 0, 0, 0, 0},

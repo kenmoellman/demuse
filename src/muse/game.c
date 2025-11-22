@@ -1372,19 +1372,26 @@ void process_command(dbref player, char *command, dbref cause)
   /* Check for single-character commands */
   if (*command == SAY_TOKEN) {
     do_say(player, command + 1, NULL);
+    return;
   } else if (*command == POSE_TOKEN) {
     do_pose(player, command + 1, NULL, 0);
+    return;
   } else if (*command == NOSP_POSE) {
     do_pose(player, command + 1, NULL, 1);
+    return;
   } else if (*command == COM_TOKEN) {
     do_com(player, "", command + 1);
+    return;
   } else if (*command == TO_TOKEN) {
     do_to(player, command + 1, NULL);
+    return;
   } else if (*command == THINK_TOKEN) {
     do_think(player, command + 1, NULL);
+    return;
   } else if (can_move(player, command)) {
     /* Command is an exact match for an exit */
     do_move(player, command);
+    return;
   } 
   else 
   {
@@ -1416,11 +1423,35 @@ void process_command(dbref player, char *command, dbref cause)
   }  
 
   /* ======================================================================
-   * HASH TABLE COMMAND DISPATCH 
+   * COMMAND DISPATCH PRIORITY LOGIC
    * ======================================================================
-   * Will abort after 200 iterations to prevent infinite loop
+   *
+   * For @ commands (administrative/building):
+   *   1. Built-in parser commands (reliable, not overridable)
+   *   2. User-defined $commands (fallback)
+   *
+   * For regular commands (movement, interaction):
+   *   1. User-defined $commands (customizable)
+   *   2. Built-in parser commands (fallback)
    */
-  {
+
+  /* Check for abbreviated @set commands first */
+  if (test_set(player, command, arg1, arg2, is_direct)) {
+    /* test_set handled the command */
+    int a;
+    for (a = 0; a < 10; a++) {
+      wptr[a] = NULL;
+    }
+    return;
+  }
+
+  /* Determine if this is an @ command */
+  int is_admin_command = (command && command[0] == '@');
+
+  /* ======================================================================
+   * DISPATCH PATH 1: @ COMMANDS (Check built-in first)
+   * ====================================================================== */
+  if (is_admin_command) {
     universe_t *universe;
     parser_t *parser;
     const command_entry_t *cmd;
@@ -1429,9 +1460,8 @@ void process_command(dbref player, char *command, dbref cause)
     universe = get_universe(get_player_universe(player));
     parser = universe->parser;
 
-    /* Try hash lookup */
-    if (parser && parser->commands) 
-    {
+    /* Try built-in hash lookup FIRST for @ commands */
+    if (parser && parser->commands) {
       cmd = find_command(parser, command);
 
       if (cmd) {
@@ -1440,7 +1470,7 @@ void process_command(dbref player, char *command, dbref cause)
         /* Check direct execution requirement */
         if (cmd->requires_direct && !is_direct) {
           /* Command requires direct execution (not @forced) */
-          goto end_hashlookup;
+          goto check_user_defined_admin;
         }
 
         /* Execute command via hash dispatch */
@@ -1490,35 +1520,117 @@ void process_command(dbref player, char *command, dbref cause)
       }
     }
 
-    /* Command not found in hash table - fall through to deferred/fallback */
-    end_hashlookup:
-    ;  /* Empty statement for label */
-  }
-
-  /* Check user-defined attributes first */
-  if (!test_set(player, command, arg1, arg2, is_direct)) 
-  {
-    /* Try matching user-defined functions ($commands) */
-    match = list_check(db[db[player].location].contents, player, '$', unp)
-         || list_check(db[player].contents, player, '$', unp)
+    check_user_defined_admin:
+    /* Built-in @ command not found or requires direct - try user-defined */
+    match = atr_match(player, player, '$', unp)
          || atr_match(db[player].location, player, '$', unp)
+         || list_check(db[db[player].location].contents, player, '$', unp)
+         || list_check(db[player].contents, player, '$', unp)
          || list_check(db[db[player].location].exits, player, '$', unp);
 
-    /* Check zone objects */
+    if (!match) {
+      DOZONE(zon, player) {
+        match = list_check((z = zon), player, '$', unp) || match;
+      }
+    }
+
+    if (match) {
+      int a;
+      for (a = 0; a < 10; a++) {
+        wptr[a] = NULL;
+      }
+      return;
+    }
+
+    /* No match - fall through to channel/error */
+    goto command_not_found;
+  }
+
+  /* ======================================================================
+   * DISPATCH PATH 2: REGULAR COMMANDS (Check user-defined first)
+   * ====================================================================== */
+
+  /* Try matching user-defined $commands in priority order */
+  match = atr_match(player, player, '$', unp)                        /* Player's own attributes */
+       || atr_match(db[player].location, player, '$', unp)           /* Room attributes */
+       || list_check(db[db[player].location].contents, player, '$', unp)  /* Room contents */
+       || list_check(db[player].contents, player, '$', unp)          /* Player inventory */
+       || list_check(db[db[player].location].exits, player, '$', unp);    /* Exits */
+
+  /* Check zone parent objects */
+  if (!match) {
     DOZONE(zon, player) {
       /* Add explicit cast to resolve conversion warning */
       match = list_check((z = zon), player, '$', unp) || match;
     }
+  }
 
-    if (!match) {
-      /* Try channel alias as last resort */
-      channel_result = is_channel_alias(player, command);
-      if (channel_result != NULL) {
-        channel_talk(player, command, arg1, arg2);
-      } else {
-        notify(player, "Huh?  (Type \"help\" for help.)");
+  /* If user-defined command was found and executed, we're done */
+  if (match) {
+    /* Clean up and return */
+    int a;
+    for (a = 0; a < 10; a++) {
+      wptr[a] = NULL;
+    }
+    return;
+  }
+
+  /* ======================================================================
+   * BUILT-IN PARSER COMMAND DISPATCH (for non-@ commands)
+   * ======================================================================
+   * Only check built-in commands if no user-defined command matched
+   */
+  {
+    universe_t *universe;
+    parser_t *parser;
+    const command_entry_t *cmd;
+
+    /* Get player's universe and parser */
+    universe = get_universe(get_player_universe(player));
+    parser = universe->parser;
+
+    /* Try hash lookup for non-@ commands (movement, interaction, etc.) */
+    if (parser && parser->commands)
+    {
+      cmd = find_command(parser, command);
+
+      if (cmd) {
+        /* Found command in hash table! */
+
+        /* Check direct execution requirement */
+        if (cmd->requires_direct && !is_direct) {
+          /* Command requires direct execution (not @forced) */
+          goto command_not_found;
+        }
+
+        /* Normal non-@ commands don't use special packing */
+        char *arg2_eval = arg2;
+        cmd->handler(player, arg1, arg2_eval);
+
+        /* Clean up and return - command handled */
+        {
+          int a;
+          for (a = 0; a < 10; a++) {
+            wptr[a] = NULL;
+          }
+        }
+        return;
       }
     }
+  }
+
+  /* ======================================================================
+   * FALLBACK: Channel aliases and error message
+   * ======================================================================
+   */
+  command_not_found:
+
+  /* Try channel alias */
+  channel_result = is_channel_alias(player, command);
+  if (channel_result != NULL) {
+    channel_talk(player, command, arg1, arg2);
+  } else {
+    notify(player, "Huh?  (Type \"help\" for help.)");
   }
 
 /* Clean up and return */

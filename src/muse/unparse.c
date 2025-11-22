@@ -86,7 +86,8 @@ char *unparse_flags(dbref thing)
   char *p;
   char *type_codes = "RTEU----PPPPPPPP";
 
-  if (!GoodObject(thing)) {
+  /* Use ValidObject() to allow displaying flags on GOING objects */
+  if (!ValidObject(thing)) {
     return stralloc("?");
   }
 
@@ -235,8 +236,10 @@ char *unparse_object(dbref player, dbref loc)
       break;
   }
 
-  /* Validate dbref range */
-  if (!GoodObject(loc)) {
+  /* Validate dbref range
+   * Use ValidObject() instead of GoodObject() to allow displaying objects
+   * marked with GOING flag (@poof recycle bin feature) */
+  if (!ValidObject(loc)) {
     return tprintf("<invalid #%ld>", loc);
   }
 

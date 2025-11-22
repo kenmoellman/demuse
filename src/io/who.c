@@ -728,9 +728,17 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
   }
 
   /* Build footer with statistics */
-  snprintf(buf, sizeof(buf),
-           "|C!+Users:| |Y!+Total:| |G!+%d||Y!+, Active:| |G!+%d||Y!+, Hidden:| |G!+%d||Y!+.| |C!+Avg:| ",
-           total_count, (total_count - inactive_count), hidden_count);
+  if (k) {
+    /* Pre-login users: build without color codes */
+    snprintf(buf, sizeof(buf),
+             "Users: Total: %d, Active: %d, Hidden: %d. Avg: ",
+             total_count, (total_count - inactive_count), hidden_count);
+  } else {
+    /* Logged-in users: build with color codes */
+    snprintf(buf, sizeof(buf),
+             "|C!+Users:| |Y!+Total:| |G!+%d||Y!+, Active:| |G!+%d||Y!+, Hidden:| |G!+%d||Y!+.| |C!+Avg:| ",
+             total_count, (total_count - inactive_count), hidden_count);
+  }
 
   /* Calculate average idle and onfor times */
   {
@@ -751,9 +759,17 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
       avgidle /= count;
       avgonfor /= count;
 
-      snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
-               "|Y!+Idle:| |G!+%s||Y!+, OnFor:| |G!+%s||Y!+.|",
-               time_format_1(avgidle), time_format_1(avgonfor));
+      if (k) {
+        /* Pre-login users: build without color codes */
+        snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+                 "Idle: %s, OnFor: %s.",
+                 time_format_1(avgidle), time_format_1(avgonfor));
+      } else {
+        /* Logged-in users: build with color codes */
+        snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf),
+                 "|Y!+Idle:| |G!+%s||Y!+, OnFor:| |G!+%s||Y!+.|",
+                 time_format_1(avgidle), time_format_1(avgonfor));
+      }
     }
   }
 
@@ -761,7 +777,9 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
 
   if (k)
   {
-    queue_string(k, tprintf("|C+%s|\n", longline));
+    /* Pre-login users: no color codes needed */
+    queue_string(k, longline);
+    queue_string(k, "\n");
     queue_string(k, buf);
     queue_string(k, "\n");
   }
