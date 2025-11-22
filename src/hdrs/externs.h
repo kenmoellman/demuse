@@ -261,6 +261,7 @@ extern void do_empty (dbref);
 extern void fix_free_list (void);
 extern dbref free_get (void);
 extern void do_undestroy (dbref,char *);
+extern void do_poof (dbref, char *);
 extern void do_upfront (dbref, char *);
 #ifdef SHRINK_DB
 extern void do_shrinkdbuse (dbref,char *);

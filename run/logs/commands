@@ -1,33 +1,5 @@
-11/20 02:17:56| Caused by office(#31RIJf), office(#31RIJf) in office(#31RIJf) executes: _@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
-11/20 02:18:07| Dumping.
-11/20 02:18:07| Queue processing: @chemit connections=* Connect: %n - [time()] (pri: 0)
-11/20 07:18:07| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @chemit connections=* Connect: Bobb|W!+y New|mark - 2013:05 PM
-11/20 07:18:09| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: l
-11/20 07:18:14| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @dig poo
-11/20 07:18:19| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @create fun
-11/20 07:18:27| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: ex #53
-11/20 07:18:33| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @poof #53
-11/20 07:18:38| Queue processing: @swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.} (pri: 0)
-11/20 07:18:38| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit #43=That's not yours to fiddle with.},#-1,{@pemit #43=I don't know what that is.},{@tel #-1=#-1;@destroy #-1;@npe #43=Okay, [nnum(#-1)] has disappeared.}
-11/20 07:18:44| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @poof 57
-11/20 07:18:44| Queue processing: @swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.} (pri: 0)
-11/20 07:18:44| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit #43=That's not yours to fiddle with.},#-1,{@pemit #43=I don't know what that is.},{@tel #-1=#-1;@destroy #-1;@npe #43=Okay, [nnum(#-1)] has disappeared.}
-11/20 07:18:59| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: WHO
-11/20 07:19:03| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: ex #57
-11/20 07:19:09| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @poof #57
-11/20 07:19:09| Queue processing: @swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit %#=That's not yours to fiddle with.},#-1,{@pemit %#=I don't know what that is.},{@tel [rmatch(v(#),v(0))]=[ifelse(hasflag(rmatch(v(#),v(0)),E),#3881,rmatch(v(#),v(0)))];@destroy [rmatch(v(#),v(0))];@npe %#=Okay, %[nnum([rmatch(v(#),v(0))])] has disappeared.} (pri: 0)
-11/20 07:19:09| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @swi controls(v(#),rmatch(v(#),v(0)),modify)=0,{@pemit #43=That's not yours to fiddle with.},#-1,{@pemit #43=I don't know what that is.},{@tel #57=#57;@destroy #57;@npe #43=Okay, [nnum(#57)] has disappeared.}
-11/20 07:19:13| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @destroy #57
-11/20 07:19:19| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: ex #57
-11/20 07:19:25| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @undestroy #57
-11/20 07:19:45| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: ex me
-11/20 07:19:57| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: ex *nyc
-11/20 07:20:11| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: hug root
-11/20 07:20:11| Queue processing: na hug %0 (pri: 0)
-11/20 07:20:11| Caused by Bobb|W!+y New|mark(#43PcNa), Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) executes: na hug root
-11/20 07:20:11| Queue processing: [s_with(get(me,na_internal),v(0),num(strcat(*,v(1))),na_do_room)] (pri: 0)
-11/20 07:20:11| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @swi 1=0,{@pemit #43=what action?},0,{@pemit #43=root(#1PvqNa) doesn't respond to that.},{@remit #39=%[na_make_message(#43,hug,#1)%];@swi #39=#30,,{@remit #30=%%%[na_make_message(#43,hug,#1)%%%]};@wait 5=@tr_as strcat(#1,strcat(/,strcat(naa_,hug)))=#43,hug}
-11/20 07:20:29| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: WHO
-11/20 07:20:38| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: idle
-11/20 07:20:38| Queue processing: =:idles (pri: 0)
-11/20 07:20:38| Caused by Bobb|W!+y New|mark(#43PcNa), Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) executes: =:idles
+11/22 07:52:16| Caused by office(#31RIJf), office(#31RIJf) in office(#31RIJf) executes: _@wait sub(3600,mod(xtime(),3600))={@tr me/vt;@tr me/startup}
+11/22 07:52:35| Queue processing: @chemit connections=* Connect: %n - [time()] (pri: 0)
+11/22 12:52:35| Caused by Bobb|W!+y New|mark(#43PcNa), Universal Zone(#4TeIq) in Universal Zone(#4TeIq) executes: @chemit connections=* Connect: Bobb|W!+y New|mark - 2013:05 PM
+11/22 12:52:41| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: WHO
+11/22 12:57:40| Bobb|W!+y New|mark(#43PcNa) in Newmark Apartment Complex |W!+-| 1st Floor Lobby(#39RJ) directly executes: @shutdown YourMUSE

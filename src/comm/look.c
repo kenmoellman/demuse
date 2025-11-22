@@ -293,8 +293,9 @@ static void look_atrs(dbref player, dbref thing, int doall)
 {
     struct all_atr_list *allatrs;
     ATTR *attr;
-    
-    if (!GoodObject(player) || !GoodObject(thing)) {
+
+    /* Use ValidObject() for thing to allow examining GOING objects (@poof recycle bin) */
+    if (!GoodObject(player) || !ValidObject(thing)) {
         return;
     }
     
@@ -710,18 +711,19 @@ void do_examine(dbref player, char *name, char *arg2)
         match_here();
         match_me();
 
-        if ((thing = noisy_match_result()) == NOTHING) {
-            /* Special case: if input is a direct dbref (e.g., #123),
-             * try to examine it even if it's marked for deletion.
-             * This allows @undestroy and examining deleted objects. */
-            if (name && *name == NUMBER_TOKEN) {
-                thing = parse_dbref(name + 1);
-                if (!ValidObject(thing)) {
-                    notify(player, "Invalid object reference.");
-                    return;
-                }
-                /* Found a valid (possibly deleted) object - continue examining it */
-            } else {
+        /* Special case: if input is a direct dbref (e.g., #123),
+         * try to examine it directly even if it's marked GOING.
+         * This allows examining deleted objects and @undestroy. */
+        if (name && *name == NUMBER_TOKEN) {
+            thing = parse_dbref(name + 1);
+            if (!ValidObject(thing)) {
+                notify(player, "Invalid object reference.");
+                return;
+            }
+            /* Found a valid (possibly GOING) object - continue examining it */
+        } else {
+            /* Not a direct dbref - use normal matching with error messages */
+            if ((thing = noisy_match_result()) == NOTHING) {
                 return;  /* Normal match failed, nothing to examine */
             }
         }
