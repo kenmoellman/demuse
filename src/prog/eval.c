@@ -1356,7 +1356,7 @@ static void fun_v(char *buff, char *args[10], dbref privs, dbref doer, int nargs
             
         case '#':
             if (GoodObject(doer)) {
-                snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", doer);
+                snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, doer);
             } else {
                 buff[0] = '\0';
             }
@@ -1364,7 +1364,7 @@ static void fun_v(char *buff, char *args[10], dbref privs, dbref doer, int nargs
             
         case '!':
             if (GoodObject(privs)) {
-                snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", privs);
+                snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, privs);
             } else {
                 buff[0] = '\0';
             }
@@ -1698,7 +1698,7 @@ static void fun_lattrdef(char *buff, char *args[10], dbref privs, dbref doer, in
 static void fun_num(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     dbref thing = match_thing(privs, args[0]);
-    snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", thing);
+    snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, thing);
 }
 
 static void fun_name(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
@@ -1741,7 +1741,7 @@ static void fun_owner(char *buff, char *args[10], dbref privs, dbref doer, int n
         it = db[it].owner;
     }
     
-    snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", it);
+    snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, it);
 }
 
 static void fun_loc(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
@@ -1759,7 +1759,7 @@ static void fun_loc(char *buff, char *args[10], dbref privs, dbref doer, int nar
         power(privs, POW_FUNCTIONS) ||
         (it == doer) ||
         (Typeof(it) == TYPE_PLAYER && !(db[it].flags & DARK))) {
-        snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", db[it].location);
+        snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[it].location);
     } else {
         safe_str_copy(buff, "#-1 PERMISSION_DENIED", EVAL_BUFFER_SIZE);
     }
@@ -1777,7 +1777,7 @@ static void fun_con(char *buff, char *args[10], dbref privs, dbref doer, int nar
     if (controls(privs, it, POW_FUNCTIONS) ||
         (db[privs].location == it) ||
         (it == doer)) {
-        snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", db[it].contents);
+        snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[it].contents);
     } else {
         safe_str_copy(buff, "#-1 PERMISSION_DENIED", EVAL_BUFFER_SIZE);
     }
@@ -1805,7 +1805,7 @@ static void fun_exit(char *buff, char *args[10], dbref privs, dbref doer, int na
             exit_ref = db[exit_ref].next;
         }
         
-        snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", exit_ref);
+        snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, exit_ref);
     } else {
         safe_str_copy(buff, "#-1 PERMISSION_DENIED", EVAL_BUFFER_SIZE);
     }
@@ -1826,7 +1826,7 @@ static void fun_next(char *buff, char *args[10], dbref privs, dbref doer, int na
             (controls(privs, db[it].location, POW_FUNCTIONS) ||
              (db[it].location == doer) ||
              (db[it].location == db[privs].location))) {
-            snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", db[it].next);
+            snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[it].next);
             return;
         }
     } else {
@@ -1837,7 +1837,7 @@ static void fun_next(char *buff, char *args[10], dbref privs, dbref doer, int na
                !controls(privs, next_ref, POW_FUNCTIONS)) {
             next_ref = db[next_ref].next;
         }
-        snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", next_ref);
+        snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, next_ref);
         return;
     }
     
@@ -1856,7 +1856,7 @@ static void fun_link(char *buff, char *args[10], dbref privs, dbref doer, int na
     if (controls(privs, it, POW_FUNCTIONS) ||
         controls(privs, db[it].location, POW_FUNCTIONS) ||
         (it == doer)) {
-        snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", db[it].link);
+        snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[it].link);
     } else {
         safe_str_copy(buff, "#-1 PERMISSION_DENIED", EVAL_BUFFER_SIZE);
     }
@@ -1887,7 +1887,7 @@ static void fun_linkup(char *buff, char *args[10], dbref privs, dbref doer, int 
         if (!GoodObject(i)) continue;
         
         if (db[i].link == it) {
-            snprintf(temp, sizeof(temp), "%s#%ld", (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
             
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -1911,7 +1911,7 @@ static void fun_zone(char *buff, char *args[10], dbref privs, dbref doer, int na
         return;
     }
     
-    snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", db[thing].zone);
+    snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[thing].zone);
 }
 
 static void fun_getzone(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
@@ -1923,7 +1923,7 @@ static void fun_getzone(char *buff, char *args[10], dbref privs, dbref doer, int
         return;
     }
     
-    snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", get_zone_first(thing));
+    snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, get_zone_first(thing));
 }
 
 static void fun_lzone(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
@@ -1942,7 +1942,7 @@ static void fun_lzone(char *buff, char *args[10], dbref privs, dbref doer, int n
     it = get_zone_first(it);
     
     while (GoodObject(it) && depth > 0) {
-        snprintf(temp, sizeof(temp), "%s#%ld", (buff[0] ? " " : ""), it);
+        snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), it);
         safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
         
         it = get_zone_next(it);
@@ -1972,9 +1972,9 @@ static void fun_inzone(char *buff, char *args[10], dbref privs, dbref doer, int 
     for (i = 0; i < db_top; i++) {
         if (!GoodObject(i)) continue;
         if (Typeof(i) != TYPE_ROOM) continue;
-        
+
         if (is_in_zone(i, zone)) {
-            snprintf(temp, sizeof(temp), "%s#%ld", (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
             
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -2016,7 +2016,7 @@ static void fun_objlist(char *buff, char *args[10], dbref privs, dbref doer, int
     /* Iterate through objects */
     current = it;
     while (GoodObject(current)) {
-        snprintf(temp, sizeof(temp), "%s#%ld", (buff[0] ? " " : ""), current);
+        snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), current);
         safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
         
         if (Typeof(current) == TYPE_EXIT) {
@@ -2082,8 +2082,8 @@ static void fun_parents(char *buff, char *args[10], dbref privs, dbref doer, int
             controls(privs, it, POW_FUNCTIONS) ||
             controls(privs, db[it].parents[i], POW_EXAMINE) ||
             controls(privs, db[it].parents[i], POW_FUNCTIONS)) {
-            
-            snprintf(temp, sizeof(temp), "%s#%ld",
+
+            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT,
                     (buff[0] ? " " : ""), db[it].parents[i]);
             safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
         }
@@ -2115,8 +2115,8 @@ static void fun_children(char *buff, char *args[10], dbref privs, dbref doer, in
             controls(privs, it, POW_FUNCTIONS) ||
             controls(privs, db[it].children[i], POW_EXAMINE) ||
             controls(privs, db[it].children[i], POW_FUNCTIONS)) {
-            
-            snprintf(temp, sizeof(temp), "%s#%ld",
+
+            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT,
                     (buff[0] ? " " : ""), db[it].children[i]);
             
             if (len + strlen(temp) > 990) {
@@ -2197,7 +2197,7 @@ static void fun_universe(char *buff, char *args[10], dbref privs, dbref doer, in
         return;
     }
     
-    snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", db[get_zone_first(it)].universe);
+    snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[get_zone_first(it)].universe);
 }
 
 static void fun_uinfo(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
@@ -2675,7 +2675,7 @@ static void fun_rmatch(char *buff, char *args[10], dbref privs, dbref doer, int 
     init_match(who, args[1], NOTYPE);
     match_everything();
     
-    snprintf(buff, EVAL_BUFFER_SIZE, "#%ld", match_result());
+    snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, match_result());
 }
 
 /* === Who List Functions === */
@@ -2705,7 +2705,7 @@ static void fun_lwho(char *buff, char *args[10], dbref privs, dbref doer, int na
         if (d->state == CONNECTED && GoodObject(d->player)) {
             if (controls(privs, d->player, POW_WHO) ||
                 could_doit(privs, d->player, A_LHIDE)) {
-                snprintf(temp, sizeof(temp), "%s#%ld",
+                snprintf(temp, sizeof(temp), "%s#" DBREF_FMT,
                         (buff[0] ? " " : ""), d->player);
                 safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
             }
@@ -2735,9 +2735,9 @@ static void fun_zwho(char *buff, char *args[10], dbref privs, dbref doer, int na
     for (i = 0; i < db_top; i++) {
         if (!GoodObject(i)) continue;
         if (Typeof(i) != TYPE_PLAYER) continue;
-        
+
         if (is_in_zone(i, zone)) {
-            snprintf(temp, sizeof(temp), "%s#%ld", (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
             
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -2911,9 +2911,9 @@ static void fun_entrances(char *buff, char *args[10], dbref privs, dbref doer, i
         if (controls(privs, i, POW_FUNCTIONS) ||
             controls(privs, i, POW_EXAMINE) ||
             control_target) {
-            
-            snprintf(temp, sizeof(temp), "%s#%ld", (buff[0] ? " " : ""), i);
-            
+
+            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
+
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
                 return;

@@ -173,7 +173,7 @@ static void store_it(dbref what)
   if (what == NOTHING || !GoodObject(match_who))
     return;
     
-  snprintf(buf, sizeof(buf), "#%ld", what);
+  snprintf(buf, sizeof(buf), "#%" DBREF_FMT, what);
   buf[sizeof(buf)-1] = '\0';
   atr_add(match_who, A_IT, buf);
 }

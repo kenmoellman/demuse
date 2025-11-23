@@ -1787,7 +1787,9 @@ void pronoun_substitute(char *result, dbref player, char *str, dbref privs)
 
         case '#':
           if ((strlen(result) + result - ores) <= (PRONOUN_BUF_SIZE - 20)) {
-            sprintf(result + strlen(result), "#%ld", player);
+            size_t current_len = strlen(result);
+            snprintf(result + current_len, PRONOUN_BUF_SIZE - current_len,
+                    "#%" DBREF_FMT, player);
           }
           break;
 

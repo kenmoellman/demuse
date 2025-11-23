@@ -4,6 +4,7 @@
 #ifndef DEFDBREF
 #define DEFDBREF
 typedef long dbref;
+#define DBREF_FMT "ld"
 #endif
 
 

@@ -406,7 +406,7 @@ dbref db_write(FILE *f)
     for (i = 0; i < db_top; i++) {
         fprintf(f, "&%ld\n", i);
         if (db_write_object(f, i) < 0) {
-            log_error(tprintf("db_write: Failed to write object #%ld", i));
+            log_error(tprintf("db_write: Failed to write object #" DBREF_FMT, i));
             return 0;
         }
     }
@@ -657,7 +657,7 @@ static void getboolexp(dbref i, FILE *f)
     }
     
     if (!GoodObject(i)) {
-        log_error(tprintf("getboolexp: Invalid object #%ld", i));
+        log_error(tprintf("getboolexp: Invalid object #" DBREF_FMT, i));
         /* Skip the line anyway */
         while ((c = getc(f)) != '\n' && c != EOF)
             ;
@@ -666,7 +666,7 @@ static void getboolexp(dbref i, FILE *f)
     
     while ((c = getc(f)) != '\n' && c != EOF) {
         if (p - buffer >= DB_MSGLEN - 2) {
-            log_error(tprintf("getboolexp: Buffer overflow on object #%ld", i));
+            log_error(tprintf("getboolexp: Buffer overflow on object #" DBREF_FMT, i));
             break;
         }
         
@@ -1101,7 +1101,7 @@ static int db_read_object(dbref i, FILE *f)
                 
                 for (j = 0; j < db_top; j++) {
                     if ((db[j].flags & TYPE_MASK) >= TYPE_PLAYER) {
-                        snprintf(buf, sizeof(buf), "#%ld", j);
+                        snprintf(buf, sizeof(buf), "#%" DBREF_FMT, j);
                         do_class(root, stralloc(buf), 
                                 class_to_name(old_to_new_class(
                                     db[j].flags & TYPE_MASK)));
@@ -1530,7 +1530,7 @@ void atr_clr(dbref thing, ATTR *atr)
     ALIST *ptr;
     
     if (!GoodObject(thing)) {
-        log_error(tprintf("atr_clr: Invalid object #%ld", thing));
+        log_error(tprintf("atr_clr: Invalid object #" DBREF_FMT, thing));
         return;
     }
     
@@ -1565,12 +1565,12 @@ void atr_add(dbref thing, ATTR *atr, char *s)
     char *d;
     
     if (!GoodObject(thing)) {
-        log_error(tprintf("atr_add: Invalid object #%ld", thing));
+        log_error(tprintf("atr_add: Invalid object #" DBREF_FMT, thing));
         return;
     }
-    
+
     if (!atr) {
-        log_error(tprintf("atr_add: NULL attribute on object #%ld", thing));
+        log_error(tprintf("atr_add: NULL attribute on object #" DBREF_FMT, thing));
         return;
     }
     
@@ -1682,11 +1682,11 @@ char *atr_get(dbref thing, ATTR *atr)
         char buf[1024];
         
         if (atr == A_LOCATION) {
-            snprintf(buf, sizeof(buf), "#%ld", db[thing].location);
+            snprintf(buf, sizeof(buf), "#%" DBREF_FMT, db[thing].location);
         } else if (atr == A_OWNER) {
-            snprintf(buf, sizeof(buf), "#%ld", db[thing].owner);
+            snprintf(buf, sizeof(buf), "#%" DBREF_FMT, db[thing].owner);
         } else if (atr == A_LINK) {
-            snprintf(buf, sizeof(buf), "#%ld", db[thing].link);
+            snprintf(buf, sizeof(buf), "#%" DBREF_FMT, db[thing].link);
         } else if (atr == A_PARENTS || atr == A_CHILDREN) {
             dbref *list;
             int i;
@@ -1697,9 +1697,9 @@ char *atr_get(dbref thing, ATTR *atr)
                 if (*buf) {
                     /* Append to existing string */
                     size_t len = strlen(buf);
-                    snprintf(buf + len, sizeof(buf) - len, " #%ld", list[i]);
+                    snprintf(buf + len, sizeof(buf) - len, " #" DBREF_FMT, list[i]);
                 } else {
-                    snprintf(buf, sizeof(buf), "#%ld", list[i]);
+                    snprintf(buf, sizeof(buf), "#%" DBREF_FMT, list[i]);
                 }
             }
         } else if (atr == A_CONTENTS) {
@@ -1710,9 +1710,9 @@ char *atr_get(dbref thing, ATTR *atr)
                 if (GoodObject(it)) {
                     if (*buf) {
                         size_t len = strlen(buf);
-                        snprintf(buf + len, sizeof(buf) - len, " #%ld", it);
+                        snprintf(buf + len, sizeof(buf) - len, " #" DBREF_FMT, it);
                     } else {
-                        snprintf(buf, sizeof(buf), "#%ld", it);
+                        snprintf(buf, sizeof(buf), "#%" DBREF_FMT, it);
                     }
                 }
             }
@@ -1724,9 +1724,9 @@ char *atr_get(dbref thing, ATTR *atr)
                 if (GoodObject(it)) {
                     if (*buf) {
                         size_t len = strlen(buf);
-                        snprintf(buf + len, sizeof(buf) - len, " #%ld", it);
+                        snprintf(buf + len, sizeof(buf) - len, " #" DBREF_FMT, it);
                     } else {
-                        snprintf(buf, sizeof(buf), "#%ld", it);
+                        snprintf(buf, sizeof(buf), "#%" DBREF_FMT, it);
                     }
                 }
             }
@@ -1740,9 +1740,9 @@ char *atr_get(dbref thing, ATTR *atr)
             strncpy(buf, unparse_flags(thing), sizeof(buf) - 1);
             buf[sizeof(buf) - 1] = '\0';
         } else if (atr == A_ZONE) {
-            snprintf(buf, sizeof(buf), "#%ld", db[thing].zone);
+            snprintf(buf, sizeof(buf), "#%" DBREF_FMT, db[thing].zone);
         } else if (atr == A_NEXT) {
-            snprintf(buf, sizeof(buf), "#%ld", db[thing].next);
+            snprintf(buf, sizeof(buf), "#%" DBREF_FMT, db[thing].next);
         } else if (atr == A_MODIFIED) {
             snprintf(buf, sizeof(buf), "%ld", db[thing].mod_time);
         } else if (atr == A_CREATED) {
@@ -1866,7 +1866,7 @@ char *unparse_attr(ATTR *atr, int dep)
         strncat(buf, atr->name, sizeof(buf) - strlen(buf) - 1);
     } else {
         size_t len = strlen(buf);
-        snprintf(buf + len, sizeof(buf) - len, "#%ld.%s", 
+        snprintf(buf + len, sizeof(buf) - len, "#%" DBREF_FMT ".%s",
                 atr->obj, atr->name);
     }
     
@@ -2381,7 +2381,7 @@ static void convert_boolexp(void)
         
         if ((db[i].flags & ENTER_OK) && (!is_zone(i))) {
             atr_add(i, A_ELOCK, buffer);
-            snprintf(buffer, sizeof(buffer), "#%ld", db[i].owner);
+            snprintf(buffer, sizeof(buffer), "#%" DBREF_FMT, db[i].owner);
             atr_add(i, A_LOCK, buffer);
         } else {
             atr_add(i, A_LOCK, buffer);

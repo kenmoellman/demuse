@@ -1,3 +1,184 @@
 & news
+==============================================================================
+                        deMUSE News and Announcements
+------------------------------------------------------------------------------
 
-This is the newsfile .. It uses the same format as the help file.
+Welcome to deMUSE 2025!
+
+This is a modernized version of the classic TinyMUSE server, descended from
+TinyMUSE '97 and TinyMUSE 1.8a4, originally created for deMUSEcracy.
+
+RECENT UPDATES (2025):
+
+* Complete modernization of C codebase
+  - ANSI C compliance throughout
+  - Memory safety improvements (SAFE_MALLOC/SMART_FREE)
+  - Buffer overflow protection (snprintf, strncpy)
+  - Extensive security hardening
+
+* Hash-based command dispatch system
+  - Fast O(1) command lookup
+  - Eliminated gperf dependency
+  - Unified hash table system
+
+* Enhanced help system
+  - Comprehensive command documentation
+  - Organized function reference
+  - Programming examples and tutorials
+
+* Parser system framework
+  - Support for multiple command parsers
+  - Universe system (experimental)
+  - Extensible command registration
+
+* Database improvements
+  - GoodObject/ValidObject safety checks
+  - Parent/child hierarchy system
+  - Enhanced attribute system
+  - Zone organization
+
+* Communication enhancements
+  - Channel system (+channel, +com)
+  - Improved mail and board systems
+  - Paste/code sharing system
+  - Better color code handling
+
+KEY FEATURES:
+
+Building System:
+  - Create rooms with @dig
+  - Link exits with @open and @link
+  - Build objects with @create
+  - Parent/child inheritance with @addparent
+
+Programming:
+  - 122 built-in functions
+  - Powerful attribute-based scripting
+  - Trigger system for automation
+  - Control flow commands (@switch, @foreach, @cycle)
+
+Communication:
+  - Multi-channel system
+  - Private paging and whispers
+  - Mail and bulletin boards
+  - Zone-wide broadcasts
+
+Administration:
+  - Database management tools (@dump, @dbck)
+  - Player management commands
+  - Quota system
+  - Power-based permissions
+
+For more information, type 'help' to access the help system.
+
+------------------------------------------------------------------------------
+
+& version
+deMUSE Server Version Information
+
+Version: 2025.01 (Modernized)
+Based on: TinyMUSE '97 / TinyMUSE 1.8a4
+Original: TinyMUD by Larry Foard
+Heritage: TinyMUD → TinyMUSH → TinyMUSE → deMUSE
+
+Modernization Date: January 2025
+Platform: Linux (POSIX-compliant)
+Language: ANSI C11
+
+Major Components:
+  - Command Parser (hash-based dispatch)
+  - Expression Evaluator (122 functions)
+  - Database System (flat-file, backward compatible)
+  - Network I/O (descriptor-based)
+  - Attribute System (extensible properties)
+  - Zone/Universe Organization
+
+For detailed changelogs, see the source repository.
+
+& welcome
+Welcome to deMUSE!
+
+This is a text-based multi-user simulation environment where you can:
+
+  * Explore virtual worlds
+  * Interact with other players
+  * Build your own spaces and objects
+  * Program automated behaviors
+  * Participate in collaborative storytelling
+
+To get started:
+  - Type 'look' to see your surroundings
+  - Type 'help' for the help system
+  - Type 'who' to see who else is online
+  - Type 'help commands' for a command list
+
+If you're new to MUSEs:
+  - MUSEs are text-based worlds
+  - Everything is described in text
+  - You interact by typing commands
+  - You can build and program if you have permission
+
+Type 'news' to see recent updates and announcements.
+Type 'help register' if you need to create a character.
+
+Enjoy your time in deMUSE!
+
+& updates
+For current updates and changes, type 'news'.
+
+For version information, type 'help version'.
+
+For a complete list of changes, see the source repository changelog.
+
+& credits
+deMUSE Credits
+
+Original TinyMUD: Larry Foard
+TinyMUSH Development: Many contributors
+TinyMUSE Development: Various authors
+deMUSE Original: Bobby Newmark (for deMUSEcracy)
+
+2025 Modernization:
+  - ANSI C compliance and security hardening
+  - Hash-based command dispatch
+  - Enhanced help system
+  - Memory safety improvements
+  - Database integrity enhancements
+
+Special thanks to all contributors who have worked on the MUSE/MUD
+family of servers over the past decades.
+
+Built on the shoulders of giants.
+
+& changelog
+RECENT CHANGES (2025):
+
+Modernization Phase:
+  ✓ Converted all K&R C to ANSI C prototypes
+  ✓ Replaced all sprintf/strcpy with safe alternatives
+  ✓ Added GoodObject/ValidObject checks throughout
+  ✓ Implemented SAFE_MALLOC/SMART_FREE system
+  ✓ Replaced gperf with hash table system
+  ✓ Merged funcs.c into eval.c
+  ✓ Created unified hash system
+  ✓ Added DBREF_FMT macro for portability
+  ✓ Fixed size_t variable usage
+  ✓ Enhanced compiler warning coverage
+
+Features Added:
+  ✓ Parser system framework
+  ✓ Universe system (experimental)
+  ✓ Enhanced channel system
+  ✓ Improved mail/board integration
+  ✓ Code paste system
+  ✓ Comprehensive help system
+
+Bug Fixes:
+  ✓ Fixed command dispatch fall-through
+  ✓ Fixed channel default validation
+  ✓ Fixed pre-login WHO ANSI codes
+  ✓ Fixed @poof recycle bin attribute display
+  ✓ Fixed numerous buffer overflow vulnerabilities
+  ✓ Fixed memory leaks
+
+For detailed commit history, see the source repository.

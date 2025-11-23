@@ -2063,10 +2063,10 @@ dbref create_guest(const char *name, const char *alias, const char *password)
     add_player(player);
     
     /* Auto-join public channel */
-    do_force(root, tprintf("#%ld", player), "+channel +public");
+    do_force(root, tprintf("#%" DBREF_FMT, player), "+channel +public");
     
     /* Set self-lock */
-    snprintf(key, sizeof(key), "#%ld", player);
+    snprintf(key, sizeof(key), "#%" DBREF_FMT, player);
     atr_add(player, A_LOCK, key);
     
     /* Set description */
@@ -2175,8 +2175,8 @@ dbref create_player(const char *name, const char *password, int class, dbref sta
 
     /* Setup for non-guests */
     if (class != CLASS_GUEST) {
-        do_force(root, tprintf("#%ld", player), "+channel +public");
-        do_class(root, tprintf("#%ld", player), class_to_name(class));
+        do_force(root, tprintf("#%" DBREF_FMT, player), "+channel +public");
+        do_class(root, tprintf("#%" DBREF_FMT, player), class_to_name(class));
     }
 
     return player;

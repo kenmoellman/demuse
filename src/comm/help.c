@@ -39,36 +39,37 @@ static int is_valid_text_filename(const char *filename)
 {
     size_t len;
     size_t i;
-    
+
     if (!filename || !*filename) {
         return 0;
     }
-    
+
     len = strlen(filename);
-    
+
     /* Check length bounds */
-    if (len < 1 || len > 10) {
+    if (len < 1 || len > 32) {
         return 0;
     }
-    
+
     /* Check for directory traversal attempts */
-    if (strchr(filename, '/') || strchr(filename, '\\') || 
-        strchr(filename, '.') || strchr(filename, ':')) {
+    if (strchr(filename, '/') || strchr(filename, '\\') ||
+        strchr(filename, ':')) {
         return 0;
     }
-    
-    /* Check for null bytes */
-    if (memchr(filename, '\0', len) != filename + len) {
+
+    /* Check for embedded null bytes (not including terminator) */
+    if (memchr(filename, '\0', len) != NULL) {
         return 0;
     }
-    
-    /* Ensure all characters are alphanumeric or underscore */
+
+    /* Ensure all characters are alphanumeric, underscore, or hyphen */
     for (i = 0; i < len; i++) {
-        if (!isalnum((unsigned char)filename[i]) && filename[i] != '_') {
+        if (!isalnum((unsigned char)filename[i]) &&
+            filename[i] != '_' && filename[i] != '-') {
             return 0;
         }
     }
-    
+
     return 1;
 }
 
@@ -97,8 +98,8 @@ void do_text(dbref player, char *arg1, char *arg2, ATTR *trig)
     /* Security check: validate filename */
     if (!is_valid_text_filename(arg1)) {
         notify(player, "Invalid text file name.");
-        log_security(tprintf("SECURITY: %s (#%ld) attempted invalid text file: %s",
-                            db[player].name, player, arg1));
+        log_security(tprintf("SECURITY: %s (#%" DBREF_FMT ") attempted invalid text file: %s (len=%zu)",
+                            db[player].name, player, arg1, strlen(arg1)));
         return;
     }
     

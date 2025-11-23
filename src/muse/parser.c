@@ -3076,7 +3076,7 @@ void list_universes(dbref player)
         if (u->description) {
             notify(player, tprintf("   %s", u->description));
         }
-        notify(player, tprintf("   Players: %d | Starting location: #%ld",
+        notify(player, tprintf("   Players: %d | Starting location: #" DBREF_FMT,
                               u->player_count, u->config.starting_location));
     }
 

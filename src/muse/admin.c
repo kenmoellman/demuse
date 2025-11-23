@@ -2194,7 +2194,7 @@ dbref cause;
 
   if (*arg2)
   {
-    if (connect_player(tprintf("#%ld", thing), arg2) != thing)
+    if (connect_player(tprintf("#%" DBREF_FMT, thing), arg2) != thing)
     {
       log_important(tprintf("%s failed to: @su %s", unparse_object_a(root, player), unparse_object_a(root, thing)));
       notify(player, perm_denied());
@@ -2442,7 +2442,7 @@ char *arg2;
 
   message = reconstruct_message(arg1, arg2);
 
-  snprintf(motd_who, sizeof(motd_who), "#%ld", player);
+  snprintf(motd_who, sizeof(motd_who), "#%" DBREF_FMT, player);
 
   if (*message)
   {
