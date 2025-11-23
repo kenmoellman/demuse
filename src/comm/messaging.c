@@ -563,7 +563,7 @@ int is_banned_from_board(dbref player)
     if (!could_doit(player, default_room, A_LPAGE)) {
         snprintf(buf, sizeof(buf), "%s&", atr_get(default_room, A_LPAGE));
         blbegin = blist = stralloc(buf);
-        target = tprintf("#%ld", player);
+        target = tprintf("#%" DBREF_FMT, player);
         
         while (*blist) {
             char *amp = strchr(blist, '&');
@@ -1032,7 +1032,7 @@ void remove_all_mail(void)
             do_mail(i, "delete", "");
             
             /* Purge deleted messages */
-            snprintf(target_buf, sizeof(target_buf), "#%ld", i);
+            snprintf(target_buf, sizeof(target_buf), "#%" DBREF_FMT, i);
             do_mail(i, "purge", target_buf);
         }
     }

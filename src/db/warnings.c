@@ -134,20 +134,20 @@ static int lock_type(dbref i, char *str)
     return 2;
   
   /* Check for owner-only lock pattern: #123&!#123 */
-  snprintf(owner_lock, sizeof(owner_lock), "#%ld&!#%ld", 
+  snprintf(owner_lock, sizeof(owner_lock), "#%" DBREF_FMT "&!#" DBREF_FMT,
            db[i].owner, db[i].owner);
   if (!strcmp(str, owner_lock))
     return 1;
     
   /* Check for simple owner lock pattern: #123 */
-  snprintf(owner_lock, sizeof(owner_lock), "#%ld", db[i].owner);
+  snprintf(owner_lock, sizeof(owner_lock), "#%" DBREF_FMT, db[i].owner);
   if (!strcmp(str, owner_lock))
     return 1;
   
   /* Check for location-based lock */
   if (GoodObject(db[i].location))
   {
-    snprintf(location_lock, sizeof(location_lock), "#%ld", db[i].location);
+    snprintf(location_lock, sizeof(location_lock), "#%" DBREF_FMT, db[i].location);
     if (!strcmp(str, location_lock))
       return 1;
   }

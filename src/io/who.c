@@ -530,7 +530,7 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
           else
           {
             if (Typeof(d->player) != TYPE_PLAYER)
-              snprintf(tempbuf, sizeof(tempbuf), "#%ld", d->player);
+              snprintf(tempbuf, sizeof(tempbuf), "#%" DBREF_FMT, d->player);
             else
             {
               if (*(p = atr_get(d->player, A_ALIAS)) == '\0')

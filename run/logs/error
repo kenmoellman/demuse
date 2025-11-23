@@ -9194,3 +9194,19 @@
 11/22 06:48:17| atr_add: Invalid object #45
 11/22 07:23:28| atr_add: Invalid object #45
 11/22 07:27:00| atr_add: Invalid object #45
+11/22 13:32:29| atr_add: Invalid object #ld
+11/22 18:35:08| is_valid_text_filename: Embedded null in 'help'
+11/22 18:35:15| is_valid_text_filename: Embedded null in 'help'
+11/22 18:36:51| is_valid_text_filename: 'help' PASSED validation
+11/22 18:36:56| is_valid_text_filename: 'help' PASSED validation
+11/22 18:37:03| is_valid_text_filename: 'help' PASSED validation
+11/22 18:37:11| is_valid_text_filename: 'help' PASSED validation
+11/22 18:37:16| is_valid_text_filename: 'help' PASSED validation
+11/22 18:37:23| is_valid_text_filename: 'help' PASSED validation
+11/22 20:17:59| is_valid_text_filename: 'help' PASSED validation
+11/22 20:18:05| is_valid_text_filename: 'help' PASSED validation
+11/22 20:18:09| is_valid_text_filename: 'help' PASSED validation
+11/22 20:18:15| is_valid_text_filename: 'help' PASSED validation
+11/22 20:24:25| is_valid_text_filename: 'help' PASSED validation
+11/22 20:26:35| is_valid_text_filename: 'help' PASSED validation
+11/23 02:08:11| is_valid_text_filename: 'help' PASSED validation

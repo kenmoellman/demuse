@@ -16,7 +16,12 @@
       "Bash(do echo \"=== $dir ===\" for file in $dir/*.c)",
       "Bash(do if [ -f \"$file\" ])",
       "Bash(xargs:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(done)",
+      "Bash(gcc:*)",
+      "Bash(git log:*)",
+      "Bash(../../bin/mkindx:*)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": []

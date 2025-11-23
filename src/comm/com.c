@@ -1151,7 +1151,7 @@ void do_channel_op(dbref player, char *arg2)
     return;
   }
 
-  place = is_in_attr(channum, tprintf("#%ld", target), A_USERS);
+  place = is_in_attr(channum, tprintf("#%" DBREF_FMT, target), A_USERS);
 
   if (yesno == 0) {
     /* Removing op status */
@@ -1175,9 +1175,9 @@ void do_channel_op(dbref player, char *arg2)
       char *tmp = atr_get(channum, A_USERS);
 
       if (tmp && strlen(tmp)) {
-        atr_add(channum, A_USERS, tprintf("%s #%ld", tmp, target));
+        atr_add(channum, A_USERS, tprintf("%s #%" DBREF_FMT, tmp, target));
       } else {
-        atr_add(channum, A_USERS, tprintf("#%ld", target));
+        atr_add(channum, A_USERS, tprintf("#%" DBREF_FMT, target));
       }
 
       notify(player, tprintf("+channel: %s is now an op on %s",
@@ -1991,7 +1991,7 @@ void list_channels(dbref player, dbref target)
               sizeof(channame) - 1);
       channame[sizeof(channame) - 1] = '\0';
 
-      int name_len = strlen(strip_color(channame));
+      size_t name_len = strlen(strip_color(channame));
       if (name_len < 20) {
         filler[20 - name_len] = '\0';
       } else {
