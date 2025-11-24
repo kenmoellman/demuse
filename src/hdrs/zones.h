@@ -55,10 +55,8 @@ extern void do_unzlink(dbref player, char *arg1);
 extern void do_gzone(dbref player, char *arg1);
 
 /* ========================================================================
- * Universe Management Commands (if USE_UNIV is defined)
+ * Universe Management Commands
  * ======================================================================== */
-
-#ifdef USE_UNIV
 
 /**
  * @ulink - Link an object to a universe
@@ -87,7 +85,5 @@ extern void do_guniverse(dbref player, char *arg1);
  * @param o Object structure to initialize
  */
 extern void init_universe(struct object *o);
-
-#endif /* USE_UNIV */
 
 #endif /* _ZONES_H_ */

@@ -2187,16 +2187,15 @@ static void fun_has_a(char *buff, char *args[10], dbref privs, dbref doer, int n
 
 /* === Universe Functions === */
 
-#ifdef USE_UNIV
 static void fun_universe(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     dbref it = match_thing(privs, args[0]);
-    
+
     if (!GoodObject(it)) {
         safe_str_copy(buff, "#-1 BAD_OBJECT", EVAL_BUFFER_SIZE);
         return;
     }
-    
+
     snprintf(buff, EVAL_BUFFER_SIZE, "#%" DBREF_FMT, db[get_zone_first(it)].universe);
 }
 
@@ -2205,17 +2204,17 @@ static void fun_uinfo(char *buff, char *args[10], dbref privs, dbref doer, int n
     dbref thing = match_thing(privs, args[0]);
     int x;
     int found = 0;
-    
+
     if (!GoodObject(thing)) {
         safe_str_copy(buff, "#-1 BAD_OBJECT", EVAL_BUFFER_SIZE);
         return;
     }
-    
+
     if (Typeof(thing) != TYPE_UNIVERSE) {
         safe_str_copy(buff, "#-1 NOT_UNIVERSE", EVAL_BUFFER_SIZE);
         return;
     }
-    
+
     for (x = 0; x < NUM_UA; x++) {
         if (strcasecmp(univ_config[x].label, args[1]) == 0) {
             switch (univ_config[x].type) {
@@ -2240,22 +2239,11 @@ static void fun_uinfo(char *buff, char *args[10], dbref privs, dbref doer, int n
             break;
         }
     }
-    
+
     if (!found) {
         safe_str_copy(buff, "#-1 NO_SUCH_FIELD", EVAL_BUFFER_SIZE);
     }
 }
-#else
-static void fun_universe(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
-{
-    safe_str_copy(buff, "#-1 NOT_AVAILABLE", EVAL_BUFFER_SIZE);
-}
-
-static void fun_uinfo(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
-{
-    safe_str_copy(buff, "#-1 NOT_AVAILABLE", EVAL_BUFFER_SIZE);
-}
-#endif
 
 /* === Player and Permission Functions === */
 

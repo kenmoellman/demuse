@@ -242,7 +242,6 @@ void do_gzone(dbref player, char *arg1)
  * SECTION 3: Universe Management Commands
  * ======================================================================== */
 
-#ifdef USE_UNIV
 /**
  * ULINK command - link to universe
  * @param player Player doing linking
@@ -430,4 +429,3 @@ void init_universe(struct object *o)
         }
     }
 }
-#endif /* USE_UNIV */

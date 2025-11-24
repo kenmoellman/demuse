@@ -172,12 +172,10 @@ int do_command(struct descriptor_data *d, char *command)
         return 0;
     }
 
-#ifdef CR_UNIDLE
     /* Empty command - just return (but don't unidle) */
     if (!command || !*command) {
         return 1;
     }
-#endif
 
     /* Unidle player if they were idle */
     if ((d->state == CONNECTED) && (db[d->player].flags & PLAYER_IDLE)) {

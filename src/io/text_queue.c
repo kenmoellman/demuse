@@ -122,13 +122,11 @@ static int flush_queue(struct text_queue *q, int n)
     return flush_queue_int(q, n, 0);
 }
 
-#ifdef PUEBLO_CLIENT
 /* Flush queue (Pueblo version) */
 static int flush_queue_pueblo(struct text_queue *q, int n)
 {
     return flush_queue_int(q, n, 1);
 }
-#endif
 
 /* Write data to a descriptor's output queue */
 int queue_write(struct descriptor_data *d, const char *b, int n)
@@ -145,7 +143,6 @@ int queue_write(struct descriptor_data *d, const char *b, int n)
     }
 #endif
 
-#ifdef PUEBLO_CLIENT
     if (d->pueblo == 0) {
         space = max_output - d->output_size - n;
         if (space < 0) {
@@ -157,12 +154,6 @@ int queue_write(struct descriptor_data *d, const char *b, int n)
             d->output_size -= flush_queue_pueblo(&d->output, -space);
         }
     }
-#else
-    space = max_output - d->output_size - n;
-    if (space < 0) {
-        d->output_size -= flush_queue(&d->output, -space);
-    }
-#endif
 
     add_to_queue(&d->output, b, n);
     d->output_size += n;

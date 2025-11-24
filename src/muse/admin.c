@@ -534,10 +534,8 @@ void do_search(dbref player, char *arg1, char *arg3)
 	restrict_type = TYPE_EXIT;
       else if (string_prefix("thing", arg3))
 	restrict_type = TYPE_THING;
-#ifdef USE_UNIV
       else if (string_prefix("universe", arg3))
 	restrict_type = TYPE_UNIVERSE;
-#endif
       else if (string_prefix("player", arg3))
       {
 	if (*arg1 == '\0')
@@ -553,7 +551,6 @@ void do_search(dbref player, char *arg1, char *arg3)
     else
       flag = 1;
     break;
-#ifdef USE_UNIV
   case 'u':
     if (string_prefix("universes", arg2))
     {
@@ -563,7 +560,6 @@ void do_search(dbref player, char *arg1, char *arg3)
     else
       flag = 1;
     break;
-#endif
   case 'z':
     if (string_prefix("zone", arg2))
       if ((restrict_zone = match_thing(player, arg3)) == NOTHING)
@@ -631,7 +627,6 @@ void do_search(dbref player, char *arg1, char *arg3)
     }
   }
 
-#ifdef USE_UNIV
   /* universe search */
   if (restrict_type == TYPE_UNIVERSE || restrict_type == NOTYPE)
   {
@@ -661,7 +656,6 @@ void do_search(dbref player, char *arg1, char *arg3)
     }
   }
 
-#endif
   /* room search */
   if (restrict_type == TYPE_ROOM || restrict_type == NOTYPE)
   {
@@ -994,12 +988,10 @@ object_flag_type *p_type;
       'i', TYPE_PLAYER, PLAYER_IDLE
     }
     ,
-#ifdef USE_UNIV
     {
       'U', TYPE_UNIVERSE, 0
     }
     ,
-#endif
     {
       0, 0, 0
     }
@@ -1062,7 +1054,6 @@ object_flag_type *p_type;
   return 1;
 }
 
-#ifdef USE_UNIV
 void do_uinfo(player, arg1)
 dbref player;
 char *arg1;
@@ -1188,7 +1179,6 @@ char *arg1, *arg2;
   if (flag)
     notify(player, "Unknown setting.");
 }
-#endif
 
 /* Ansi: void do_teleport(dbref player, char *arg1, char *arg2); */
 void do_teleport(player, arg1, arg2)
@@ -1200,11 +1190,7 @@ char *arg2;
   dbref victim;
   dbref destination;
   char *to;
-
-#ifdef USE_UNIV
   dbref univ_src, univ_dest;
-
-#endif
 
   /* get victim, destination */
   if ((!(arg2)) || *arg2 == '\0')
@@ -1291,7 +1277,6 @@ char *arg2;
     {
       /* replace above 2 lines with IS() macro? */
 
-#ifdef USE_UNIV
       univ_src = db[get_zone_first(victim)].universe;
       univ_dest = db[get_zone_first(db[victim].link)].universe;
       if (
@@ -1301,7 +1286,6 @@ char *arg2;
 	notify(player, perm_denied());
 	return;
       }
-#endif
 
       notify(victim,
 	     "You feel a sudden urge to leave this place and go home...");
@@ -1321,17 +1305,15 @@ char *arg2;
     if(controls(player, victim, POW_TELEPORT) ||
       controls(player, db[victim].location, POW_TELEPORT))
     {
-#ifdef USE_UNIV
       univ_src = db[get_zone_first(victim)].universe;
       univ_dest = db[get_zone_first(db[victim].link)].universe;
-      if ( 
+      if (
            (!db[univ_src].ua_int[UA_TELEPORT] || !db[univ_dest].ua_int[UA_TELEPORT])
            && !power(player, POW_TELEPORT))
-      { 
+      {
 	notify(player, perm_denied());
         return;
       }
-#endif
       safe_tel(victim, destination);
       did_it(player, victim, A_TPORT, 0, A_OTPORT, 0, A_AFTPORT);
       return;
@@ -1340,7 +1322,6 @@ char *arg2;
     return;
 
   default:
-#ifdef USE_UNIV
     univ_src = db[get_zone_first(victim)].universe;
     univ_dest = db[get_zone_first(destination)].universe;
     if (
@@ -1350,7 +1331,6 @@ char *arg2;
       notify(player, perm_denied());
       return;
     }
-#endif
 
     /* check victim, destination types, teleport if ok */
     if (Typeof(victim) == TYPE_ROOM)
@@ -1651,10 +1631,8 @@ char *arg3;
     type = TYPE_ROOM;
   else if (string_prefix("channels", arg3))
     type = TYPE_CHANNEL;
-#ifdef USE_UNIV
   else if (string_prefix("universes", arg3))
     type = TYPE_UNIVERSE;
-#endif
   else if (string_prefix("exits", arg3))
     type = TYPE_EXIT;
   else if (!strcmp("all", arg3))
@@ -1695,13 +1673,11 @@ char *arg3;
     notify(player, "Wiped out all channels.");
     notify(victim, tprintf("All your channels have been destroyed by %s.",
 			   unparse_object(victim, player)));
-#ifdef USE_UNIV
   case TYPE_UNIVERSE:
     notify(player, "Wiped out all universes.");
     notify(victim, tprintf("All your universes have been destroyed by %s.",
 			   unparse_object(victim, player)));
     break;
-#endif
   case TYPE_EXIT:
     notify(player, "Wiped out all exits.");
     notify(victim, tprintf("All your exits have been destroyed by %s.",
@@ -2122,9 +2098,7 @@ char *arg2;
 
     SWAPREF(db[i].location);
     SWAPREF(db[i].zone);
-#ifdef USE_UNIV
     SWAPREF(db[i].universe);
-#endif
     SWAPREF(db[i].contents);
     SWAPREF(db[i].exits);
     SWAPREF(db[i].link);

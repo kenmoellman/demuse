@@ -134,7 +134,7 @@ extern int dozonetemp;            /* Temporary variable for DOZONE macro */
 #define TYPE_ROOM       0x0    /* Room object */
 #define TYPE_THING      0x1    /* Thing/item object */
 #define TYPE_EXIT       0x2    /* Exit/link object */
-#define TYPE_UNIVERSE   0x3    /* Universe object (if USE_UNIV defined) */
+#define TYPE_UNIVERSE   0x3    /* Universe object (always enabled) */
 #define TYPE_CHANNEL    0x4    /* Communication channel object */
 #define NOTYPE          0x7    /* No particular type (for searches) */
 #define TYPE_PLAYER     0x8    /* Player object */
@@ -462,15 +462,13 @@ struct object {
     long skills[MAX_SKILLS];    /* Skill levels */
     struct main_spell_struct *spells;  /* Known spells */
 #endif
-    
-    /* Universe system (if enabled) */
-#ifdef USE_UNIV
+
+    /* Universe system */
     dbref universe;             /* Which universe rules apply */
     char **ua_string;           /* Universe string variables */
     int *ua_int;                /* Universe integer variables */
     float *ua_float;            /* Universe floating point variables */
-#endif
-    
+
     /* Paste buffer (for multi-line input) */
     char **paste;               /* Paste buffer lines */
     int paste_cnt;              /* Number of lines in paste buffer */

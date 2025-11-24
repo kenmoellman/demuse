@@ -150,17 +150,15 @@ static int validate_paste_target(dbref player, dbref target, ATTR *attr, int fla
             notify(player, "That player is page-locked against you.");
             return 0;
         }
-        
-#ifdef USE_BLACKLIST
+
         /* Check blacklist */
         if (!could_doit(real_owner(player), real_owner(target), A_BLACKLIST) ||
             !could_doit(real_owner(target), real_owner(player), A_BLACKLIST)) {
             notify(player, "There's a blacklist in effect.");
             return 0;
         }
-#endif
     }
-    
+
     return 1;
 }
 

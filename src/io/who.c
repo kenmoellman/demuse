@@ -172,16 +172,14 @@ static char *who_format(const char *str, int i, dbref player)
   }
   else
   {
-#ifdef WHO_IDLE_COLOR
     /* Colorize idle players in red */
-    if (GoodObject(player) && 
-        (db[player].flags & PLAYER_IDLE) && 
+    if (GoodObject(player) &&
+        (db[player].flags & PLAYER_IDLE) &&
         (i != 0))
     {
       str2 = tprintf("|R+%s|", strip_color(str));
     }
     else
-#endif /* WHO_IDLE_COLOR */
     {
       str2 = tprintf("%s", str);
     }
@@ -385,7 +383,6 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
         continue;
     }
 
-#ifdef USE_BLACKLIST
     /* Check blacklist */
     if (GoodObject(w))
     {
@@ -401,7 +398,6 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
           continue;
       }
     }
-#endif /* USE_BLACKLIST */
 
     /* Check name filter */
     if (name_list[0] > 0)
@@ -453,7 +449,6 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
           continue;
         }
 
-#ifdef USE_BLACKLIST
         /* Check blacklist for data rows */
         if (GoodObject(w))
         {
@@ -472,7 +467,6 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
             }
           }
         }
-#endif /* USE_BLACKLIST */
 
         /* Handle hidden players */
         hidden = 0;
@@ -795,7 +789,6 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
     {
       messenger = atol(motd_who + 1);
 
-#ifdef USE_BLACKLIST
       /* Check blacklist for MOTD visibility */
       if (GoodObject(messenger) && GoodObject(w))
       {
@@ -808,7 +801,6 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
           int m_can_see = could_doit(real_owner(messenger), real_owner(w), A_BLACKLIST);
 
           if (w_can_see && m_can_see)
-#endif /* USE_BLACKLIST */
           {
             char *from;
             char *newstring;
@@ -824,15 +816,13 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
               from = tprintf("|W!+Unknown|");
 
             newstring = tprintf("|C+---------------------------------------------%s||C!+<| %s |C!+>||C+--|",
-                              truncate_color(longline, (16 - strlen(strip_color_nobeep(from)))), 
+                              truncate_color(longline, (16 - strlen(strip_color_nobeep(from)))),
                               from);
 
             notify(w, newstring);
           }
-#ifdef USE_BLACKLIST
         }
       }
-#endif /* USE_BLACKLIST */
     }
   }
 }

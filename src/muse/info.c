@@ -616,12 +616,10 @@ void do_dbtop(dbref player, char *arg1)
     int found = 0;
 
     /* Check permissions */
-#ifdef POW_DBTOP
     if (!power(player, POW_DBTOP)) {
         notify(player, "@dbtop is a restricted command.");
         return;
     }
-#endif
 
     /* If no argument or "all", show usage */
     if (!arg1 || !*arg1) {

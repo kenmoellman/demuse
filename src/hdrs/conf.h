@@ -37,6 +37,7 @@ DO_NUM("dump_interval",dump_interval)
 /*DO_NUM("fight_interval",fight_interval)*/
 DO_NUM("garbage_chunk",garbage_chunk)
 DO_NUM("max_output",max_output)
+DO_NUM("max_output_pueblo",max_output_pueblo)
 DO_NUM("max_input",max_input)
 DO_NUM("command_time_msec",command_time_msec)
 DO_NUM("command_burst_size",command_burst_size)

@@ -294,7 +294,6 @@ void trig_idle_boot(void)
       continue;
     }
 
-#ifdef BOOT_GUESTS
     /* Boot idle guest players */
     if (GoodObject(d->player) && Guest(d->player)) {
       if (now - d->last_time > guest_boot_time) {
@@ -307,7 +306,6 @@ void trig_idle_boot(void)
         shutdownsock(d);
       }
     }
-#endif
   }
 }
 

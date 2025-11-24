@@ -353,8 +353,7 @@ static int db_write_object(FILE *f, dbref i)
     putlist(f, o->parents);
     putlist(f, o->children);
     put_atrdefs(f, o->atrdefs);
-    
-#ifdef USE_UNIV
+
     /* Write universe data */
     fprintf(f, ">%ld\n", o->universe);
     if (((o->flags & TYPE_MASK) == TYPE_UNIVERSE)) {
@@ -376,7 +375,6 @@ static int db_write_object(FILE *f, dbref i)
         }
     }
     fprintf(f, "\\\n");
-#endif
     
     return 0;
 }
@@ -919,10 +917,8 @@ static int db_read_object(dbref i, FILE *f)
         o->link = NOTHING;
         o->next = getref(f);
         o->next_fighting = NOTHING;
-#ifdef USE_UNIV
         o->universe = NOTHING;
-#endif
-        
+
         /* Handle combat list */
         if (o->fighting != NOTHING) {
             if (combat_list == NOTHING)
@@ -1063,13 +1059,11 @@ static int db_read_object(dbref i, FILE *f)
             o->children = NULL;
             o->atrdefs = NULL;
         }
-        
-#ifdef USE_UNIV
+
         if (db_version > 12)
             get_univ_info(f, o);
         else if (((o->flags & TYPE_MASK) == TYPE_UNIVERSE))
             init_universe(o);
-#endif
         
         /* Register players and channels */
         if (Typeof(i) == TYPE_PLAYER || 
@@ -1140,10 +1134,9 @@ static int db_read_object(dbref i, FILE *f)
     return i;
 }
 
-#ifdef USE_UNIV
 /*
  * get_univ_info - Read universe-specific data from file
- * 
+ *
  * SECURITY: Validates universe configuration indices
  */
 void get_univ_info(FILE *f, struct object *o)
@@ -1212,7 +1205,6 @@ void get_univ_info(FILE *f, struct object *o)
         }
     }
 }
-#endif /* USE_UNIV */
 
 /* ============================================================================
  * BUILT-IN ATTRIBUTE SYSTEM
@@ -1962,9 +1954,7 @@ dbref new_object(void)
     o->mod_time = 0;
     o->create_time = now;
     o->zone = NOTHING;
-#ifdef USE_UNIV
     o->universe = db[0].universe;
-#endif
     o->i_flags = I_UPDATEBYTES;
     o->size = 0;
     o->atrdefs = NULL;
@@ -2288,9 +2278,7 @@ static void scramble_to_link(void)
             db[i].link = db[i].location;
             db[i].location = i;
         } else if (Typeof(i) == TYPE_THING || Typeof(i) == TYPE_CHANNEL
-#ifdef USE_UNIV
                    || Typeof(i) == TYPE_UNIVERSE
-#endif
                    || Typeof(i) >= TYPE_PLAYER) {
             db[i].link = db[i].exits;
             db[i].exits = -1;

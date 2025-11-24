@@ -93,16 +93,22 @@ multi-homing either.) -wm 05/08/2000 */
 /* Sort who list by idle time? */
 /* #define SORT_BY_IDLE */
 
-/* color output lines on who list for those who are idle? */
-#define WHO_IDLE_COLOR
+/* WHO idle color - always enabled */
+/* WHO_IDLE_COLOR - removed, feature now always on */
 
-/* define if wish to allow objects to talk on com channels */
-#define ALLOW_COM_NP
+/* Allow objects to talk on com channels - converted to power POW_COM_TALK */
+/* ALLOW_COM_NP - removed, use POW_COM_TALK power instead */
 
-/* define Pueblo client support. defined = ON */
-/* #define PUEBLO_CLIENT  */
+/* Pueblo client support - always enabled */
+/* PUEBLO_CLIENT - removed, feature now always on */
+
+/* Universe system - always enabled */
+/* USE_UNIV - removed, feature now always on */
 
 /* message configuration */
+
+/* Number of welcome message files (welcome000.txt to welcomeNNN.txt) */
+#define NUM_WELCOME_MESSAGES 10
 
 /* define these to your liking.  Be sure NOT to put your MUSE name in them. *
  * The MUSE name is now the first thing in each string.  Work it out.       *
@@ -153,18 +159,19 @@ multi-homing either.) -wm 05/08/2000 */
 #undef TECH_EMAIL
 
 
-/* The new Blacklisting feature - it's pretty cool, check out the help on it. */
-#define USE_BLACKLIST
+/* Blacklist feature - always enabled */
+/* USE_BLACKLIST - removed, feature now always on */
 
 /* define this if you'd like to have teh system automatically purge +mail that   *
  * users delete out of other peoples' mailboxes ( +mail delete=wm:6 would delete *
  * AND PURGE message 6 if it was written by the issuer, and unread by wm )      */
 #undef TARGET_DEL_PURGE
 
-/* define this if you want dbtop to require powers. */
-#define DBTOP_POW
+/* @dbtop power requirement - always enabled */
+/* DBTOP_POW - removed, feature now always on */
 
-/* Guests get kicked at reboot?  Guests get idlebooted? Define this to make it so.  */
+/* Guest idle boot - always enabled */
+/* BOOT_GUEST - removed, feature now always on */
 #define BOOT_GUEST
 
 /* does a cariage return with no other input unidle a person? If yes, define */
@@ -193,8 +200,8 @@ multi-homing either.) -wm 05/08/2000 */
 /* define this if you want people to be able to connect as their objects. */
 /* #define USE_INCOMING */
 
-/* define this if you want to use the Universe mods */
-#define USE_UNIV
+/* Universe mods - always enabled (see comments at top of file) */
+/* #define USE_UNIV */
 
 /* defines this if you are using the /proc filesystem. */
 #define USE_PROC
@@ -422,11 +429,7 @@ typedef int ptype;  /* Power type for player powers/permissions */
 #define POW_CLASS        7
 #define POW_COMBAT       14
 #define POW_DB           8
-#ifdef DBTOP_POW
 #define POW_DBTOP        9
-#else
-#define POW_NUTTIN0      9
-#endif /* DBTOP_POW */
 #define POW_EXAMINE      10
 #ifdef ALLOW_EXEC
 #define POW_EXEC         11
@@ -466,11 +469,7 @@ typedef int ptype;  /* Power type for player powers/permissions */
 #define POW_SHUTDOWN     35
 #define POW_SUMMON       36
 #define POW_SLAVE        37
-#ifdef USE_SPACE
-#define POW_SPACE	 38
-#else
 #define POW_NUTTIN4      38
-#endif
 #define POW_NUTTIN5      39
 #define POW_STATS        40
 #define POW_STEAL        41
@@ -478,6 +477,7 @@ typedef int ptype;  /* Power type for player powers/permissions */
 #define POW_WATTR        43
 #define POW_WFLAGS       44
 #define POW_WHO          45
+#define POW_COM_TALK     48
 
 
 /* ============================================================================
@@ -646,19 +646,11 @@ powers[] =
     {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO},
     {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
   },
-#ifdef DBTOP_POW
   {
     "Dbtop", POW_DBTOP, "Abililty to do a @dbtop",
     {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO},
     {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
   },
-#else
-  {
-    "NUTTIN0", POW_NUTTIN0, "Ability to do NUTTIN - Disabled POW_DBTOP",
-    {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
-    {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
-  },
-#endif /* DBTOP_POW */
   {
     "Examine", POW_EXAMINE, "Ability to see people's homes and locations",
     {YES, YESEQ, YESEQ, YESEQ, NO, NO, NO, YESLT, YESLT, YESLT},
@@ -823,19 +815,11 @@ powers[] =
     {YESLT, YESLT, NO, NO, NO, NO, NO, NO, NO, NO},
     {YES,   YESLT, NO, NO, NO, NO, NO, NO, NO, NO}
   },
-#ifdef USE_SPACE
-  {
-    "Space", POW_SPACE, "Ability to control the cosmos",
-    {NO,  NO,  NO,  NO, NO, NO, NO, NO, NO, NO},
-    {YES, YES, YES, NO, NO, NO, NO, NO, NO, NO}
-  },
-#else
   {
     "NUTTIN4", POW_NUTTIN4, "Ability to do NUTTIN - Disabled Space",
     {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
     {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO}
   },
-#endif
   {
     "NUTTIN5", POW_NUTTIN5, "Ability to do NUTTIN - Removed Spoof",
     {NO,  NO, NO, NO, NO, NO, NO, NO, NO, NO},
@@ -875,6 +859,11 @@ powers[] =
     "Channel", POW_CHANNEL, "Ability to maintain all channels.",
     {YES, NO, NO, NO, NO, NO, NO, NO, NO, NO},
     {YES, YES, NO, NO, NO, NO, NO, NO, NO, NO}
+  },
+  {
+    "ComTalk", POW_COM_TALK, "Ability for non-player objects to talk on channels.",
+    {NO, NO, NO, NO, NO, NO, NO, NO, NO, NO},
+    {YES, YES, YES, YES, YES, YES, YES, YES, YES, YES}
   },
 };
 

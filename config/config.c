@@ -65,6 +65,7 @@ int dump_interval = 2714;
 int garbage_chunk = 3;
 
 int max_output = 32767;		/* number of bytes until output flushed */
+int max_output_pueblo = 65535;	/* max output for Pueblo HTML clients */
 
 int max_input=1024;
 int command_time_msec = 1000;	/* time slice length (milliseconds) */

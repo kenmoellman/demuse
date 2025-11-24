@@ -1033,9 +1033,7 @@ static void destroy_player(dbref player)
             
             switch (Typeof(thing)) {
             case TYPE_CHANNEL:
-#ifdef USE_UNIV
             case TYPE_UNIVERSE:
-#endif
             case TYPE_PLAYER:
                 /* Handle puppets/slaves */
                 if (db[thing].owner == player && db[player].owner == thing) {

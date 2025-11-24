@@ -266,9 +266,7 @@ int could_doit(dbref player, dbref thing, ATTR *attr)
   /* Objects nowhere fail */
   where = db[thing].location;
   if ((Typeof(thing) == TYPE_PLAYER || Typeof(thing) == TYPE_CHANNEL ||
-#ifdef USE_UNIV
        Typeof(thing) == TYPE_UNIVERSE ||
-#endif
        Typeof(thing) == TYPE_THING) && where == NOTHING) {
     return 0;
   }
@@ -814,14 +812,6 @@ int controls(dbref who, dbref what, int cutoff_level)
       (db[what].flags & SEE_OK)) {
     return 1;
   }
-
-#ifdef USE_SPACE
-  /* Space restrictions */
-  if ((db[what].owner == SPACE_LORD) && !power(who, POW_SPACE) &&
-      GoodObject(where) && (db[where].flags & ROOM_ZEROG)) {
-    return 0;
-  }
-#endif
 
   /* Check ownership (direct or group) */
   if (db[who].owner == db[what].owner ||
@@ -1408,9 +1398,7 @@ int ok_object_name(dbref obj, char *name)
   switch (Typeof(obj)) {
     case TYPE_THING:
     case TYPE_CHANNEL:
-#ifdef USE_UNIV
     case TYPE_UNIVERSE:
-#endif
       return ok_thing_name(name);
       
     case TYPE_EXIT:
