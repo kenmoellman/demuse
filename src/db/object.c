@@ -332,9 +332,7 @@ void do_link(dbref player, char *name, char *room_name)
         case TYPE_PLAYER:
         case TYPE_THING:
         case TYPE_CHANNEL:
-#ifdef USE_UNIV
         case TYPE_UNIVERSE:
-#endif
             /* Set home */
             init_match(player, room_name, NOTYPE);
             match_exit();
@@ -568,7 +566,6 @@ void do_create(dbref player, char *name, int cost)
     notify(player, tprintf("%s created.", unparse_object(player, thing)));
 }
 
-#ifdef USE_UNIV
 /**
  * UCREATE command - create a universe object
  * @param player Player creating universe
@@ -650,7 +647,6 @@ void do_ucreate(dbref player, char *name, int cost)
 }
 
 /* NOTE: init_universe() moved to muse/zones.c (2025 reorganization) */
-#endif /* USE_UNIV */
 
 /* ===================================================================
  * Cloning
@@ -1743,7 +1739,6 @@ void do_empty(dbref thing)
     /* Type-specific cleanup */
     switch (Typeof(thing)) {
     case TYPE_CHANNEL:
-#ifdef USE_UNIV
     case TYPE_UNIVERSE:
         /* Free universe-specific arrays */
         if (db[thing].ua_string) {
@@ -1758,7 +1753,6 @@ void do_empty(dbref thing)
         if (db[thing].ua_int) {
             SMART_FREE(db[thing].ua_int);
         }
-#endif
         /* FALLTHROUGH */
 
     case TYPE_THING:
@@ -1779,9 +1773,7 @@ void do_empty(dbref thing)
 
             /* Clear zone and universe */
             db[thing].zone = NOTHING;
-#ifdef USE_UNIV
             db[thing].universe = NOTHING;
-#endif
 
             /* Destroy all exits */
             first = Exits(thing);
@@ -1875,9 +1867,7 @@ void do_empty(dbref thing)
             }
             break;
         case TYPE_PLAYER:
-#ifdef USE_UNIV
         case TYPE_UNIVERSE:
-#endif
             refund_cost = 1000;
             break;
         default:
@@ -2078,9 +2068,7 @@ static int object_cost(dbref thing)
         }
 
     case TYPE_PLAYER:
-#ifdef USE_UNIV
     case TYPE_UNIVERSE:
-#endif
         return 1000;
 
     default:
@@ -2174,9 +2162,7 @@ void fix_free_list(void)
             switch (Typeof(thing)) {
             case TYPE_PLAYER:
             case TYPE_CHANNEL:
-#ifdef USE_UNIV
             case TYPE_UNIVERSE:
-#endif
             case TYPE_THING:
             case TYPE_ROOM:
                 log_error(tprintf("Dead exit in exit list (first) for room #%ld: %ld",
@@ -2207,9 +2193,7 @@ void fix_free_list(void)
             switch (Typeof(thing)) {
             case TYPE_PLAYER:
             case TYPE_CHANNEL:
-#ifdef USE_UNIV
             case TYPE_UNIVERSE:
-#endif
             case TYPE_THING:
                 db[thing].link = player_start;
                 break;
@@ -2226,9 +2210,7 @@ void fix_free_list(void)
             switch (Typeof(thing)) {
             case TYPE_PLAYER:
             case TYPE_CHANNEL:
-#ifdef USE_UNIV
             case TYPE_UNIVERSE:
-#endif
             case TYPE_THING:
                 db[thing].location = NOTHING;
                 moveto(thing, player_start);
@@ -2346,9 +2328,7 @@ static void dbmark2(void)
 
         if (Typeof(loc) == TYPE_PLAYER ||
             Typeof(loc) == TYPE_CHANNEL ||
-#ifdef USE_UNIV
             Typeof(loc) == TYPE_UNIVERSE ||
-#endif
             Typeof(loc) == TYPE_THING) {
 
             if (db[loc].link != NOTHING && GoodObject(db[loc].link)) {
@@ -2543,9 +2523,7 @@ static void dbunmark1(void)
         } else if (!IS_GONE(loc)) {
             if (Typeof(loc) == TYPE_PLAYER ||
                 Typeof(loc) == TYPE_CHANNEL ||
-#ifdef USE_UNIV
                 Typeof(loc) == TYPE_UNIVERSE ||
-#endif
                 Typeof(loc) == TYPE_THING) {
 
                 log_error(tprintf("DBCK: Moved object %ld", loc));
@@ -2995,9 +2973,7 @@ void do_incremental(void)
                 case TYPE_PLAYER:
                 case TYPE_THING:
                 case TYPE_CHANNEL:
-#ifdef USE_UNIV
                 case TYPE_UNIVERSE:
-#endif
                 case TYPE_ROOM:
                     log_error(tprintf("Dead exit in exit list (first) for room #%ld: %ld",
                                     thing, db[thing].exits));
@@ -3026,9 +3002,7 @@ void do_incremental(void)
                 case TYPE_PLAYER:
                 case TYPE_THING:
                 case TYPE_CHANNEL:
-#ifdef USE_UNIV
                 case TYPE_UNIVERSE:
-#endif
                     db[thing].link = player_start;
                     break;
                 case TYPE_EXIT:
@@ -3043,9 +3017,7 @@ void do_incremental(void)
                 case TYPE_PLAYER:
                 case TYPE_THING:
                 case TYPE_CHANNEL:
-#ifdef USE_UNIV
                 case TYPE_UNIVERSE:
-#endif
                     db[thing].location = NOTHING;
                     moveto(thing, player_start);
                     break;

@@ -47,7 +47,6 @@ extern void do_dig(dbref player, char *name, char *argv[]);
  */
 extern void do_create(dbref player, char *name, int cost);
 
-#ifdef USE_UNIV
 /**
  * @ucreate - Create a new universe object
  * @param player Player creating object
@@ -55,7 +54,6 @@ extern void do_create(dbref player, char *name, int cost);
  * @param cost Pennies to spend
  */
 extern void do_ucreate(dbref player, char *name, int cost);
-#endif
 
 /**
  * @clone - Create a copy of an object

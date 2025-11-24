@@ -47,11 +47,7 @@ void close_sockets(void)
         write(d->descriptor, tprintf("%s %s", muse_name, SHUTDOWN_MESSAGE), 
               (strlen(SHUTDOWN_MESSAGE) + strlen(muse_name) + 1));
       process_output(d);
-#ifndef BOOT_GUEST
-      if (x && d->player >= 0 && d->state == CONNECTED)
-#else
       if (x && d->player >= 0 && d->state == CONNECTED && !Guest(d->player))
-#endif
       {
         fprintf(x, "%010d %010ld %010ld %010ld\n", d->descriptor, 
                 (long)d->connected_at, (long)d->last_time, (long)d->player);

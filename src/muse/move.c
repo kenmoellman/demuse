@@ -711,9 +711,7 @@ void do_move(dbref player, char *direction)
   dbref old_exit;
   int deep;
   char message_buf[MESSAGE_BUFFER_SIZE];
-#ifdef USE_UNIV
   dbref univ_src, univ_dest;
-#endif
 
   /* Validate player */
   if (!GoodObject(player) || !direction)
@@ -762,11 +760,10 @@ void do_move(dbref player, char *direction)
     if (Typeof(player) == TYPE_ROOM || Typeof(player) == TYPE_EXIT)
       return;
 
-#ifdef USE_UNIV
     /* Check if teleport is enabled in universes */
     univ_src = db[get_zone_first(player)].universe;
     univ_dest = db[get_zone_first(db[player].link)].universe;
-    
+
     if (GoodObject(univ_src) && GoodObject(univ_dest) &&
         (!db[univ_src].ua_int[UA_TELEPORT] || 
          !db[univ_dest].ua_int[UA_TELEPORT]) &&
@@ -775,7 +772,6 @@ void do_move(dbref player, char *direction)
       notify(player, perm_denied());
       return;
     }
-#endif
 
     /* Check if already home */
     if (GoodObject(db[player].link) && 
@@ -872,9 +868,7 @@ void do_move(dbref player, char *direction)
     case TYPE_PLAYER:
     case TYPE_THING:
     case TYPE_CHANNEL:
-#ifdef USE_UNIV
     case TYPE_UNIVERSE:
-#endif
       if (db[db[exit].link].flags & GOING)
       {
         notify(player, "You can't go that way.");
@@ -1003,9 +997,7 @@ void do_get(dbref player, char *what)
   {
   case TYPE_PLAYER:
   case TYPE_CHANNEL:
-#ifdef USE_UNIV
   case TYPE_UNIVERSE:
-#endif
     notify(player, perm_denied());
     break;
     

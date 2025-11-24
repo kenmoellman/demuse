@@ -410,15 +410,13 @@ int page_check(dbref receiver, dbref sender)
     if (!could_doit(receiver, sender, A_LPAGE)) {
         return 0;
     }
-    
-#ifdef USE_BLACKLIST
-    /* Check blacklist if enabled */
+
+    /* Check blacklist */
     if (!could_doit(real_owner(sender), real_owner(receiver), A_BLACKLIST) ||
         !could_doit(real_owner(receiver), real_owner(sender), A_BLACKLIST)) {
         return 0;
     }
-#endif
-    
+
     return 1;
 }
 

@@ -509,9 +509,7 @@ void do_look_at(dbref player, char *arg1)
             case TYPE_THING:
             case TYPE_PLAYER:
             case TYPE_CHANNEL:
-#ifdef USE_UNIV
             case TYPE_UNIVERSE:
-#endif
                 look_simple(player, thing, 1);
                 if (controls(player, thing, POW_EXAMINE) ||
                     !(db[thing].flags & OPAQUE) ||
@@ -553,11 +551,9 @@ char *flag_description(dbref thing)
     case TYPE_CHANNEL:
         strncat(buf, "Channel", sizeof(buf) - strlen(buf) - 1);
         break;
-#ifdef USE_UNIV
     case TYPE_UNIVERSE:
         strncat(buf, "Universe", sizeof(buf) - strlen(buf) - 1);
         break;
-#endif
     case TYPE_PLAYER:
         strncat(buf, "Player", sizeof(buf) - strlen(buf) - 1);
         break;
@@ -793,13 +789,11 @@ void do_examine(dbref player, char *name, char *arg2)
         notify(player, tprintf("Zone:%s",
                               unparse_object(player, db[thing].zone)));
     }
-    
-#ifdef USE_UNIV
+
     if (db[thing].universe != NOTHING) {
         notify(player, tprintf("Universe:%s",
                               unparse_object(player, db[thing].universe)));
     }
-#endif
     
     notify(player, tprintf("Created:%s",
                           db[thing].create_time ?
@@ -918,9 +912,7 @@ void do_examine(dbref player, char *name, char *arg2)
     case TYPE_THING:
     case TYPE_PLAYER:
     case TYPE_CHANNEL:
-#ifdef USE_UNIV
     case TYPE_UNIVERSE:
-#endif
         /* Show home */
         notify(player,
                tprintf("Home:%s",

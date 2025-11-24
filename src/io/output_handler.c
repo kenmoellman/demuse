@@ -172,9 +172,7 @@ void raw_notify_internal(dbref player, char *msg, int color)
     extern dbref speaker, as_from, as_to;
     char buf0[IO_BUFFER_SIZE];
     char ansi[ANSI_BUFFER_SIZE];
-#ifdef PUEBLO_CLIENT
     char *html = NULL;
-#endif
     char *temp;
 
     if (!msg) {
@@ -210,20 +208,17 @@ void raw_notify_internal(dbref player, char *msg, int color)
     }
 
     /* Format ANSI output */
-    safe_string_copy(ansi, add_pre_suf(player, color, msg, 0), 
+    safe_string_copy(ansi, add_pre_suf(player, color, msg, 0),
                     sizeof(ansi));
 
-#ifdef PUEBLO_CLIENT
     /* Allocate and format HTML output if needed */
-//    html = malloc(HTML_BUFFER_SIZE);
     SAFE_MALLOC(html, char, HTML_BUFFER_SIZE);
     if (!html) {
         log_error("Failed to allocate HTML buffer");
         return;
     }
-    safe_string_copy(html, add_pre_suf(player, color, msg, 1), 
+    safe_string_copy(html, add_pre_suf(player, color, msg, 1),
                     HTML_BUFFER_SIZE);
-#endif
 
     /* Handle as_from/as_to redirection */
     if (player == as_from) {
@@ -233,16 +228,13 @@ void raw_notify_internal(dbref player, char *msg, int color)
     /* Send to all connected descriptors for this player */
     for (d = descriptor_list; d; d = d->next) {
         if (d->state == CONNECTED && d->player == player) {
-#ifdef USE_BLACKLIST
             /* Check blacklist restrictions */
-            if (((!strlen(atr_get(real_owner(d->player), A_BLACKLIST))) && 
+            if (((!strlen(atr_get(real_owner(d->player), A_BLACKLIST))) &&
                  (!strlen(atr_get(real_owner(player), A_BLACKLIST)))) ||
-                !((could_doit(real_owner(player), real_owner(d->player), 
-                              A_BLACKLIST)) && 
-                  (could_doit(real_owner(d->player), real_owner(player), 
+                !((could_doit(real_owner(player), real_owner(d->player),
+                              A_BLACKLIST)) &&
+                  (could_doit(real_owner(d->player), real_owner(player),
                               A_BLACKLIST)))) {
-#endif
-#ifdef PUEBLO_CLIENT
                 if (!d->pueblo) {
                     queue_string(d, ansi);
                     queue_write(d, "\n", 1);
@@ -250,21 +242,13 @@ void raw_notify_internal(dbref player, char *msg, int color)
                     queue_string(d, html);
                     queue_write(d, "\n", 1);
                 }
-#else
-                queue_string(d, ansi);
-                queue_write(d, "\n", 1);
-#endif
-#ifdef USE_BLACKLIST
             }
-#endif
         }
     }
 
-#ifdef PUEBLO_CLIENT
     if (html) {
         SMART_FREE(html);
     }
-#endif
 }
 
 /* Public notification functions (maintain API compatibility) */

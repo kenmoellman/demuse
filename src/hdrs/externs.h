@@ -65,9 +65,7 @@ typedef long dbref;
 #define signal_type int
 #endif
 
-#ifdef USE_UNIV
 #include "universe.h"
-#endif
 
 /* Macros for checking valid dbrefs */
 #ifndef ValidObject

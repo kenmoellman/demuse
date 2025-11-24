@@ -207,7 +207,6 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
       continue;
     }
 
-#ifdef USE_BLACKLIST
     /* Check blacklist - both players must have each other blacklisted */
     if (player > 0) {
       char *p_blacklist = atr_get(real_owner(d->player), A_BLACKLIST);
@@ -220,7 +219,6 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
         }
       }
     }
-#endif
 
     /* Add puppet indicator if needed */
     if ((db[d->player].flags & PUPPET) && (player > 0) && (player != d->player)) {
@@ -292,12 +290,10 @@ static void com_who(dbref player, const char *channel)
         is_on_channel_only(d->player, channel) >= 0) {
 
       if ((could_doit(real_owner(d->player), real_owner(player), A_LHIDE))
-#ifdef USE_BLACKLIST
           && (((!strlen(atr_get(real_owner(d->player), A_BLACKLIST))) &&
                (!strlen(atr_get(real_owner(player), A_BLACKLIST)))) ||
               (!((could_doit(real_owner(player), real_owner(d->player), A_BLACKLIST)) &&
                  (could_doit(real_owner(d->player), real_owner(player), A_BLACKLIST)))))
-#endif
          ) {
         notify(player, tprintf("%s is on channel %s.",
                               unparse_object(player, d->player), channel));
@@ -393,17 +389,15 @@ void do_com(dbref player, char *arg1, char *arg2)
   }
 
   /* Permission checks */
-#ifdef ALLOW_COM_NP
   if (Typeof(player) == TYPE_CHANNEL) {
     notify(player, "+channel: Channels can't talk on channels. Imagine the Spam.");
     return;
   }
-#else
-  if (Typeof(player) != TYPE_PLAYER) {
-    notify(player, "+channel: Non-players cannot talk on channels. Sorry.");
+
+  if (Typeof(player) != TYPE_PLAYER && !power(player, POW_COM_TALK)) {
+    notify(player, "+channel: You don't have permission to talk on channels.");
     return;
   }
-#endif
 
   if (is_banned(player, nocolor) >= 0) {
     notify(player, "+channel: You have been banned from that channel.");
@@ -1274,17 +1268,15 @@ void do_channel_join(dbref player, char *arg2)
     return;
   }
 
-#ifdef ALLOW_COM_NP
   if (Typeof(player) == TYPE_CHANNEL) {
     notify(player, "+channel: Channels can't talk on channels. Imagine the Spam.");
     return;
   }
-#else
-  if (Typeof(player) != TYPE_PLAYER) {
-    notify(player, "+channel: Non-players cannot be on channels. Sorry.");
+
+  if (Typeof(player) != TYPE_PLAYER && !power(player, POW_COM_TALK)) {
+    notify(player, "+channel: You don't have permission to be on channels.");
     return;
   }
-#endif
 
   /* Parse alias and password */
   alias = strchr(arg2, ':');

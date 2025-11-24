@@ -35,10 +35,7 @@
 
 /* Use \033 instead of \e for ISO C compliance */
 static const char *normal_ansi = "\033[0m";
-
-#ifdef PUEBLO_CLIENT
 static const char *normal_pueblo = "<font fgcolor=\"FFFFFF\" bgcolor=\"000000\">";
-#endif
 
 /* ===================================================================
  * Forward Declarations
@@ -50,12 +47,9 @@ static int is_background(int num);
 static void set_ca(int *attribs, int num);
 static char *make_num_string(int fore, int back, int ca);
 static char *color_escape(const char *s);
-
-#ifdef PUEBLO_CLIENT
 static char *make_font_string(const char *fore, const char *back, int ca);
 static char *color_pueblo(const char *s);
 static const char *pueblo_color(int num);
-#endif
 
 /* ===================================================================
  * Utility Functions
@@ -303,7 +297,6 @@ char *colorize(const char *str, int strip, int pueblo)
         buf2[sizeof(buf2) - 1] = '\0';
 
         if (!strip) {
-#ifdef PUEBLO_CLIENT
             char *markup;
             if (!pueblo) {
                 markup = color_escape(s);
@@ -312,21 +305,14 @@ char *colorize(const char *str, int strip, int pueblo)
             }
             strncat(buf2, markup, sizeof(buf2) - strlen(buf2) - 1);
             SMART_FREE(markup);
-            
+
             strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
-            
+
             if (!pueblo) {
                 strncat(buf2, normal_ansi, sizeof(buf2) - strlen(buf2) - 1);
             } else {
                 strncat(buf2, normal_pueblo, sizeof(buf2) - strlen(buf2) - 1);
             }
-#else
-            char *escape = color_escape(s);
-            strncat(buf2, escape, sizeof(buf2) - strlen(buf2) - 1);
-            SMART_FREE(escape); 
-            strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
-            strncat(buf2, normal_ansi, sizeof(buf2) - strlen(buf2) - 1);
-#endif
         } else {
             /* Just append the text without color codes */
             strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
@@ -451,8 +437,6 @@ char *parse_color_nobeep(char *str, int pueblo)
 /* ===================================================================
  * Pueblo Client Support
  * =================================================================== */
-
-#ifdef PUEBLO_CLIENT
 
 /**
  * Convert HTML special characters for Pueblo
@@ -660,5 +644,3 @@ static char *color_pueblo(const char *s)
 
     return stralloc(escape);
 }
-
-#endif /* PUEBLO_CLIENT */

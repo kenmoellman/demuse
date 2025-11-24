@@ -377,10 +377,8 @@ static void shovechars(int port)
         time(&now);
         last_slice = update_quotas(last_slice, current_time);
 
-#ifdef RANDOM_WELCOME
-        sprintf(welcome_msg_file, "msgs/welcome%03d.txt", 
-                rand() % num_welcome_msgs);
-#endif
+        sprintf(welcome_msg_file, "msgs/welcome%03d.txt",
+                rand() % NUM_WELCOME_MESSAGES);
 
         clear_stack();
         process_commands();

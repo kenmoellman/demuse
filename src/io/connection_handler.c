@@ -30,10 +30,8 @@ void welcome_user(struct descriptor_data *d)
         return;
     }
 
-#ifdef PUEBLO_CLIENT
     queue_string(d, "This world is Pueblo 1.0 Enhanced\n");
-#endif
-    
+
     connect_message(d, welcome_msg_file, 0);
 }
 
@@ -358,13 +356,11 @@ void check_connect(struct descriptor_data *d, char *msg)
         return;
     }
 
-#ifdef PUEBLO_CLIENT
     /* Handle Pueblo client identification */
     if (!strncmp(command, "PUEBLOCLIENT", 12)) {
         d->pueblo = 2;
         return;
     }
-#endif
 
     /* Unknown command - show welcome screen if not Pueblo */
     if (d->pueblo == 0) {

@@ -1006,18 +1006,12 @@ static void cmd_giveto(dbref player, char *arg1, char *arg2)
  * cmd_guniverse - Wrapper for @guniverse command
  *
  * Core: do_guniverse(player, arg1)
- * Note: Only available if USE_UNIV is defined
+ * Note: Universe commands are always available
  */
 static void cmd_guniverse(dbref player, char *arg1, char *arg2)
 {
-#ifdef USE_UNIV
     (void)arg2;
     do_guniverse(player, arg1);
-#else
-    (void)arg1;
-    (void)arg2;
-    notify(player, "Universe features are not enabled.");
-#endif
 }
 
 /**
@@ -1667,69 +1661,45 @@ static void cmd_tr_as(dbref player, char *arg1, char *arg2)
  * cmd_uconfig - Wrapper for @uconfig command
  *
  * Core: do_uconfig(player, arg1, arg2)
- * Note: Only available if USE_UNIV is defined
+ * Note: Universe commands are always available
  */
 static void cmd_uconfig(dbref player, char *arg1, char *arg2)
 {
-#ifdef USE_UNIV
     do_uconfig(player, arg1, arg2);
-#else
-    (void)arg1;
-    (void)arg2;
-    notify(player, "Universe features are not enabled.");
-#endif
 }
 
 /**
  * cmd_ucreate - Wrapper for @ucreate command
  *
  * Core: do_ucreate(player, arg1, (int)atol(arg2))
- * Note: Only available if USE_UNIV is defined, arg2 is converted to int
+ * Note: Universe commands are always available, arg2 is converted to int
  */
 static void cmd_ucreate(dbref player, char *arg1, char *arg2)
 {
-#ifdef USE_UNIV
     do_ucreate(player, arg1, (int)atol(arg2));
-#else
-    (void)arg1;
-    (void)arg2;
-    notify(player, "Universe features are not enabled.");
-#endif
 }
 
 /**
  * cmd_uinfo - Wrapper for @uinfo command
  *
  * Core: do_uinfo(player, arg1)
- * Note: Only available if USE_UNIV is defined
+ * Note: Universe commands are always available
  */
 static void cmd_uinfo(dbref player, char *arg1, char *arg2)
 {
-#ifdef USE_UNIV
     (void)arg2;
     do_uinfo(player, arg1);
-#else
-    (void)arg1;
-    (void)arg2;
-    notify(player, "Universe features are not enabled.");
-#endif
 }
 
 /**
  * cmd_ulink - Wrapper for @ulink command
  *
  * Core: do_ulink(player, arg1, arg2)
- * Note: Only available if USE_UNIV is defined
+ * Note: Universe commands are always available
  */
 static void cmd_ulink(dbref player, char *arg1, char *arg2)
 {
-#ifdef USE_UNIV
     do_ulink(player, arg1, arg2);
-#else
-    (void)arg1;
-    (void)arg2;
-    notify(player, "Universe features are not enabled.");
-#endif
 }
 
 /**
@@ -1770,18 +1740,12 @@ static void cmd_unhide(dbref player, char *arg1, char *arg2)
  * cmd_unulink - Wrapper for @unulink command
  *
  * Core: do_unulink(player, arg1)
- * Note: Only available if USE_UNIV is defined
+ * Note: Universe commands are always available
  */
 static void cmd_unulink(dbref player, char *arg1, char *arg2)
 {
-#ifdef USE_UNIV
     (void)arg2;
     do_unulink(player, arg1);
-#else
-    (void)arg1;
-    (void)arg2;
-    notify(player, "Universe features are not enabled.");
-#endif
 }
 
 /**
@@ -2912,7 +2876,7 @@ int get_player_universe(dbref player)
     }
 
     /* TODO: In future, check:
-     * - db[player].universe field (if USE_UNIV enabled)
+     * - db[player].universe field (always available)
      * - A_UNIVERSE attribute
      * - Player's zone's universe
      * For now, everyone is in default universe
@@ -2940,7 +2904,7 @@ int set_player_universe(dbref player, int universe_id)
     }
 
     /* TODO: Implement universe assignment
-     * - Set db[player].universe (if USE_UNIV)
+     * - Set db[player].universe (always available)
      * - Set A_UNIVERSE attribute
      * For now, this is a no-op
      */
