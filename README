@@ -1,93 +1,9 @@
------------------------------------------------------------------------------
-dmMUSE README file
------------------------------------------------------------------------------
+deMUSE was created by Ken Moellman as a branch project of MUSE '97 (aka TinyMUSE 1.97) with the goal to create a MUSE server which would be more stable, secure and configurable, and less platform specific.   
 
-dmMUSE was created by Bobby Newmark (wm) as a branch project.  After leaving 
-the tm97 development team, the goal was to create a MUSE server which would 
-be more stable, secure and configurable, and less platform specific.   
+You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
 
-You can find the latest patches, sourcecode, etc, on the MU*Net website,
-http://www.mu-net.org/ via ftp (you can go directly to ftp.mu-net.org also).
+deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
 
-deMUSE was created in conjunction with specs given by shkoo for releasing 
-TinyMUSE variants.  These rules state that no one can release an offical
-version of TinyMUSE without explicit consent.  This version of MUSE was never
-intended to be a TinyMUSE release.  The code mods were made to support 
-DeMUSEcracy, an online government and social project.  We hope that you will
-find the server useful.
+This software come with no guarentee, and any wording that suggests such should be taken as bragging and not as official policy.
 
-deMUSE was developed under Slackware Linux 4.0. It should work at least under 
-other versions of Linux, and was tested for a short time with GLIBC2.
-
-You can contact me in the following ways (as of 01/01/2000)
-Bobby Newmark:  dm2k@mu-net.net
-Please send all bug reports, fixes, etc, to this address.
-
-This software come with no guarentee, and any wording that suggests such 
-should be taken as bragging and not as official policy.
-
-This code line has some very bad problems, because the base, the core of this
-code is ancient, and has been coded through time by multiple authors and has
-problems in efficiency, and possibly stability.  I've done my best to clean
-out the junk in the core, and to make the game more efficient, while also
-trying to make the game more stable.
-
-
------------------------------------------------------------------------------
-MUSE '97 README  -- PLEASE READ CAREFULLY.
------------------------------------------------------------------------------
-TinyMUSE '97 was not written by shkoo.  Do not bother shkoo with questions
-about TinyMUSE '97.
-
-TinyMUSE '97 was written with explicit consent and approval of shkoo.
-
-There are variants and versions of MUSE that have been developed past 
-TinyMUSE 1.8a4.  These versions and variants are NOT supported in any way
-by shkoo or the authors of TinyMUSE '97.
-
-The variants cannot be upgraded to TinyMUSE '97 as of yet.  TinyMUSE 1.8a4
-and lower can be easily upgraded.  We hope to write a db conversion tool for
-the base "version" of MUSE 1.9.  This, by the way, was not an official 
-TinyMUSE release.
-
-There are still many features being developed, and any features that may be
-excluded that you would like to see in the next version of the code, please 
-write to use and tell us.  If you've written a peice of code that's useful,
-we'd like to see it.  
-
-You can contact us in the following ways (as of 12/31/97)
-Bobby Newmark:  newmark@iglou.com
-draco: draco@musenet.org
-NetRunner: kotcher@cis.ohio-state.edu
-
-Please send all bug reports, bug fixes, and requests to these addresses.
-In addition, a mailing was was established for this purpose. It is currently
-down after the machine was hacked.  We should have the online soon, and provided
-you are a MUSE community person, you shall see us around, and newer versions
-will contain more information.
-
-TM '97
-
------------------------------------------------------------------------------
-  TinyMUSE (Tiny - Multi User Simulation Environment)
------------------------------------------------------------------------------
-
-This program was born from TinyMUSH, which was made from
-TinyMUD by Larry Foard(larry@belch.berkeley.edu). This program
-will run any database from old TinyMUD, TinyMUSH v1.5 or older,
-but will upgrade it to the new format.
-
-For information on installing this, look in doc/INSTALL. Other
-files in the doc directory may be helpful.
-
-TinyMUSE is available via anonymous ftp to mcmuse.mc.maricopa.edu
-in the directory pub/muse/server.
-
-You may want to subscribe to the tinymuse mailing list. Send mail
-to "tinymuse-request@mcmuse.mc.maricopa.edu" with the word
-"subscribe" in the body of the message.  It is strongly encouraged
-that you subscribe to this mailing list; bugfixes are posted.
-
--shkoo
-
-
+Most recently, the code has undergone significant overhaul. 
