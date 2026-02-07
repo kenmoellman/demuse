@@ -1,12 +1,16 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-deMUSE is a TinyMUSE-derived Multi-User Simulation Environment (MUSE) server, originally created by Bobby Newmark as a fork of TinyMUSE '97. This is a text-based MUD (Multi-User Dungeon) server written in C that allows multiple users to connect via telnet and interact in a virtual world.
+deMUSE is a TinyMUSE-derived Multi-User Simulation Environment (MUSE) server, originally created by Ken Moellman as a fork of TinyMUSE '97. This is a text-based MUD (Multi-User Dungeon) server written in C that allows multiple users to connect via telnet and interact in a virtual world. The branch has the goal of creating a MUSE server which would be more stable, secure and configurable, and less platform specific. It borrows code from other platforms such as TinyMAZE. The codebase has been recently modernized (2025) with significant safety improvements, ANSI C compliance, and modern memory management while maintaining compatibility with the original MUSE database format.
 
-The codebase has been recently modernized (2025) with significant safety improvements, ANSI C compliance, and modern memory management while maintaining compatibility with the original MUSE database format.
+deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
+
+Future planned improvements include moving the database from flat file to MySQL/MariaDB.
+
+You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
+
+
+This software come with no guarentee, and you use it at your own risk.
+
 
 ## Build Commands
 
@@ -168,17 +172,13 @@ The codebase has been significantly modernized with:
 - We should use SAFE_MALLOC and SMART_FREE to malloc and free. 
 - Better safety - Use snprintf() and strncpy() instead of sprintf()/strcpy(), etc 
 - Extensive validation - GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database
-- Better organization - Section headers with === markers 
 - Better documentation - More detailed explanations of logic and functions, and better inline comments  
 - Improved header - Comprehensive modernization notes 
 - Explain security vulnerabilities clearly when unable to be rectified
 
-**Things not to do**
-- Change existing function input and output parameters 
-- Add functions to that are already defined in other places in the code (don't duplicate functions)
 
 **Converting int to long**
-- In the past dbref was defined as an int, and then later it was changed to be a long, but there are still places in the code where this isn't correctly implemented.
+- In the past dbref was defined as an int, and then later it was changed to be a long, but there were still places in the code where this wasn't correctly implemented.
 - Need to utilize recently-created macro DBREF_FMT defined in config.h to replace instances where variables of type dbref are being placed into a string, instead of having a hardcoded %d or %ld 
 - Need to watch for and fix places where variables were type int that are getting value of strlen which is now a size_t 
 
@@ -229,7 +229,7 @@ The muse/ Makefile uses strict compilation:
 
 ### Database Format
 
-The database is a flat-file format that must remain compatible with:
+The database is a flat-file format that remains compatible with:
 - TinyMUSE 1.8a4 and earlier
 - TinyMUSE '97
 - Earlier deMUSE versions
@@ -243,7 +243,7 @@ From the TODO file, known unresolved issues include:
 - Prefix/suffix recursion bugs with high idle times
 - Function memory leaks (being addressed)
 - @booting yourself has bugs
-- Some MAZE combat features not implemented (maze.c)
+- Most MAZE combat features not implemented (maze.c)
 - Universe code incomplete
 
 ## Historical Context
