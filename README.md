@@ -166,16 +166,14 @@ The codebase has been significantly modernized with:
 ## Development Notes
 
 **Things to do**
-- convert to using ANSI C instead of K&R C
-- Modernize the code to replace deprecated functions and improve logic 
-- Look for potential buffer overruns and prevent them 
-- We should use SAFE_MALLOC and SMART_FREE to malloc and free. 
-- Better safety - Use snprintf() and strncpy() instead of sprintf()/strcpy(), etc 
-- Extensive validation - GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database
-- Better documentation - More detailed explanations of logic and functions, and better inline comments  
-- Improved header - Comprehensive modernization notes 
-- Explain security vulnerabilities clearly when unable to be rectified
-
+- convert to using ANSI C instead of K&R C - should be completed, but need to verify.
+- Modernize the code to replace deprecated functions and improve logic - always in progress
+- Look for potential buffer overruns and prevent them - always in progress
+- We should use SAFE_MALLOC and SMART_FREE to malloc and free - should be completed, but need to verify.
+- Better safety - Use snprintf() and strncpy() instead of sprintf()/strcpy(), etc - should be completed, but need to verify.
+- Extensive validation - GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database - should be completed, but need to verify.
+- Better documentation - More detailed explanations of logic and functions, and better inline comments  - always in progress
+- Improved header - Comprehensive modernization notes  - in progress
 
 **Converting int to long**
 - In the past dbref was defined as an int, and then later it was changed to be a long, but there were still places in the code where this wasn't correctly implemented.
