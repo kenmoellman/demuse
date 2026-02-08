@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "externs.h"
 
-void main()
+int main(void)
 {
   FILE *f;
   int j;

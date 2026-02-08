@@ -21,34 +21,21 @@
 #define  DEF_MODE	0644
 
 #define  MUSE_PROGRAM	"../bin/netmuse"
-#ifdef __STDC__
 #include <stdlib.h>
-void main(int, char **);
+int main(int, char **);
 void wd_init_signals(void);
 void shutdown_wd(void);
 void wd_init_io(void);
 void restart_loop(char **);
 void analyze(int, int);
 void wd_sig_handler(int);
-
-#else
-void main();
-void wd_init_signals();
-void shutdown_wd();
-void wd_init_io();
-void restart_loop();
-void analyze();
-void wd_sig_handler();
-
-#endif
 int muse_pid;
 
 /* void remove_temp_dbs(void); */
 
-void main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
+  (void)argc;  /* unused */
   switch (fork())
   {
   case 0:
@@ -59,7 +46,7 @@ char *argv[];
     break;
   default:
     exit(0);
-    return;
+    return 0;
   }
   wd_init_io();
   printf("------------------------------------\n");
@@ -72,14 +59,14 @@ char *argv[];
   exit(0);
 }
 
-void wd_init_signals()
+void wd_init_signals(void)
 {
   signal(SIGHUP, wd_sig_handler);
   signal(SIGTERM, wd_sig_handler);
   signal(SIGUSR1, wd_sig_handler);
 }
 
-void wd_init_io()
+void wd_init_io(void)
 {
 #ifndef fileno
   /* sometimes stdio.h #defines this */
@@ -122,8 +109,7 @@ void wd_init_io()
   close(fd);
 }
 
-void restart_loop(argv)
-char *argv[];
+void restart_loop(char *argv[])
 {
   int pid, status;
   struct stat statbuf;
@@ -204,9 +190,7 @@ char *argv[];
   }
 }
 
-void analyze(pid, status)
-int pid;
-int status;
+void analyze(int pid, int status)
 {
   int sig;
 
@@ -237,20 +221,18 @@ int status;
   }
 }
 
-void wd_sig_handler(sig)
-int sig;
+void wd_sig_handler(int sig)
 {
   printf("Recieved signal %d.\n", sig);
   shutdown_wd();
 }
 
-void shutdown_wd()
+void shutdown_wd(void)
 {
   printf("Shutting down watchdog program...\n");
   exit(0);
 }
-void setlinebuf(f)
-FILE *f;
+void setlinebuf(FILE *f)
 {
   setbuf(f, NULL);
 }

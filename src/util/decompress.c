@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "externs.h"
 
-main()
+int main(void)
 {
   char buf[16384];
 
