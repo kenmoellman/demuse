@@ -21,3 +21,5 @@ src/muse/netmuse
 src/util/mkindx
 src/util/mycompress
 src/util/wd
+CLAUDE.md
+.claude/
