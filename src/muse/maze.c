@@ -104,13 +104,16 @@ char *comma(char *num)
   size_t num_len;
 
   if (!num || !*num) {
-    return stralloc("");
+    buf[0] = '\0';
+    return buf;
   }
 
   /* Check for buffer overflow */
   num_len = strlen(num);
   if (num_len >= COMMA_BUF_SIZE - 100) {
-    return stralloc("NUMBER TOO LONG");
+    strncpy(buf, "NUMBER TOO LONG", COMMA_BUF_SIZE - 1);
+    buf[COMMA_BUF_SIZE - 1] = '\0';
+    return buf;
   }
 
   p = num;
@@ -210,7 +213,9 @@ char *my_center(char *str, int width)
   }
 
   if (width > MAX_CENTER_WIDTH || width < 0) {
-    return stralloc("WIDTH OUT OF RANGE");
+    strncpy(buffer, "WIDTH OUT OF RANGE", sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+    return buffer;
   }
   
   /* Calculate visible length (excluding ANSI codes) */
@@ -270,14 +275,18 @@ char *my_string(char *str, int num)
   }
 
   if (num > MAX_STRING_REPEAT || num < 0) {
-    return stralloc("NUM OUT OF RANGE");
+    strncpy(buffer, "NUM OUT OF RANGE", sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+    return buffer;
   }
-  
+
   str_len = strlen(str);
-  
+
   /* Check if result would overflow buffer */
   if (str_len * num >= sizeof(buffer)) {
-    return stralloc("RESULT TOO LONG");
+    strncpy(buffer, "RESULT TOO LONG", sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+    return buffer;
   }
 
   for (i = 0; i < num; i++) { 
@@ -416,12 +425,16 @@ char *poss(dbref thing)
   size_t name_len;
   
   if (!GoodObject(thing)) {
-    return stralloc("*INVALID*'s");
+    strncpy(buf, "*INVALID*'s", sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+    return buf;
   }
-  
+
   p = db[thing].name;
   if (!p) {
-    return stralloc("*INVALID*'s");
+    strncpy(buf, "*INVALID*'s", sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+    return buf;
   }
   
   name_len = strlen(p);
