@@ -50,26 +50,9 @@
 /* maximum number of aliases each user may have. */
 #define MAX_ALIASES 3
 
-/* Send information to a RWHO server. you need to contact a RWHO server
- * administrator to do this. */
-#undef USE_RWHO
-/* Retrieve information from a RWHO server */
-#undef USER_RWHO
-
-#if defined(USER_RWHO) && !defined(USER_RWHO)
-#define RWHO_SERVER "139.78.10.3"
-#endif
-
-#ifdef USE_RWHO
-#define RWHO_SERVER "192.5.214.1" /* the RWHO server to send updates to */
-#define RWHO_MUSE_NAME "Unnamed" /* the shortened name of this muse, for
-				 * constructing unique player id's. */
-#define RWHO_PASSWORD "<password>" /* The password to get into the RWHO
-				  * server */
-#define RWHO_INTERVAL 200	/* how long between updating the RWHO
-				 * server with the list of connected
-				 * people. */
-#endif
+/* RWHO (Remote WHO) system removed - servers no longer exist.
+ * Previously allowed listing connected users across MUD servers.
+ * See git history for original clilib.c and rwho.c if needed. */
 
 /* If you wish people to create characters that have the same permissions
  * as they do, define this */

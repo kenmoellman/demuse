@@ -554,7 +554,7 @@ void outgoing_setupfd(dbref player, int fd)
     d->raw_input_at = NULL;
     d->quota = command_burst_size;
     d->last_time = 0;
-    strcpy(d->addr, "RWHO");
+    strcpy(d->addr, "UNUSED");  /* Was "RWHO" - RWHO system removed */
 
     if (descriptor_list) {
         descriptor_list->prev = &d->next;
