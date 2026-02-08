@@ -216,11 +216,20 @@ mdbref grab_free_mail_slot(void)
     
     /* Expand database if needed */
     if (++mdb_top >= mdb_alloc) {
+        long old_alloc = mdb_alloc;
+        MDB_ENTRY *new_mdb;
+
         mdb_alloc *= 2;
-        mdb = realloc(mdb, sizeof(MDB_ENTRY) * mdb_alloc);
-        if (!mdb) {
+        SAFE_MALLOC(new_mdb, MDB_ENTRY, mdb_alloc);
+        if (!new_mdb) {
             panic("Failed to expand message database");
         }
+
+        memcpy(new_mdb, mdb, sizeof(MDB_ENTRY) * old_alloc);
+        memset(new_mdb + old_alloc, 0,
+               sizeof(MDB_ENTRY) * (mdb_alloc - old_alloc));
+        SMART_FREE(mdb);
+        mdb = new_mdb;
     }
     
     mdb[mdb_top - 1].message = NULL;
@@ -917,11 +926,11 @@ void info_mail(dbref player)
     notify(player, "");
     
     notify(player, "|C!+Memory Usage:|");
-    notify(player, tprintf("  Structure memory:    %ld bytes (%.2f KB)", 
+    notify(player, tprintf("  Structure memory:    %zu bytes (%.2f KB)",
                           total_memory, total_memory / 1024.0));
-    notify(player, tprintf("  Message text:        %ld bytes (%.2f KB)", 
+    notify(player, tprintf("  Message text:        %zu bytes (%.2f KB)",
                           message_text_size, message_text_size / 1024.0));
-    notify(player, tprintf("  Total memory:        %ld bytes (%.2f KB)", 
+    notify(player, tprintf("  Total memory:        %zu bytes (%.2f KB)",
                           total_memory + message_text_size,
                           (total_memory + message_text_size) / 1024.0));
     notify(player, "");
