@@ -1188,11 +1188,15 @@ void get_univ_info(FILE *f, struct object *o)
                 case UF_STRING:
                     {
                         size_t len = strlen(i_str) + 1;
-                        o->ua_string[attr_index] = realloc(
-                            o->ua_string[attr_index], len * sizeof(char));
-                        if (o->ua_string[attr_index]) {
-                            strncpy(o->ua_string[attr_index], i_str, len);
-                            o->ua_string[attr_index][len - 1] = '\0';
+                        char *new_str;
+                        SAFE_MALLOC(new_str, char, len);
+                        if (new_str) {
+                            strncpy(new_str, i_str, len);
+                            new_str[len - 1] = '\0';
+                            if (o->ua_string[attr_index]) {
+                                SMART_FREE(o->ua_string[attr_index]);
+                            }
+                            o->ua_string[attr_index] = new_str;
                         }
                     }
                     break;
@@ -1894,20 +1898,25 @@ static void db_grow(dbref newtop)
         /* Grow database if needed */
         if (newtop > db_size) {
             /* Double size until large enough */
+            dbref old_size = db_size;
             while (newtop > db_size)
                 db_size *= 2;
-            
-            newdb = realloc(db - 5, (5 + db_size) * sizeof(struct object));
-            
-            if (!newdb) {
+
+            struct object *temp;
+            struct object *old_base = db - 5;
+            SAFE_MALLOC(temp, struct object, db_size + 5);
+
+            if (!temp) {
                 log_error("PANIC: Cannot allocate memory for database growth");
                 abort();
             }
-            
-            newdb += 5;
-            memset(newdb + db_top, 0, 
+
+            newdb = temp + 5;
+            memcpy(temp, old_base, (5 + old_size) * sizeof(struct object));
+            memset(newdb + db_top, 0,
                   sizeof(struct object) * (db_size - db_top));
-            
+            SMART_FREE(old_base);
+
             db = newdb;
         }
         

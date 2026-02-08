@@ -384,22 +384,33 @@ void add_more_paste(dbref player, char *str)
                 notify(player, "System error: out of memory.");
                 return;
             }
-            p->paste->str = stralloc("");
+            SAFE_MALLOC(p->paste->str, char, 1);
+            if (!p->paste->str) {
+                log_error("Out of memory in add_more_paste!");
+                notify(player, "System error: out of memory.");
+                SMART_FREE(p->paste);
+                p->paste = NULL;
+                return;
+            }
+            p->paste->str[0] = '\0';
             p->paste->next = NULL;
         }
-        
+
         /* Calculate new length */
         len = strlen(p->paste->str) + strlen(str) + 1;
-        
-        /* Reallocate and append */
-        p->paste->str = (char *)realloc(p->paste->str, len);
-        if (!p->paste->str) {
+
+        /* Allocate new buffer, copy old + new, free old */
+        char *new_str;
+        SAFE_MALLOC(new_str, char, len);
+        if (!new_str) {
             log_error("Out of memory in add_more_paste!");
             notify(player, "System error: out of memory.");
             return;
         }
-        
-        strcat(p->paste->str, str);
+
+        snprintf(new_str, len, "%s%s", p->paste->str, str);
+        SMART_FREE(p->paste->str);
+        p->paste->str = new_str;
         return;
     }
     
@@ -412,13 +423,16 @@ void add_more_paste(dbref player, char *str)
         return;
     }
     
-    new_line->str = stralloc(str);
+    len = strlen(str) + 1;
+    SAFE_MALLOC(new_line->str, char, len);
     if (!new_line->str) {
         SMART_FREE(new_line);
         log_error("Out of memory in add_more_paste!");
         notify(player, "System error: out of memory.");
         return;
     }
+    strncpy(new_line->str, str, len);
+    new_line->str[len - 1] = '\0';
     
     new_line->next = NULL;
     
@@ -540,7 +554,7 @@ void do_pastestats(dbref player, char *arg)
     PASTEY *line;
     int paste_num = 0;
     int total_pastes = 0;
-    int size;
+    size_t size;
     int requested;
     char target_desc[256];
     
@@ -585,7 +599,7 @@ void do_pastestats(dbref player, char *arg)
                 }
             }
             
-            notify(player, tprintf("%d: %s -> %s: %d bytes",
+            notify(player, tprintf("%d: %s -> %s: %zu bytes",
                                   paste_num, db[p->player].cname, target_desc, size));
         }
         return;
