@@ -822,12 +822,7 @@ void do_search(dbref player, char *arg1, char *arg3)
     notify(player, "Nothing found.");
 }
 
-static object_flag_type convert_flags(player, is_wizard, s, p_mask, p_type)
-dbref player;
-int is_wizard;
-char *s;
-object_flag_type *p_mask;
-object_flag_type *p_type;
+static object_flag_type convert_flags(dbref player, int is_wizard, char *s, object_flag_type *p_mask, object_flag_type *p_type)
 {
   static struct
   {
@@ -1054,9 +1049,7 @@ object_flag_type *p_type;
   return 1;
 }
 
-void do_uinfo(player, arg1)
-dbref player;
-char *arg1;
+void do_uinfo(dbref player, char *arg1)
 {
   dbref thing;
   int x;
@@ -1107,9 +1100,7 @@ char *arg1;
   notify(player, "|R++||Y+---||R+>|");
 }
 
-void do_uconfig(player, arg1, arg2)
-dbref player;
-char *arg1, *arg2;
+void do_uconfig(dbref player, char *arg1, char *arg2)
 {
   char *i;
   dbref thing;
@@ -1180,11 +1171,7 @@ char *arg1, *arg2;
     notify(player, "Unknown setting.");
 }
 
-/* Ansi: void do_teleport(dbref player, char *arg1, char *arg2); */
-void do_teleport(player, arg1, arg2)
-dbref player;
-char *arg1;
-char *arg2;
+void do_teleport(dbref player, char *arg1, char *arg2)
 {
   long moves;
   dbref victim;
@@ -1395,10 +1382,7 @@ char *arg2;
 
 /* Note: special match, link_ok objects are considered
    controlled for this purpose */
-dbref match_controlled(player, name, cutoff_level)
-dbref player;
-char *name;
-int cutoff_level;
+dbref match_controlled(dbref player, char *name, int cutoff_level)
 {
   dbref match;
 
@@ -1428,10 +1412,7 @@ int cutoff_level;
  * @param cutoff_level Power level required to control the object
  * @return The matched object or NOTHING
  */
-dbref match_controlled_allow_deleted(player, name, cutoff_level)
-dbref player;
-char *name;
-int cutoff_level;
+dbref match_controlled_allow_deleted(dbref player, char *name, int cutoff_level)
 {
   dbref match;
 
@@ -1451,11 +1432,7 @@ int cutoff_level;
   }
 }
 
-/* Ansi: void do_force(dbref player,char *what,char *command); */
-void do_force(player, what, command)
-dbref player;
-char *what;
-char *command;
+void do_force(dbref player, char *what, char *command)
 {
   dbref victim;
 
@@ -1483,9 +1460,7 @@ char *command;
   parse_que(victim, command, player);
 }
 
-int try_force(player, command)
-dbref player;
-char *command;
+int try_force(dbref player, char *command)
 {
   char buff[1024];
   char *s;
@@ -1510,10 +1485,7 @@ char *command;
     return (0);
 }
 
-/* Ansi: void do_pstats(dbref player, char *name); */
-void do_pstats(player, name)
-dbref player;
-char *name;
+void do_pstats(dbref player, char *name)
 {
   dbref owner;
   long i, total;
@@ -1540,12 +1512,7 @@ char *name;
   for (i = 1; i < NUM_CLASSES; i++)
     notify(player, tprintf("%9ld %ss", pla[i], class_to_name(i)));
 }
-/* Ansi: void calc_stats(dbref owner,int *total,int *players,int count[NUM_OBJ_TYPES]); */
-void calc_stats(owner, total, obj, pla)
-dbref owner;
-register long *total;
-long obj[NUM_OBJ_TYPES];
-long pla[NUM_CLASSES];
+void calc_stats(dbref owner, long *total, long obj[NUM_OBJ_TYPES], long pla[NUM_CLASSES])
 {
   int i;
   dbref thing;
@@ -1567,9 +1534,7 @@ long pla[NUM_CLASSES];
 	++*total;
       }
 }
-/* Ansi: int owns_stuff(dbref player); */
-int owns_stuff(player)
-dbref player;
+int owns_stuff(dbref player)
 {
   dbref i;
   int matches = 0;
@@ -1581,11 +1546,7 @@ dbref player;
   }
   return matches;
 }
-/* Ansi: void do_wipeout(dbref player,char *arg1,char *arg3); */
-void do_wipeout(player, arg1, arg3)
-dbref player;
-char *arg1;
-char *arg3;
+void do_wipeout(dbref player, char *arg1, char *arg3)
 {
   char *arg2;
   int type;
@@ -1690,11 +1651,7 @@ char *arg3;
     break;
   }
 }
-/* Ansi: void do_chownall(dbref player,char *arg1,char *arg2); */
-void do_chownall(player, arg1, arg2)
-dbref player;
-char *arg1;
-char *arg2;
+void do_chownall(dbref player, char *arg1, char *arg2)
 {
   dbref playerA;
   dbref playerB;
@@ -1736,10 +1693,7 @@ char *arg2;
 			unparse_object_a(playerB, playerB)));
   notify(player, "Owner changed.");
 }
-/* Ansi: void do_poor(dbref player,char *arg1); */
-void do_poor(player, arg1)
-dbref player;
-char *arg1;
+void do_poor(dbref player, char *arg1)
 {
   dbref a;
   long int amt = atol(arg1);
@@ -1750,10 +1704,7 @@ char *arg1;
     if (Typeof(a) == TYPE_PLAYER)
       s_Pennies(a, amt);
 }
-/* Ansi: void do_allquota(dbref player,char *arg1); */
-void do_allquota(player, arg1)
-dbref player;
-char *arg1;
+void do_allquota(dbref player, char *arg1)
 {
   long count, limit, owned;
   char buf[20];
@@ -1793,11 +1744,7 @@ char *arg1;
   }
   notify(player, tprintf("done (%ld players processed).", count));
 }
-/* Ansi: void do_newpassword(dbref player, char *name, char *password); */
-void do_newpassword(player, name, password)
-dbref player;
-char *name;
-char *password;
+void do_newpassword(dbref player, char *name, char *password)
 {
   dbref victim;
 
@@ -1837,11 +1784,7 @@ char *password;
 			   db[player].name));
   }
 }
-/* Ansi: void do_boot(dbref player,char *name); */
-void do_boot(player, name, reason)
-dbref player;
-char *name;
-char *reason;
+void do_boot(dbref player, char *name, char *reason)
 {
   dbref victim;
 
@@ -1897,9 +1840,7 @@ char *reason;
   boot_off(victim);
 }
 
-void do_cboot(player, arg1)
-dbref player;
-char *arg1;
+void do_cboot(dbref player, char *arg1)
 {
   struct descriptor_data *d;
   long toboot;
@@ -1966,10 +1907,7 @@ char *arg1;
   }
 }
 
-/* Ansi: void do_join(dbref player,char *arg1); */
-void do_join(player, arg1)
-dbref player;
-char *arg1;
+void do_join(dbref player, char *arg1)
 {
   dbref victim;
   dbref to;
@@ -2000,10 +1938,7 @@ char *arg1;
   moveto(victim, db[to].location);
 }
 
-/* Ansi: void do_summon(dbref player, char *arg1); */
-void do_summon(player, arg1)
-dbref player;
-char *arg1;
+void do_summon(dbref player, char *arg1)
 {
   dbref victim;
   dbref dest;
@@ -2033,10 +1968,7 @@ char *arg1;
   moveto(victim, dest);
 }
 
-void do_swap(player, arg1, arg2)
-dbref player;
-char *arg1;
-char *arg2;
+void do_swap(dbref player, char *arg1, char *arg2)
 {
   dbref thing1, thing2;
   struct object swapbuf;
@@ -2132,11 +2064,7 @@ char *arg2;
        unparse_object_a(player, thing1), unparse_object_a(player, thing2)));
 }
 
-void do_su(player, arg1, arg2, cause)
-dbref player;
-char *arg1;
-char *arg2;
-dbref cause;
+void do_su(dbref player, char *arg1, char *arg2, dbref cause)
 {
   dbref thing;
   struct descriptor_data *d;
@@ -2254,9 +2182,7 @@ struct descriptor_data *find_least_idle(dbref player)
   return sd;
 }
 
-void do_fixquota(player, arg1)
-dbref player;
-char *arg1;
+void do_fixquota(dbref player, char *arg1)
 {
   dbref victim;
   long owned, i;
@@ -2296,9 +2222,7 @@ char *arg1;
   }
 }
 
-void do_nologins(player, arg1)
-dbref player;
-char *arg1;
+void do_nologins(dbref player, char *arg1)
 {
   if (!power(player, POW_SECURITY))
   {
@@ -2354,9 +2278,7 @@ char *arg1;
 			unparse_object(player, player), arg1));
 }
 
-void do_lockout(player, arg1)
-dbref player;
-char *arg1;
+void do_lockout(dbref player, char *arg1)
 {
   if (!power(player, POW_SECURITY))
   {
@@ -2401,10 +2323,7 @@ char *arg1;
 			unparse_object(player, player), arg1));
 }
 
-void do_plusmotd(player, arg1, arg2)
-dbref player;
-char *arg1;
-char *arg2;
+void do_plusmotd(dbref player, char *arg1, char *arg2)
 {
   char *message;
 

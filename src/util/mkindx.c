@@ -8,9 +8,7 @@
 
 char line[LINE_SIZE + 1];
 
-void main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
   long pos;
   int i, n, lineno, ntopics;
@@ -25,8 +23,8 @@ char *argv[];
     exit(1);
   }
 
-  sprintf(textfile, "%stext", argv[1]);
-  sprintf(indxfile, "%sindx", argv[1]);
+  snprintf(textfile, sizeof(textfile), "%stext", argv[1]);
+  snprintf(indxfile, sizeof(indxfile), "%sindx", argv[1]);
 
   if ((rfp = fopen(textfile, "r")) == NULL)
   {
