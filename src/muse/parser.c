@@ -524,6 +524,16 @@ static void cmd_password(dbref player, char *arg1, char *arg2)
 }
 
 /**
+ * cmd_newpassword - Wrapper for @newpassword command
+ *
+ * Core: do_newpassword(dbref player, char *arg1, char *arg2)
+ */
+static void cmd_newpassword(dbref player, char *arg1, char *arg2)
+{
+    do_newpassword(player, arg1, arg2);
+}
+
+/**
  * cmd_boot - Wrapper for @boot command
  *
  * Core: do_boot(dbref player, char *arg1, char *arg2)
@@ -2498,6 +2508,7 @@ static void register_demuse_commands(parser_t *parser)
          * ================================================================== */
         {"@lockout",    cmd_lockout,   6, 1, 0, 0, 0},  /* requires_direct, min=6 to avoid collision */
         {"@nologins",   cmd_nologins,  2, 1, 0, 0, 0},  /* requires_direct */
+        {"@newpassword", cmd_newpassword, 2, 1, 0, 0, 0}, /* requires_direct */
         {"@nuke",       cmd_nuke,      2, 1, 0, 0, 0},  /* requires_direct */
         {"@password",   cmd_password,  2, 1, 0, 0, 0},  /* requires_direct */
         {"@pcreate",    cmd_pcreate,   2, 0, 0, 0, 0},

@@ -272,6 +272,7 @@ struct descriptor_data *initializesock(int s, struct sockaddr_in *a,
   d->raw_input = 0;
   d->raw_input_at = 0;
   d->pueblo = 0;
+  d->emergency_bypass = 0;
   d->quota = command_burst_size;
   d->last_time = now;
   strncpy(d->addr, addr, 50);
