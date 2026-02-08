@@ -405,7 +405,7 @@ void do_link(dbref player, char *name, char *room_name)
 
         default:
             notify(player, "Internal error: weird object type.");
-            log_error(tprintf("PANIC weird object: Typeof(%ld) = %d",
+            log_error(tprintf("PANIC weird object: Typeof(%" DBREF_FMT ") = %d",
                              thing, Typeof(thing)));
             break;
     }
@@ -472,11 +472,11 @@ void do_dig(dbref player, char *name, char *argv[])
     db[room].zone = db[where].zone;
     db[room].flags |= (db[db[room].owner].flags & INHERIT_POWERS);
 
-    notify(player, tprintf("%s created with room number %ld.", name, room));
+    notify(player, tprintf("%s created with room number %" DBREF_FMT ".", name, room));
 
     /* Create optional entrance */
     if (argv[1] && *argv[1]) {
-        snprintf(nbuff, sizeof(nbuff), "%ld", room);
+        snprintf(nbuff, sizeof(nbuff), "%" DBREF_FMT, room);
         do_open(player, argv[1], nbuff, NOTHING);
     }
 
@@ -737,7 +737,7 @@ void do_clone(dbref player, char *arg1, char *arg2)
     PUSH_L(db[clone].parents, thing);
     PUSH_L(db[thing].children, clone);
 
-    notify(player, tprintf("%s cloned with number %ld.",
+    notify(player, tprintf("%s cloned with number %" DBREF_FMT ".",
                           unparse_object(player, thing), clone));
 
     /* Move to current location */
@@ -1636,14 +1636,14 @@ dbref free_get(void)
         return NOTHING;
     }
 
-    log_important(tprintf("First free is %ld", newobj));
+    log_important(tprintf("First free is %" DBREF_FMT, newobj));
     first_free = db[first_free].next;
 
     /* Make sure this object really should be in free list */
     if (NOT_OK(newobj)) {
         report();
-        log_error(tprintf("Object #%ld in free list is corrupt, repairing it", newobj));
-        log_error(tprintf("  location=%ld (should be NOTHING), owner=%ld (should be %ld)",
+        log_error(tprintf("Object #%" DBREF_FMT " in free list is corrupt, repairing it", newobj));
+        log_error(tprintf("  location=%" DBREF_FMT " (should be NOTHING), owner=%" DBREF_FMT " (should be %" DBREF_FMT ")",
                          db[newobj].location, db[newobj].owner, root));
         log_error(tprintf("  flags=0x%lx (should be 0x%lx)",
                          (unsigned long)db[newobj].flags,
@@ -1656,7 +1656,7 @@ dbref free_get(void)
         db[newobj].link = NOTHING;
         s_Pennies(newobj, 0L);
 
-        log_error(tprintf("Object #%ld repaired and ready for reuse", newobj));
+        log_error(tprintf("Object #%" DBREF_FMT " repaired and ready for reuse", newobj));
     }
 
     /* Free object name to prevent information leakage */
@@ -1780,7 +1780,7 @@ void do_empty(dbref thing)
             while (first != NOTHING && iteration_count < MAX_LOOP_ITERATIONS) {
                 iteration_count++;
                 if (!GoodObject(first)) {
-                    log_error(tprintf("Invalid exit #%ld in do_empty", first));
+                    log_error(tprintf("Invalid exit #%" DBREF_FMT " in do_empty", first));
                     break;
                 }
                 rest = db[first].next;
@@ -2165,7 +2165,7 @@ void fix_free_list(void)
             case TYPE_UNIVERSE:
             case TYPE_THING:
             case TYPE_ROOM:
-                log_error(tprintf("Dead exit in exit list (first) for room #%ld: %ld",
+                log_error(tprintf("Dead exit in exit list (first) for room #%" DBREF_FMT ": %" DBREF_FMT,
                                 thing, db[thing].exits));
                 report();
                 db[thing].exits = NOTHING;
@@ -2177,7 +2177,7 @@ void fix_free_list(void)
         CHECK_REF(db[thing].zone) {
             switch (Typeof(thing)) {
             case TYPE_ROOM:
-                log_error(tprintf("Zone for #%ld is #%ld! setting it to the global zone.",
+                log_error(tprintf("Zone for #%" DBREF_FMT " is #%" DBREF_FMT "! setting it to the global zone.",
                                 thing, db[thing].zone));
                 if (GoodObject(0)) {
                     db[thing].zone = db[0].zone;
@@ -2230,7 +2230,7 @@ void fix_free_list(void)
         /* --- Validate next pointer in contents/exit chains --- */
         if (((db[thing].next < 0) || (db[thing].next >= db_top)) &&
             (db[thing].next != NOTHING)) {
-            log_error(tprintf("Invalid next pointer from object %s(%ld)",
+            log_error(tprintf("Invalid next pointer from object %s(%" DBREF_FMT ")",
                             db[thing].name, thing));
             report();
             db[thing].next = NOTHING;
@@ -2241,7 +2241,7 @@ void fix_free_list(void)
             (db[thing].owner >= db_top) ||
             !GoodObject(db[thing].owner) ||
             Typeof(db[thing].owner) != TYPE_PLAYER) {
-            log_error(tprintf("Invalid object owner %s(%ld): %ld",
+            log_error(tprintf("Invalid object owner %s(%" DBREF_FMT "): %" DBREF_FMT,
                             db[thing].name, thing, db[thing].owner));
             report();
             db[thing].owner = root;
@@ -2451,14 +2451,14 @@ static void dbmark1(void)
              thing = db[thing].next, iteration_count++) {
 
             if (!ValidObject(thing)) {
-                log_error(tprintf("Invalid object #%ld in contents of #%ld, clearing contents",
+                log_error(tprintf("Invalid object #%" DBREF_FMT " in contents of #%" DBREF_FMT ", clearing contents",
                                 thing, loc));
                 db[loc].contents = NOTHING;
                 break;
             }
 
             if ((db[thing].location != loc) || (Typeof(thing) == TYPE_EXIT)) {
-                log_error(tprintf("Contents of object %ld corrupt at object %ld, cleared",
+                log_error(tprintf("Contents of object %" DBREF_FMT " corrupt at object %" DBREF_FMT ", cleared",
                                 loc, thing));
                 db[loc].contents = NOTHING;
                 break;
@@ -2468,7 +2468,7 @@ static void dbmark1(void)
         }
 
         if (iteration_count >= MAX_LOOP_ITERATIONS) {
-            log_error(tprintf("dbmark1: Infinite loop in contents of #%ld, cleared", loc));
+            log_error(tprintf("dbmark1: Infinite loop in contents of #%" DBREF_FMT ", cleared", loc));
             db[loc].contents = NOTHING;
         }
 
@@ -2479,14 +2479,14 @@ static void dbmark1(void)
              thing = db[thing].next, iteration_count++) {
 
             if (!GoodObject(thing)) {
-                log_error(tprintf("Invalid object #%ld in exits of #%ld, clearing exits",
+                log_error(tprintf("Invalid object #%" DBREF_FMT " in exits of #%" DBREF_FMT ", clearing exits",
                                 thing, loc));
                 db[loc].exits = NOTHING;
                 break;
             }
 
             if ((db[thing].location != loc) || (Typeof(thing) != TYPE_EXIT)) {
-                log_error(tprintf("Exits of object %ld corrupt at object %ld, cleared",
+                log_error(tprintf("Exits of object %" DBREF_FMT " corrupt at object %" DBREF_FMT ", cleared",
                                 loc, thing));
                 db[loc].exits = NOTHING;
                 break;
@@ -2496,7 +2496,7 @@ static void dbmark1(void)
         }
 
         if (iteration_count >= MAX_LOOP_ITERATIONS) {
-            log_error(tprintf("dbmark1: Infinite loop in exits of #%ld, cleared", loc));
+            log_error(tprintf("dbmark1: Infinite loop in exits of #%" DBREF_FMT ", cleared", loc));
             db[loc].exits = NOTHING;
         }
     }
@@ -2526,7 +2526,7 @@ static void dbunmark1(void)
                 Typeof(loc) == TYPE_UNIVERSE ||
                 Typeof(loc) == TYPE_THING) {
 
-                log_error(tprintf("DBCK: Moved object %ld", loc));
+                log_error(tprintf("DBCK: Moved object %" DBREF_FMT, loc));
 
                 if (db[loc].location > 0 &&
                     GoodObject(db[loc].location) &&
@@ -2536,7 +2536,7 @@ static void dbunmark1(void)
                     moveto(loc, 0);
                 }
             } else if (Typeof(loc) == TYPE_EXIT) {
-                log_error(tprintf("DBCK: moved exit %ld", loc));
+                log_error(tprintf("DBCK: moved exit %" DBREF_FMT, loc));
 
                 if (db[loc].location > 0 &&
                     GoodObject(db[loc].location) &&
@@ -2588,7 +2588,7 @@ static void calc_memstats(void)
     if (first_free != NOTHING && ValidObject(first_free)) {
         char tempbuf[128];
         snprintf(tempbuf, sizeof(tempbuf),
-                 " The first object in the free list is #%ld.", first_free);
+                 " The first object in the free list is #%" DBREF_FMT ".", first_free);
         strncat(newbuf, tempbuf, sizeof(newbuf) - strlen(newbuf) - 1);
     }
 
@@ -2820,14 +2820,14 @@ void do_incremental(void)
                 continue;
             }
 
-            snprintf(ccom, sizeof(ccom), "object #%ld\n", thing);
+            snprintf(ccom, sizeof(ccom), "object #%" DBREF_FMT "\n", thing);
 
             /* Safely copy object name */
             strncpy(buff, o->name ? o->name : "", sizeof(buff) - 1);
             buff[sizeof(buff) - 1] = '\0';
 
 #ifdef MEMORY_DEBUG_LOG
-            memdebug_log_ts("GC: About to SET object #%ld name=%s ptr=%p\n",
+            memdebug_log_ts("GC: About to SET object #%" DBREF_FMT " name=%s ptr=%p\n",
                           thing, o->name, (void*)o->name);
 #endif
             SET(o->name, buff);
@@ -2852,7 +2852,7 @@ void do_incremental(void)
                      i++, iteration_count++) {
 
                     if (!GoodObject(db[thing].parents[i])) {
-                        log_error(tprintf("Bad #%ld in parent list on #%ld.",
+                        log_error(tprintf("Bad #%" DBREF_FMT " in parent list on #%" DBREF_FMT ".",
                                         db[thing].parents[i], thing));
                         REMOVE_FIRST_L(db[thing].parents, db[thing].parents[i]);
                         goto again1;
@@ -2870,7 +2870,7 @@ void do_incremental(void)
                     }
 
                     if (j != -1) {
-                        log_error(tprintf("Wrong #%ld in parent list on #%ld.",
+                        log_error(tprintf("Wrong #%" DBREF_FMT " in parent list on #%" DBREF_FMT ".",
                                         db[thing].parents[i], thing));
                         REMOVE_FIRST_L(db[thing].parents, db[thing].parents[i]);
                         goto again1;
@@ -2890,7 +2890,7 @@ void do_incremental(void)
                      i++, iteration_count++) {
 
                     if (!GoodObject(db[thing].children[i])) {
-                        log_error(tprintf("Bad #%ld in children list on #%ld.",
+                        log_error(tprintf("Bad #%" DBREF_FMT " in children list on #%" DBREF_FMT ".",
                                         db[thing].children[i], thing));
                         REMOVE_FIRST_L(db[thing].children, db[thing].children[i]);
                         goto again2;
@@ -2908,7 +2908,7 @@ void do_incremental(void)
                     }
 
                     if (j != -1) {
-                        log_error(tprintf("Wrong #%ld in children list on #%ld.",
+                        log_error(tprintf("Wrong #%" DBREF_FMT " in children list on #%" DBREF_FMT ".",
                                         db[thing].children[i], thing));
                         REMOVE_FIRST_L(db[thing].children, db[thing].children[i]);
                         goto again2;
@@ -2975,7 +2975,7 @@ void do_incremental(void)
                 case TYPE_CHANNEL:
                 case TYPE_UNIVERSE:
                 case TYPE_ROOM:
-                    log_error(tprintf("Dead exit in exit list (first) for room #%ld: %ld",
+                    log_error(tprintf("Dead exit in exit list (first) for room #%" DBREF_FMT ": %" DBREF_FMT,
                                     thing, db[thing].exits));
                     report();
                     db[thing].exits = NOTHING;
@@ -2986,7 +2986,7 @@ void do_incremental(void)
             CHECK_REF(db[thing].zone) {
                 switch (Typeof(thing)) {
                 case TYPE_ROOM:
-                    log_error(tprintf("Zone for #%ld is #%ld! setting to global zone.",
+                    log_error(tprintf("Zone for #%" DBREF_FMT " is #%" DBREF_FMT "! setting to global zone.",
                                     thing, db[thing].zone));
                     if (GoodObject(0)) {
                         db[thing].zone = db[0].zone;
@@ -3033,7 +3033,7 @@ void do_incremental(void)
 
             if (((db[thing].next < 0) || (db[thing].next >= db_top)) &&
                 (db[thing].next != NOTHING)) {
-                log_error(tprintf("Invalid next pointer from object %s(%ld)",
+                log_error(tprintf("Invalid next pointer from object %s(%" DBREF_FMT ")",
                                 db[thing].name, thing));
                 report();
                 db[thing].next = NOTHING;
@@ -3043,7 +3043,7 @@ void do_incremental(void)
                 (db[thing].owner >= db_top) ||
                 !GoodObject(db[thing].owner) ||
                 Typeof(db[thing].owner) != TYPE_PLAYER) {
-                log_error(tprintf("Invalid object owner %s(%ld): %ld",
+                log_error(tprintf("Invalid object owner %s(%" DBREF_FMT "): %" DBREF_FMT,
                                 db[thing].name, thing, db[thing].owner));
                 report();
                 db[thing].owner = root;
@@ -3218,7 +3218,7 @@ void do_shrinkdbuse(dbref player, char *arg1)
     distance = atol(arg1);
 
     if (distance == 0) {
-        notify(player, tprintf("db_top: %ld", db_top));
+        notify(player, tprintf("db_top: %" DBREF_FMT, db_top));
         return;
     }
 
@@ -3251,7 +3251,7 @@ void do_shrinkdbuse(dbref player, char *arg1)
         }
 
         if (vari2 > 0 && vari > vari2 && GoodObject(vari) && GoodObject(vari2)) {
-            notify(player, tprintf("Found one: %ld  Free: %ld", vari, vari2));
+            notify(player, tprintf("Found one: %" DBREF_FMT "  Free: %" DBREF_FMT, vari, vari2));
 
             snprintf(temp, sizeof(temp), "#%" DBREF_FMT, vari);
             snprintf(temp2, sizeof(temp2), "#%" DBREF_FMT, vari2);

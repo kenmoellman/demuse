@@ -661,7 +661,7 @@ void do_email(dbref player, const char *arg1, const char *msg)
         update_rate_limit(player, &limits);
         
         /* Log the email */
-        log_io(tprintf("EMAIL: %s (#%ld) to %s", db[player].name, player, to_address));
+        log_io(tprintf("EMAIL: %s (#%" DBREF_FMT ") to %s", db[player].name, player, to_address));
     } else {
         notify(player, "Failed to send email.");
         if (*error_buf) {

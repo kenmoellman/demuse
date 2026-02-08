@@ -358,7 +358,7 @@ static signal_type dump_status(int sig)
       }
 
       /* Print connected player info */
-      fprintf(stderr, "PLAYING descriptor %d player %s(#%ld)",
+      fprintf(stderr, "PLAYING descriptor %d player %s(#%" DBREF_FMT ")",
               d->descriptor, db[d->player].name, d->player);
 
       if (d->last_time) {

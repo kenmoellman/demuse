@@ -338,7 +338,7 @@ void check_connect(struct descriptor_data *d, char *msg)
                 log_io(tprintf("FAILED CREATE: %s on concid %ld",
                               user, d->concid));
             } else {
-                log_io(tprintf("CREATED: %s(#%ld) on concid %ld",
+                log_io(tprintf("CREATED: %s(#%" DBREF_FMT ") on concid %ld",
                               db[player].name, player, d->concid));
                 
                 d->state = CONNECTED;

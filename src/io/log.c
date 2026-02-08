@@ -261,7 +261,7 @@ void suspectlog(dbref player, char *command)
 
   /* Validate player dbref */
   if (!GoodObject(player)) {
-    fprintf(stderr, "ERROR: suspectlog called with invalid player #%ld\n",
+    fprintf(stderr, "ERROR: suspectlog called with invalid player #%" DBREF_FMT "\n",
             player);
     return;
   }

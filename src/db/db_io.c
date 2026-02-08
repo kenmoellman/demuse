@@ -198,7 +198,7 @@ void putref(FILE *f, dbref ref)
         log_error("putref: NULL file pointer");
         return;
     }
-    fprintf(f, "%ld\n", ref);
+    fprintf(f, "%" DBREF_FMT "\n", ref);
 }
 
 /*
@@ -355,7 +355,7 @@ static int db_write_object(FILE *f, dbref i)
     put_atrdefs(f, o->atrdefs);
 
     /* Write universe data */
-    fprintf(f, ">%ld\n", o->universe);
+    fprintf(f, ">%" DBREF_FMT "\n", o->universe);
     if (((o->flags & TYPE_MASK) == TYPE_UNIVERSE)) {
         for (x = 0; x < NUM_UA; x++) {
             switch (univ_config[x].type) {
@@ -398,11 +398,11 @@ dbref db_write(FILE *f)
     
     /* Write header */
     fprintf(f, "@%d\n", DB_VERSION);
-    fprintf(f, "~%ld\n", db_top);
+    fprintf(f, "~%" DBREF_FMT "\n", db_top);
     
     /* Write all objects */
     for (i = 0; i < db_top; i++) {
-        fprintf(f, "&%ld\n", i);
+        fprintf(f, "&%" DBREF_FMT "\n", i);
         if (db_write_object(f, i) < 0) {
             log_error(tprintf("db_write: Failed to write object #%" DBREF_FMT, i));
             return 0;
@@ -775,13 +775,13 @@ static int get_list(FILE *f, dbref obj, int vers)
             
         case '<':  /* End of list */
             if ('\n' != fgetc(f)) {
-                log_error(tprintf("No line feed on object %ld", obj));
+                log_error(tprintf("No line feed on object %" DBREF_FMT, obj));
                 return 0;
             }
             return 1;
             
         default:
-            log_error(tprintf("Bad character %c on object %ld", c, obj));
+            log_error(tprintf("Bad character %c on object %" DBREF_FMT, c, obj));
             return 0;
         }
     }
@@ -830,8 +830,8 @@ void load_more_db(void)
             struct descriptor_data *d;
             char buf[1024];
             
-            snprintf(buf, sizeof(buf), 
-                    "Now loading object #%ld of %ld.\n", 
+            snprintf(buf, sizeof(buf),
+                    "Now loading object #%" DBREF_FMT " of %ld.\n",
                     (long)(i - 1), (long)(db_init * 2 / 3));
             
             for (d = descriptor_list; d; d = d->next) {
@@ -1045,7 +1045,7 @@ static int db_read_object(dbref i, FILE *f)
         
         /* Read attribute list */
         if (!get_list(f, i, db_version)) {
-            log_error(tprintf("Bad attribute list object %ld", i));
+            log_error(tprintf("Bad attribute list object %" DBREF_FMT, i));
             return -2;
         }
         
@@ -1077,7 +1077,7 @@ static int db_read_object(dbref i, FILE *f)
     case '*':  /* End of dump marker */
         end = getstring_noalloc(f);
         if (strcmp(end, "**END OF DUMP***")) {
-            log_error(tprintf("No end of dump %ld.", i));
+            log_error(tprintf("No end of dump %" DBREF_FMT ".", i));
             return -2;
         } else {
             extern void zero_free_list(void);
@@ -1127,7 +1127,7 @@ static int db_read_object(dbref i, FILE *f)
         }
         
     default:
-        log_error(tprintf("Failed object %ld.", i));
+        log_error(tprintf("Failed object %" DBREF_FMT ".", i));
         return -2;
     }
     

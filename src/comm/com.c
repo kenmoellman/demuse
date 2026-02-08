@@ -222,7 +222,7 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
 
     /* Add puppet indicator if needed */
     if ((db[d->player].flags & PUPPET) && GoodObject(player) && (player != d->player)) {
-      output_str2 = tprintf("%s  [#%ld/%s]", output_str, db[player].owner,
+      output_str2 = tprintf("%s  [#%" DBREF_FMT "/%s]", output_str, db[player].owner,
                            atr_get(db[player].owner, A_ALIAS));
       output_str = output_str2;
     }
@@ -984,7 +984,7 @@ void do_channel_create(dbref player, char *arg2)
     s_Pennies(channel, (long)MAX_OBJECT_ENDOWMENT);
   }
 
-  atr_add(channel, A_LASTLOC, tprintf("%ld", channel));
+  atr_add(channel, A_LASTLOC, tprintf("%" DBREF_FMT, channel));
   moveto(channel, channel);
   db[channel].i_flags &= I_MARKED;
 
@@ -1373,9 +1373,9 @@ void do_channel_join(dbref player, char *arg2)
 
   /* Add to channel's player list */
   if (!*atr_get(channum, A_CHANNEL)) {
-    atr_add(channum, A_CHANNEL, tprintf("%ld", player));
+    atr_add(channum, A_CHANNEL, tprintf("%" DBREF_FMT, player));
   } else {
-    atr_add(channum, A_CHANNEL, tprintf("%s %ld",
+    atr_add(channum, A_CHANNEL, tprintf("%s %" DBREF_FMT,
                                         atr_get(channum, A_CHANNEL),
                                         player));
   }
@@ -1472,7 +1472,7 @@ void do_channel_leave(dbref player, char *arg2)
   if (channum == NOTHING) {
     notify(player, "+channel: Removing old channel");
   } else {
-    j = is_on_channel(channum, tprintf("%ld", player));
+    j = is_on_channel(channum, tprintf("%" DBREF_FMT, player));
     if (j != NOTHING) {
       cattr = remove_from_ch_attr(channum, j);
       atr_add(channum, A_CHANNEL, cattr);
@@ -2312,7 +2312,7 @@ int remove_from_channel(dbref victim, const char *arg2)
 
   /* Remove from channel's player list */
   if (channum != NOTHING) {
-    j = is_on_channel_only(channum, tprintf("%ld", victim));
+    j = is_on_channel_only(channum, tprintf("%" DBREF_FMT, victim));
     if (j >= 0) {
       atr_add(channum, A_CHANNEL, remove_from_ch_attr(channum, j));
     }

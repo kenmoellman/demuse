@@ -305,7 +305,7 @@ int do_command(struct descriptor_data *d, char *command)
             safe_string_copy(ccom, command, sizeof(ccom));
             process_command(d->player, command, NOTHING);
         } else {
-            log_error(tprintf("ERROR: Negative player %ld trying to execute %s",
+            log_error(tprintf("ERROR: Negative player %" DBREF_FMT " trying to execute %s",
                             d->player, command));
             notify(-d->player, command);
         }

@@ -297,7 +297,7 @@ void do_ulink(dbref player, char *arg1, char *arg2)
     }
 
     db[object].universe = univ;
-    notify(player, tprintf("%s(#%ld) universe set to %s(#%ld)",
+    notify(player, tprintf("%s(#%" DBREF_FMT ") universe set to %s(#%" DBREF_FMT ")",
                           db[object].name, object, db[univ].name, univ));
 }
 
@@ -380,7 +380,7 @@ void do_guniverse(dbref player, char *arg1)
         }
     }
 
-    notify(player, tprintf("Global universe set to #%ld.", thing));
+    notify(player, tprintf("Global universe set to #%" DBREF_FMT ".", thing));
 }
 
 /**

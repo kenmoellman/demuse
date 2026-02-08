@@ -1386,7 +1386,7 @@ void do_class(dbref player, const char *arg1, const char *class)
     
     /* Root must remain director */
     if (who == root && newlevel != CLASS_DIR) {
-        notify(player, tprintf("Player #%ld cannot resign their position.", root));
+        notify(player, tprintf("Player #%" DBREF_FMT " cannot resign their position.", root));
         return;
     }
     

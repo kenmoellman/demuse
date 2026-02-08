@@ -51,7 +51,7 @@ dbref make_guest(struct descriptor_data *d)
         return NOTHING;
     }
 
-    log_io(tprintf("Created guest account %s (#%ld) for concid %ld",
+    log_io(tprintf("Created guest account %s (#%" DBREF_FMT ") for concid %ld",
                   name, player, d->concid));
 
     return player;
