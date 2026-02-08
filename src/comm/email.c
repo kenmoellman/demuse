@@ -556,6 +556,9 @@ void do_email(dbref player, const char *arg1, const char *msg)
     struct email_rate_limit limits;
     char error_buf[CURL_ERROR_SIZE];
     
+    /* Validate player */
+    if (!GoodObject(player)) return;
+
     /* Check permissions */
     if (Guest(player)) {
         notify(player, "Guests cannot send email.");

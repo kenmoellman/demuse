@@ -157,7 +157,7 @@ void parse_que(dbref player, char *command, dbref cause)
   /* Check for custom priority setting */
   p = atr_get(player, A_NICE);
   if (p && *p) {
-    pri = atoi(p);
+    pri = (int)strtol(p, NULL, 10);
   } else {
     /* Default priority based on cause type */
     if (GoodObject(cause) && Typeof(cause) == TYPE_PLAYER) {
@@ -246,7 +246,7 @@ static void big_que(dbref player, char *command, dbref cause, int pri, time_t wa
   }
 
   /* Charge queue cost with random penalty */
-  if (!payfor(player, queue_cost + (((rand() & queue_loss) == 0) ? 1 : 0))) {
+  if (!payfor(player, queue_cost + (((random() & queue_loss) == 0) ? 1 : 0))) {
     if (GoodObject(db[player].owner)) {
       notify(db[player].owner, "Not enough money to queue command.");
     }
@@ -290,7 +290,11 @@ static void big_que(dbref player, char *command, dbref cause, int pri, time_t wa
   }
 
   /* Initialize queue entry */
-  strcpy(Astr(tmp), command);
+  {
+    size_t cmd_len = strlen(command) + 1;
+    strncpy(Astr(tmp), command, cmd_len - 1);
+    Astr(tmp)[cmd_len - 1] = '\0';
+  }
   tmp->player = player;
   tmp->next = NULL;
   tmp->prev = NULL;
@@ -582,7 +586,7 @@ void wait_que(dbref player, int wait, char *command, dbref cause)
   }
 
   /* Charge queue cost */
-  if (!payfor(player, queue_cost + (((rand() & queue_loss) == 0) ? 1 : 0))) {
+  if (!payfor(player, queue_cost + (((random() & queue_loss) == 0) ? 1 : 0))) {
     notify(player, "Not enough money to queue command.");
     return;
   }
@@ -590,7 +594,7 @@ void wait_que(dbref player, int wait, char *command, dbref cause)
   /* Determine priority - @wait commands get slightly lower priority */
   p = atr_get(player, A_NICE);
   if (p && *p) {
-    pri = atoi(p) + 5;
+    pri = (int)strtol(p, NULL, 10) + 5;
     if (pri > 20) {
       pri = 20;
     }
@@ -664,7 +668,7 @@ void do_queue(dbref player)
         if (strlen(mytmp) > 18) {
           mytmp[19] = '\0';
         }
-        strcat(mytmp, "]");
+        strncat(mytmp, "]", sizeof(mytmp) - strlen(mytmp) - 1);
         
         notify(player, tprintf("%5d %s %2d %5ld %s", 
                                tmp->pid, mytmp, tmp->pri, 
@@ -701,9 +705,9 @@ void do_halt(dbref player, char *arg1, char *arg2)
   } else if (!strcmp(arg1, "all")) {
     /* @halt all - halt everything */
     do_haltall(player);
-  } else if ((atoi(arg1) > 0) || (!strncmp(arg1, "0", 2))) {
+  } else if (((int)strtol(arg1, NULL, 10) > 0) || (!strncmp(arg1, "0", 2))) {
     /* @halt <number> - halt by PID */
-    do_halt_process(player, atoi(arg1));
+    do_halt_process(player, (int)strtol(arg1, NULL, 10));
   } else {
     /* @halt <player> - halt another player */
     dbref lu = lookup_player(arg1);

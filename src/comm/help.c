@@ -364,7 +364,11 @@ void list_help_topics(dbref player, const char *indxfile)
             first = 0;
         }
         
-        strcpy(bp, entry.topic);
+        {
+            size_t remaining = sizeof(buf) - (size_t)(bp - buf);
+            strncpy(bp, entry.topic, remaining - 1);
+            bp[remaining - 1] = '\0';
+        }
         bp += strlen(entry.topic);
         count++;
     }

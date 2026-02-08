@@ -437,7 +437,7 @@ void get_powers(dbref i, char *str)
     /* Parse value */
     if (isdigit(*str))
     {
-      value = atoi(str);
+      value = (int)strtol(str, NULL, 10);
       /* Validate power number */
       if (value > 0 && value <= NUM_POWS)
         powbuf[pos++] = value;

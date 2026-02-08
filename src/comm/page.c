@@ -316,7 +316,7 @@ void do_page(dbref player, char *arg1, char *arg2)
         /* Check if multiplication would overflow */
         if (targets[0] > (LONG_MAX / page_cost)) {
             notify(player, "Too many targets - cost overflow.");
-            log_error(tprintf("Page cost overflow: player #%d, targets %d", 
+            log_error(tprintf("Page cost overflow: player #%" DBREF_FMT ", targets %" DBREF_FMT,
                             player, targets[0]));
             return;
         }
@@ -439,7 +439,7 @@ void page_notify(dbref from, dbref to, const char *message)
     
     /* Check message length */
     if (strlen(message) > MAX_PAGE_LEN) {
-        log_error(tprintf("page_notify: message too long from #%d to #%d", 
+        log_error(tprintf("page_notify: message too long from #%" DBREF_FMT " to #%" DBREF_FMT,
                          from, to));
         return;
     }
@@ -499,7 +499,7 @@ dbref get_last_pager(dbref player)
     lastpage = atr_get(player, A_LASTPAGE);
     
     if (lastpage && *lastpage == '#') {
-        result = atoi(lastpage + 1);
+        result = strtol(lastpage + 1, NULL, 10);
         if (GoodObject(result)) {
             return result;
         }
@@ -534,5 +534,5 @@ void do_page_last(dbref player, const char *message)
     }
     
     /* Use regular page with last pager as target */
-    do_page(player, tprintf("#%d", last_pager), (char *)message);
+    do_page(player, tprintf("#%" DBREF_FMT, last_pager), (char *)message);
 }

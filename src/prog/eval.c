@@ -146,7 +146,7 @@ static int safe_str_cat(char *dest, const char *src, size_t dest_size)
         return -1;
     }
     
-    strcat(dest, src);
+    strncat(dest, src, dest_size - dest_len - 1);
     return 0;
 }
 
@@ -176,7 +176,7 @@ static int istrue(const char *str)
     }
     
     /* "0" is false, but only if it's a valid number */
-    if (isdigit(str[0]) && atoi(str) == 0) {
+    if (isdigit(str[0]) && (int)strtol(str, NULL, 10) == 0) {
         return 0;
     }
     
@@ -561,18 +561,18 @@ static void fun_strlen(char *buff, char *args[10], dbref privs, dbref doer, int 
 
 static void fun_mid(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int start = atoi(args[1]);
-    int len = atoi(args[2]);
-    int str_len = strlen(args[0]);
-    
+    int start = (int)strtol(args[1], NULL, 10);
+    int len = (int)strtol(args[2], NULL, 10);
+    size_t str_len = strlen(args[0]);
+
     /* Validate parameters */
     if (start < 0 || len < 0 || start > MAX_BUFF_LEN || (len + start) < 0) {
         safe_str_copy(buff, "#-1 OUT_OF_RANGE", EVAL_BUFFER_SIZE);
         return;
     }
-    
+
     /* Extract substring */
-    if (start < str_len) {
+    if ((size_t)start < str_len) {
         safe_str_copy(buff, args[0] + start, EVAL_BUFFER_SIZE);
         if (len < (int)strlen(buff)) {
             buff[len] = '\0';
@@ -653,25 +653,25 @@ static void fun_pos(char *buff, char *args[10], dbref privs, dbref doer, int nar
 static void fun_delete(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     const char *src = args[0];
-    int start = atoi(args[1]);
-    int len = atoi(args[2]);
-    int src_len = strlen(src);
+    int start = (int)strtol(args[1], NULL, 10);
+    int len = (int)strtol(args[2], NULL, 10);
+    size_t src_len = strlen(src);
     int i;
     char *dest = buff;
-    
+
     /* Validate parameters */
     if (start < 0 || len < 0 || len + start >= 1000) {
         safe_str_copy(buff, "#-1 OUT_OF_RANGE", EVAL_BUFFER_SIZE);
         return;
     }
-    
+
     /* Copy characters before deletion point */
     for (i = 0; i < start && *src && (dest - buff) < (EVAL_BUFFER_SIZE - 1); i++) {
         *dest++ = *src++;
     }
-    
+
     /* Skip deleted characters */
-    if (len + start < src_len) {
+    if ((size_t)(len + start) < src_len) {
         src += len;
         /* Copy remaining characters */
         while (*src && (dest - buff) < (EVAL_BUFFER_SIZE - 1)) {
@@ -685,8 +685,8 @@ static void fun_delete(char *buff, char *args[10], dbref privs, dbref doer, int 
 static void fun_extract(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     const char *s = args[0];
-    int start = atoi(args[1]);
-    int count = atoi(args[2]);
+    int start = (int)strtol(args[1], NULL, 10);
+    int count = (int)strtol(args[2], NULL, 10);
     const char *word_start;
     const char *word_end;
     
@@ -731,8 +731,8 @@ static void fun_extract(char *buff, char *args[10], dbref privs, dbref doer, int
 static void fun_remove(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     const char *s = args[0];
-    int word_num = atoi(args[1]);
-    int num_words = atoi(args[2]);
+    int word_num = (int)strtol(args[1], NULL, 10);
+    int num_words = (int)strtol(args[2], NULL, 10);
     char *dest = buff;
     int i;
     
@@ -892,7 +892,7 @@ static void fun_cstrip(char *buff, char *args[10], dbref privs, dbref doer, int 
 
 static void fun_ctrunc(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int max_len = atoi(args[1]);
+    int max_len = (int)strtol(args[1], NULL, 10);
     char *result;
     
     if (max_len < 0 || max_len >= EVAL_BUFFER_SIZE) {
@@ -912,7 +912,7 @@ static void fun_ctrunc(char *buff, char *args[10], dbref privs, dbref doer, int 
 
 static void fun_ljust(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int width = atoi(args[1]);
+    int width = (int)strtol(args[1], NULL, 10);
     const char *text = args[0];
     char *stripped;
     int text_len;
@@ -953,7 +953,7 @@ static void fun_ljust(char *buff, char *args[10], dbref privs, dbref doer, int n
 
 static void fun_rjust(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int width = atoi(args[1]);
+    int width = (int)strtol(args[1], NULL, 10);
     const char *text = args[0];
     char *stripped;
     int text_len;
@@ -993,9 +993,9 @@ static void fun_rjust(char *buff, char *args[10], dbref privs, dbref doer, int n
 static void fun_string(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     const char *letter = args[0];
-    int count = atoi(args[1]);
-    int letter_len = strlen(letter);
-    int total_len;
+    int count = (int)strtol(args[1], NULL, 10);
+    size_t letter_len = strlen(letter);
+    size_t total_len;
     int i;
     
     if (count <= 0) {
@@ -1003,9 +1003,9 @@ static void fun_string(char *buff, char *args[10], dbref privs, dbref doer, int 
         return;
     }
     
-    total_len = count * letter_len;
-    
-    if (total_len <= 0 || total_len > 950) {
+    total_len = (size_t)count * letter_len;
+
+    if (total_len == 0 || total_len > 950) {
         safe_str_copy(buff, "#-1 OUT_OF_RANGE", EVAL_BUFFER_SIZE);
         return;
     }
@@ -1021,11 +1021,11 @@ static void fun_string(char *buff, char *args[10], dbref privs, dbref doer, int 
 static void fun_flip(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     const char *s = args[0];
-    int len = strlen(s);
+    size_t len = strlen(s);
     char *p = buff + len;
-    
-    if (len >= EVAL_BUFFER_SIZE) {
-        len = EVAL_BUFFER_SIZE - 1;
+
+    if (len >= (size_t)EVAL_BUFFER_SIZE) {
+        len = (size_t)EVAL_BUFFER_SIZE - 1;
         p = buff + len;
     }
     
@@ -1037,7 +1037,7 @@ static void fun_flip(char *buff, char *args[10], dbref privs, dbref doer, int na
 
 static void fun_spc(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int count = atoi(args[0]);
+    int count = (int)strtol(args[0], NULL, 10);
     int i;
     
     if (count <= 0) {
@@ -1059,7 +1059,7 @@ static void fun_spc(char *buff, char *args[10], dbref privs, dbref doer, int nar
 
 static void fun_lnum(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int count = atoi(args[0]);
+    int count = (int)strtol(args[0], NULL, 10);
     int i;
     char temp[32];
     
@@ -1083,8 +1083,8 @@ static void fun_lnum(char *buff, char *args[10], dbref privs, dbref doer, int na
 static void fun_base(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
     const char *num_str = args[0];
-    int old_base = atoi(args[1]);
-    int new_base = atoi(args[2]);
+    int old_base = (int)strtol(args[1], NULL, 10);
+    int new_base = (int)strtol(args[2], NULL, 10);
     long decimal = 0;
     int digit;
     int is_negative = 0;
@@ -1160,7 +1160,7 @@ static void fun_base(char *buff, char *args[10], dbref privs, dbref doer, int na
 
 static void fun_rand(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int mod = atoi(args[0]);
+    int mod = (int)strtol(args[0], NULL, 10);
     
     if (mod < 1) {
         mod = 1;
@@ -1887,7 +1887,7 @@ static void fun_linkup(char *buff, char *args[10], dbref privs, dbref doer, int 
         if (!GoodObject(i)) continue;
         
         if (db[i].link == it) {
-            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT, (buff[0] ? " " : ""), i);
             
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -1942,7 +1942,7 @@ static void fun_lzone(char *buff, char *args[10], dbref privs, dbref doer, int n
     it = get_zone_first(it);
     
     while (GoodObject(it) && depth > 0) {
-        snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), it);
+        snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT, (buff[0] ? " " : ""), it);
         safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
         
         it = get_zone_next(it);
@@ -1974,7 +1974,7 @@ static void fun_inzone(char *buff, char *args[10], dbref privs, dbref doer, int 
         if (Typeof(i) != TYPE_ROOM) continue;
 
         if (is_in_zone(i, zone)) {
-            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT, (buff[0] ? " " : ""), i);
             
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -2016,7 +2016,7 @@ static void fun_objlist(char *buff, char *args[10], dbref privs, dbref doer, int
     /* Iterate through objects */
     current = it;
     while (GoodObject(current)) {
-        snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), current);
+        snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT, (buff[0] ? " " : ""), current);
         safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
         
         if (Typeof(current) == TYPE_EXIT) {
@@ -2083,7 +2083,7 @@ static void fun_parents(char *buff, char *args[10], dbref privs, dbref doer, int
             controls(privs, db[it].parents[i], POW_EXAMINE) ||
             controls(privs, db[it].parents[i], POW_FUNCTIONS)) {
 
-            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT,
+            snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT,
                     (buff[0] ? " " : ""), db[it].parents[i]);
             safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
         }
@@ -2116,7 +2116,7 @@ static void fun_children(char *buff, char *args[10], dbref privs, dbref doer, in
             controls(privs, db[it].children[i], POW_EXAMINE) ||
             controls(privs, db[it].children[i], POW_FUNCTIONS)) {
 
-            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT,
+            snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT,
                     (buff[0] ? " " : ""), db[it].children[i]);
             
             if (len + strlen(temp) > 990) {
@@ -2309,10 +2309,10 @@ static void fun_time(char *buff, char *args[10], dbref privs, dbref doer, int na
     }
     
     safe_str_copy(temp, mktm(now, "D", privs), sizeof(temp));
-    
-    hour = atoi(temp + 11);
-    mins = atoi(temp + 14);
-    
+
+    hour = (int)strtol(temp + 11, NULL, 10);
+    mins = (int)strtol(temp + 14, NULL, 10);
+
     snprintf(buff, EVAL_BUFFER_SIZE, "%2d:%02d %cM",
             (hour > 12) ? hour - 12 : ((hour == 0) ? 12 : hour),
             mins,
@@ -2330,10 +2330,10 @@ static void fun_mtime(char *buff, char *args[10], dbref privs, dbref doer, int n
     }
     
     safe_str_copy(temp, mktm(now, "D", privs), sizeof(temp));
-    
-    hour = atoi(temp + 11);
-    mins = atoi(temp + 14);
-    
+
+    hour = (int)strtol(temp + 11, NULL, 10);
+    mins = (int)strtol(temp + 14, NULL, 10);
+
     snprintf(buff, EVAL_BUFFER_SIZE, "%d:%d", hour, mins);
 }
 
@@ -2349,9 +2349,9 @@ static void fun_mstime(char *buff, char *args[10], dbref privs, dbref doer, int 
     
     safe_str_copy(temp, mktm(now, "D", privs), sizeof(temp));
     
-    hour = atoi(temp + 11);
-    mins = atoi(temp + 14);
-    secs = atoi(temp + 17);
+    hour = (int)strtol(temp + 11, NULL, 10);
+    mins = (int)strtol(temp + 14, NULL, 10);
+    secs = (int)strtol(temp + 17, NULL, 10);
     
     snprintf(buff, EVAL_BUFFER_SIZE, "%02d:%02d:%02d", hour, mins, secs);
 }
@@ -2429,7 +2429,7 @@ static void fun_modtime(char *buff, char *args[10], dbref privs, dbref doer, int
 
 static void fun_tms(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int num = atoi(args[0]);
+    int num = (int)strtol(args[0], NULL, 10);
     
     if (num < 0) {
         safe_str_copy(buff, "#-1 NEGATIVE_TIME", EVAL_BUFFER_SIZE);
@@ -2441,7 +2441,7 @@ static void fun_tms(char *buff, char *args[10], dbref privs, dbref doer, int nar
 
 static void fun_tml(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int num = atoi(args[0]);
+    int num = (int)strtol(args[0], NULL, 10);
     
     if (num < 0) {
         safe_str_copy(buff, "#-1 NEGATIVE_TIME", EVAL_BUFFER_SIZE);
@@ -2453,7 +2453,7 @@ static void fun_tml(char *buff, char *args[10], dbref privs, dbref doer, int nar
 
 static void fun_tmf(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int num = atoi(args[0]);
+    int num = (int)strtol(args[0], NULL, 10);
     
     if (num < 0) {
         safe_str_copy(buff, "#-1 NEGATIVE_TIME", EVAL_BUFFER_SIZE);
@@ -2465,7 +2465,7 @@ static void fun_tmf(char *buff, char *args[10], dbref privs, dbref doer, int nar
 
 static void fun_tmfl(char *buff, char *args[10], dbref privs, dbref doer, int nargs)
 {
-    int num = atoi(args[0]);
+    int num = (int)strtol(args[0], NULL, 10);
     
     if (num < 0) {
         safe_str_copy(buff, "#-1 NEGATIVE_TIME", EVAL_BUFFER_SIZE);
@@ -2693,7 +2693,7 @@ static void fun_lwho(char *buff, char *args[10], dbref privs, dbref doer, int na
         if (d->state == CONNECTED && GoodObject(d->player)) {
             if (controls(privs, d->player, POW_WHO) ||
                 could_doit(privs, d->player, A_LHIDE)) {
-                snprintf(temp, sizeof(temp), "%s#" DBREF_FMT,
+                snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT,
                         (buff[0] ? " " : ""), d->player);
                 safe_str_cat(buff, temp, EVAL_BUFFER_SIZE);
             }
@@ -2725,7 +2725,7 @@ static void fun_zwho(char *buff, char *args[10], dbref privs, dbref doer, int na
         if (Typeof(i) != TYPE_PLAYER) continue;
 
         if (is_in_zone(i, zone)) {
-            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT, (buff[0] ? " " : ""), i);
             
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -2900,7 +2900,7 @@ static void fun_entrances(char *buff, char *args[10], dbref privs, dbref doer, i
             controls(privs, i, POW_EXAMINE) ||
             control_target) {
 
-            snprintf(temp, sizeof(temp), "%s#" DBREF_FMT, (buff[0] ? " " : ""), i);
+            snprintf(temp, sizeof(temp), "%s#%" DBREF_FMT, (buff[0] ? " " : ""), i);
 
             if (len + strlen(temp) > 990) {
                 safe_str_cat(buff, " #-1", EVAL_BUFFER_SIZE);
@@ -3165,9 +3165,14 @@ static int udef_fun(char **str, char *buff, dbref privs, dbref doer)
                 (*str)++;
             }
             museexec(str, obuff, privs, doer, 1);
-            strcpy(args[a] = stack_em_fun(strlen(obuff) + 1), obuff);
+            {
+                size_t obuff_len = strlen(obuff) + 1;
+                args[a] = stack_em_fun(obuff_len);
+                strncpy(args[a], obuff, obuff_len - 1);
+                args[a][obuff_len - 1] = '\0';
+            }
         }
-        
+
         /* Set pronoun pointers */
         for (a = 0; a < 10; a++) {
             saveptr[a] = wptr[a];
@@ -3189,8 +3194,8 @@ static int udef_fun(char **str, char *buff, dbref privs, dbref doer)
         
         /* Copy result, skipping object name */
         {
-            int name_len = strlen(db[doer].name) + 1;
-            if (name_len < (int)strlen(result)) {
+            size_t name_len = strlen(db[doer].name) + 1;
+            if (name_len < strlen(result)) {
                 safe_str_copy(buff, result + name_len, EVAL_BUFFER_SIZE);
             } else {
                 buff[0] = '\0';
@@ -3258,7 +3263,12 @@ static void do_fun(char **str, char *buff, dbref privs, dbref doer)
             (*str)++;
         }
         museexec(str, obuff, privs, doer, 1);
-        strcpy(args[a] = (char *)stack_em_fun(strlen(obuff) + 1), obuff);
+        {
+            size_t obuff_len = strlen(obuff) + 1;
+            args[a] = (char *)stack_em_fun(obuff_len);
+            strncpy(args[a], obuff, obuff_len - 1);
+            args[a][obuff_len - 1] = '\0';
+        }
     }
     
     if (**str) {

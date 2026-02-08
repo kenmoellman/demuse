@@ -210,7 +210,7 @@ char *unparse_list(dbref player, const char *list)
     
     while (pos < (MAX_LOOK_BUFFER - 100) && *list) {
         if (*list == '#' && list[1] >= '0' && list[1] <= '9') {
-            int y = atoi(list + 1);
+            int y = (int)strtol(list + 1, NULL, 10);
             char *x;
             
             if (y >= HOME || y < db_top) {

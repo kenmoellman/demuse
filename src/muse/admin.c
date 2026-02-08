@@ -126,7 +126,7 @@ void do_pclear(dbref player, char *name)
  */
 void do_stats(dbref player, char *name)
 {
-  extern char *type_to_name();
+  extern char *type_to_name(int type);
   dbref owner;
   long i, total;
   long obj[NUM_OBJ_TYPES];
@@ -378,7 +378,7 @@ void do_search(dbref player, char *arg1, char *arg3)
   object_flag_type restrict_type;
   object_flag_type restrict_class;
   char buf[3100];
-  extern char *str_index();
+  extern char *str_index(char *what, int chr);
 
   /* parse first argument into two */
   arg2 = str_index(arg1, ' ');
@@ -1141,7 +1141,7 @@ void do_uconfig(dbref player, char *arg1, char *arg2)
 	notify(player, tprintf("%s - Set.", db[thing].cname));
 	break;
       case UF_INT:
-	db[thing].ua_int[x] = atoi(i);
+	db[thing].ua_int[x] = (int)strtol(i, NULL, 10);
 	notify(player, tprintf("%s - Set.", db[thing].cname));
 	break;
       case UF_FLOAT:

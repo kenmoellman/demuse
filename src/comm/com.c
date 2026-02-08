@@ -183,7 +183,7 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
   /* Loop through all descriptors */
   for (d = descriptor_list; d; d = d->next) {
     /* Check if descriptor is valid and connected */
-    if (!d || d->state != CONNECTED || d->player <= 0) {
+    if (!d || d->state != CONNECTED || !GoodObject(d->player)) {
       continue;
     }
 
@@ -221,7 +221,7 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
     }
 
     /* Add puppet indicator if needed */
-    if ((db[d->player].flags & PUPPET) && (player > 0) && (player != d->player)) {
+    if ((db[d->player].flags & PUPPET) && GoodObject(player) && (player != d->player)) {
       output_str2 = tprintf("%s  [#%ld/%s]", output_str, db[player].owner,
                            atr_get(db[player].owner, A_ALIAS));
       output_str = output_str2;
@@ -357,7 +357,7 @@ void do_com(dbref player, char *arg1, char *arg2)
       q = strchr(alias, ':');
       if (q && *q) {
         *q++ = '\0';
-        onoff = atoi(q);
+        onoff = (int)strtol(q, NULL, 10);
       } else {
         do_channel_alias(player, tprintf("%s:%s", curr, alias));
         onoff = 1;
@@ -1861,7 +1861,7 @@ void do_channel_unban(dbref player, char *arg2)
   strncpy(buf2, atr_get(victim, A_BANNED), sizeof(buf2) - 1);
   buf2[sizeof(buf2) - 1] = '\0';
 
-  strcpy(buf2 + i, end);
+  snprintf(buf2 + i, sizeof(buf2) - (size_t)i, "%s", end);
 
   /* Trim trailing space */
   end = strchr(buf2, '\0');
@@ -2084,13 +2084,13 @@ void do_channel_search(dbref player, char *arg2)
 
     /* Validate channel object */
     if (!GoodObject(channel)) {
-      log_error(tprintf("do_channel_search: Invalid channel dbref " DBREF_FMT " for key '%s'",
+      log_error(tprintf("do_channel_search: Invalid channel dbref %" DBREF_FMT " for key '%s'",
                        channel, key));
       continue;
     }
 
     if (Typeof(channel) != TYPE_CHANNEL) {
-      log_error(tprintf("do_channel_search: Object " DBREF_FMT " is not a channel (key '%s')",
+      log_error(tprintf("do_channel_search: Object %" DBREF_FMT " is not a channel (key '%s')",
                        channel, key));
       continue;
     }
@@ -2109,7 +2109,8 @@ void do_channel_search(dbref player, char *arg2)
     strncat(owner, filler, sizeof(owner) - strlen(owner) - 1);
 
     /* Format channel name with truncation and padding */
-    strcpy(filler, "                        ");
+    strncpy(filler, "                        ", sizeof(filler) - 1);
+    filler[sizeof(filler) - 1] = '\0';
     strncpy(chan, truncate_color(unparse_object(player, channel), 20),
             sizeof(chan) - 1);
     chan[sizeof(chan) - 1] = '\0';
@@ -2125,12 +2126,15 @@ void do_channel_search(dbref player, char *arg2)
     /* Determine on/off status */
     if (is_on_channel_only(player, db[channel].name) != NOTHING) {
       if (channel_onoff_chk(player, channel)) {
-        strcpy(onoff, "ON ");
+        strncpy(onoff, "ON ", sizeof(onoff) - 1);
+        onoff[sizeof(onoff) - 1] = '\0';
       } else {
-        strcpy(onoff, "OFF");
+        strncpy(onoff, "OFF", sizeof(onoff) - 1);
+        onoff[sizeof(onoff) - 1] = '\0';
       }
     } else {
-      strcpy(onoff, "   ");
+      strncpy(onoff, "   ", sizeof(onoff) - 1);
+      onoff[sizeof(onoff) - 1] = '\0';
     }
 
     /* Filter by search level and display */
@@ -2153,7 +2157,8 @@ void do_channel_search(dbref player, char *arg2)
             could_doit(player, channel, A_LHIDE))) {
         /* Channel is hidden but player has permission to see it */
         if (controls(player, channel, POW_CHANNEL)) {
-          strcpy(onoff, "HID");
+          strncpy(onoff, "HID", sizeof(onoff) - 1);
+          onoff[sizeof(onoff) - 1] = '\0';
           notify(player, tprintf("  %s %s %s", onoff, chan, owner));
         }
       } else {
@@ -2373,7 +2378,7 @@ char *remove_from_attr(dbref player, int i, ATTR *attr)
   strncpy(buf2, atr_get(player, attr), sizeof(buf2) - 1);
   buf2[sizeof(buf2) - 1] = '\0';
 
-  strcpy(buf2 + i, end);
+  snprintf(buf2 + i, sizeof(buf2) - (size_t)i, "%s", end);
 
   /* Trim trailing space */
   end = strchr(buf2, '\0');
@@ -2422,7 +2427,7 @@ int channel_onoff_chk(dbref player, dbref channum)
     q = strchr(alias, ':');
     if (q && *q) {
       *q++ = '\0';
-      onoff = atoi(q);
+      onoff = (int)strtol(q, NULL, 10);
     } else {
       do_channel_alias(player, tprintf("%s:%s", curr, alias));
       onoff = 1;

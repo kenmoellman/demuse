@@ -21,7 +21,8 @@ static char *strsave(const char *s)
 //    p = malloc(strlen(s) + 1);
     SAFE_MALLOC(p, char, strlen(s) + 1);
     if (p) {
-        strcpy(p, s);
+        strncpy(p, s, strlen(s));
+        p[strlen(s)] = '\0';
     } else {
         log_error("Failed to allocate memory in strsave");
     }
@@ -250,13 +251,13 @@ int do_command(struct descriptor_data *d, char *command)
                 queue_string(d, 
                     "Usage: I wanna connect concid <id> <hostname>\n");
             } else {
-                do_connectid(d, atoi(command + 
-                    sizeof("I wanna connect concid ") - 1), n);
+                do_connectid(d, (int)strtol(command +
+                    sizeof("I wanna connect concid ") - 1, NULL, 10), n);
             }
         } else if (!strncmp(command, "I wanna kill concid ",
                            sizeof("I wanna kill concid ") - 1)) {
-            do_killid(d, atoi(command + 
-                sizeof("I wanna kill concid ") - 1));
+            do_killid(d, (int)strtol(command +
+                sizeof("I wanna kill concid ") - 1, NULL, 10));
         } else {
             /* Forward to specific concid */
             char *k = strchr(command, ' ');
@@ -267,7 +268,7 @@ int do_command(struct descriptor_data *d, char *command)
                 int j;
                 
                 *k = '\0';
-                j = atoi(command);
+                j = (int)strtol(command, NULL, 10);
                 
                 for (l = descriptor_list; l; l = l->next) {
                     if (l->concid == j) {
@@ -316,7 +317,8 @@ int do_command(struct descriptor_data *d, char *command)
         }
     } else {
         /* Not connected yet - handle login/creation */
-        d->pueblo--;
+        if (d->pueblo > 0)
+            d->pueblo--;
         check_connect(d, command);
     }
 

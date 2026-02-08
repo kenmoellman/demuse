@@ -411,7 +411,7 @@ void init_universe(struct object *o)
         switch (univ_config[i].type) {
             case UF_BOOL:
             case UF_INT:
-                o->ua_int[i] = atoi(univ_config[i].def);
+                o->ua_int[i] = (int)strtol(univ_config[i].def, NULL, 10);
                 o->ua_string[i] = NULL;
                 break;
 
@@ -423,7 +423,9 @@ void init_universe(struct object *o)
             case UF_STRING:
                 SAFE_MALLOC(o->ua_string[i], char, strlen(univ_config[i].def) + 1);
                 if (o->ua_string[i]) {
-                    strcpy(o->ua_string[i], univ_config[i].def);
+                    size_t def_len = strlen(univ_config[i].def) + 1;
+                    strncpy(o->ua_string[i], univ_config[i].def, def_len - 1);
+                    o->ua_string[i][def_len - 1] = '\0';
                 }
                 break;
         }

@@ -75,7 +75,7 @@ void open_sockets(void)
     muse_up_time = atol(buf);
   }
   if (fgets(buf, 1024, x)) {
-    sock = atoi(buf);
+    sock = (int)strtol(buf, NULL, 10);
   }
   
   fcntl(sock, F_SETFD, 1);
@@ -86,7 +86,7 @@ void open_sockets(void)
     
   while (fgets(buf, 1024, x))
   {
-    int desc = atoi(buf);
+    int desc = (int)strtol(buf, NULL, 10);
     struct sockaddr_in in;
     socklen_t namelen = sizeof(in);
     char buff[INET_ADDRSTRLEN];
@@ -271,6 +271,7 @@ struct descriptor_data *initializesock(int s, struct sockaddr_in *a,
   d->input.tail = &d->input.head;
   d->raw_input = 0;
   d->raw_input_at = 0;
+  d->pueblo = 0;
   d->quota = command_burst_size;
   d->last_time = now;
   strncpy(d->addr, addr, 50);
@@ -572,7 +573,10 @@ void resock(void)
 }
 #endif
 
-void get_ident(char *rslt, int sock, int timout, struct sockaddr_in remoteaddr)  
+/* TODO: Examine whether this entire ident (RFC 1413) lookup should be
+ * modernized or replaced. The protocol is largely obsolete and most
+ * hosts no longer run identd. Consider making this optional or removing it. */
+void get_ident(char *rslt, int sock, int timout, struct sockaddr_in remoteaddr)
 {
   struct sockaddr_in localaddr, sin_addr; 
   struct timeval timeout;
@@ -581,7 +585,8 @@ void get_ident(char *rslt, int sock, int timout, struct sockaddr_in remoteaddr)
   int err, fd;
   socklen_t len;
 
-  strcpy(rslt, "???");
+  strncpy(rslt, "???", 39);
+  rslt[39] = '\0';
 
   len = sizeof(localaddr);
   if (getsockname(sock, (struct sockaddr *)&localaddr, &len))
@@ -627,7 +632,7 @@ void get_ident(char *rslt, int sock, int timout, struct sockaddr_in remoteaddr)
     return;
   }
 
-  sprintf(buf, "%d,%d\r\n", ntohs(remoteaddr.sin_port),
+  snprintf(buf, sizeof(buf), "%d,%d\r\n", ntohs(remoteaddr.sin_port),
           ntohs(localaddr.sin_port));
   write(fd, buf, strlen(buf));
 

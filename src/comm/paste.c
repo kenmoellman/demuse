@@ -465,6 +465,10 @@ static void do_end_paste(dbref player)
     
     /* Handle attribute paste */
     if (p->attr) {
+        if (!GoodObject(p->target)) {
+            notify(player, "Paste target no longer exists.");
+            return;
+        }
         if (!p->paste || !p->paste->str || !*p->paste->str) {
             atr_clr(p->target, p->attr);
             notify(player, tprintf("%s - Cleared.", db[p->target].cname));
@@ -485,12 +489,12 @@ static void do_end_paste(dbref player)
             if (text && *text) {
                 strncat(mail_buffer, text, sizeof(mail_buffer) - strlen(mail_buffer) - 2);
                 if (line->next) {
-                    strcat(mail_buffer, "\n");
+                    strncat(mail_buffer, "\n", sizeof(mail_buffer) - strlen(mail_buffer) - 1);
                 }
             }
         }
         
-        do_mail(player, tprintf("#%d", p->target), mail_buffer);
+        do_mail(player, tprintf("#%" DBREF_FMT, p->target), mail_buffer);
         return;
     }
     
@@ -587,9 +591,11 @@ void do_pastestats(dbref player, char *arg)
             
             /* Build target description */
             if (p->target == NOTHING) {
-                strcpy(target_desc, "NOTHING");
+                strncpy(target_desc, "NOTHING", sizeof(target_desc) - 1);
+                target_desc[sizeof(target_desc) - 1] = '\0';
             } else {
-                strcpy(target_desc, db[p->target].cname);
+                strncpy(target_desc, db[p->target].cname, sizeof(target_desc) - 1);
+                target_desc[sizeof(target_desc) - 1] = '\0';
                 if (p->attr) {
                     strncat(target_desc, "/", sizeof(target_desc) - strlen(target_desc) - 1);
                     strncat(target_desc, p->attr->name, sizeof(target_desc) - strlen(target_desc) - 1);
@@ -606,7 +612,7 @@ void do_pastestats(dbref player, char *arg)
     }
     
     /* Show specific paste */
-    requested = atoi(arg);
+    requested = (int)strtol(arg, NULL, 10);
     if (requested < 1 || requested > total_pastes) {
         notify(player, tprintf("Valid @pastes: 1 - %d", total_pastes));
         return;
@@ -627,9 +633,11 @@ void do_pastestats(dbref player, char *arg)
     
     /* Build target description */
     if (p->target == NOTHING) {
-        strcpy(target_desc, "NOTHING");
+        strncpy(target_desc, "NOTHING", sizeof(target_desc) - 1);
+        target_desc[sizeof(target_desc) - 1] = '\0';
     } else {
-        strcpy(target_desc, db[p->target].cname);
+        strncpy(target_desc, db[p->target].cname, sizeof(target_desc) - 1);
+        target_desc[sizeof(target_desc) - 1] = '\0';
         if (p->attr) {
             strncat(target_desc, "/", sizeof(target_desc) - strlen(target_desc) - 1);
             strncat(target_desc, p->attr->name, sizeof(target_desc) - strlen(target_desc) - 1);

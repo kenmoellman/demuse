@@ -303,14 +303,14 @@ static void parse_range(struct top *head, char *range, struct buffer **p1, struc
 
   /* Parse range specification */
   c = strchr(range_buf, '-');
-  l1 = atoi(range_buf);
+  l1 = (int)strtol(range_buf, NULL, 10);
   if (l1 <= 0) {
     l1 = 1;
   }
 
   if (c) {
     *c++ = '\0';
-    l2 = atoi(c);
+    l2 = (int)strtol(c, NULL, 10);
     if (l2 <= 0) {
       l2 = 0; /* 0 means to end of file */
     }

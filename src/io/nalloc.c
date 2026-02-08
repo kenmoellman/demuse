@@ -614,15 +614,19 @@ char *stralloc_p(char *string)
 char *stralloc_int(char *string, int perm)
 {
   char *p;
-  p = stack_em_int((strlen(string) + 1), 5, perm);
-  strcpy(p, string);
+  size_t slen = strlen(string);
+  p = stack_em_int((slen + 1), 5, perm);
+  strncpy(p, string, slen);
+  p[slen] = '\0';
   return(p);
 }
 
 char *funalloc(char *string)
 {
-    char *p = stack_em_int((strlen(string) + 1), 5, 0);  /* permanantly allocate functions? */
-    strcpy(p, string);
+    size_t slen = strlen(string);
+    char *p = stack_em_int((slen + 1), 5, 0);  /* permanantly allocate functions? */
+    strncpy(p, string, slen);
+    p[slen] = '\0';
     return(p);
 }
 

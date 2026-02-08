@@ -1791,7 +1791,7 @@ void do_empty(dbref thing)
             }
 
             if (iteration_count >= MAX_LOOP_ITERATIONS) {
-                log_error(tprintf("do_empty: Infinite loop in exits of #" DBREF_FMT, thing));
+                log_error(tprintf("do_empty: Infinite loop in exits of #%" DBREF_FMT, thing));
             }
 
             /* Fix home links that point to this object */
@@ -1817,7 +1817,7 @@ void do_empty(dbref thing)
             }
 
             if (iteration_count >= MAX_LOOP_ITERATIONS) {
-                log_error(tprintf("do_empty: Infinite loop in contents (link fix) of #" DBREF_FMT, thing));
+                log_error(tprintf("do_empty: Infinite loop in contents (link fix) of #%" DBREF_FMT, thing));
             }
 
             /* Send all contents home */
@@ -1833,7 +1833,7 @@ void do_empty(dbref thing)
             }
 
             if (iteration_count >= MAX_LOOP_ITERATIONS) {
-                log_error(tprintf("do_empty: Infinite loop sending contents home for #" DBREF_FMT, thing));
+                log_error(tprintf("do_empty: Infinite loop sending contents home for #%" DBREF_FMT, thing));
             }
         }
         break;
@@ -2306,7 +2306,7 @@ static void dbmark(dbref loc)
     }
 
     if (iteration_count >= MAX_LOOP_ITERATIONS) {
-        log_error(tprintf("dbmark: Maximum iterations exceeded for room #" DBREF_FMT, loc));
+        log_error(tprintf("dbmark: Maximum iterations exceeded for room #%" DBREF_FMT, loc));
     }
 }
 
@@ -2374,7 +2374,7 @@ static void dbunmark(void)
             ndisrooms++;
 
             /* Build room list safely */
-            snprintf(tempbuf, sizeof(tempbuf), " #" DBREF_FMT, loc);
+            snprintf(tempbuf, sizeof(tempbuf), " #%" DBREF_FMT, loc);
             if (strlen(roomlist) + strlen(tempbuf) < sizeof(roomlist) - 1) {
                 strncat(roomlist, tempbuf, sizeof(roomlist) - strlen(roomlist) - 1);
             }
@@ -2386,7 +2386,7 @@ static void dbunmark(void)
             nunlexits++;
 
             /* Build exit list safely */
-            snprintf(tempbuf, sizeof(tempbuf), " #" DBREF_FMT, loc);
+            snprintf(tempbuf, sizeof(tempbuf), " #%" DBREF_FMT, loc);
             if (strlen(exitlist) + strlen(tempbuf) < sizeof(exitlist) - 1) {
                 strncat(exitlist, tempbuf, sizeof(exitlist) - strlen(exitlist) - 1);
             }
@@ -2646,7 +2646,7 @@ void do_dbck(dbref player)
              j != NOTHING && m < 1000;
              j = (GoodObject(j) ? db[j].next : NOTHING), m++) {
             if (m >= 999 && GoodObject(j)) {
-                log_error(tprintf("Breaking circular exit chain at #" DBREF_FMT, i));
+                log_error(tprintf("Breaking circular exit chain at #%" DBREF_FMT, i));
                 db[j].next = NOTHING;
             }
         }
@@ -2656,7 +2656,7 @@ void do_dbck(dbref player)
              j != NOTHING && m < 1000;
              j = (GoodObject(j) ? db[j].next : NOTHING), m++) {
             if (m >= 999 && GoodObject(j)) {
-                log_error(tprintf("Breaking circular contents chain at #" DBREF_FMT, i));
+                log_error(tprintf("Breaking circular contents chain at #%" DBREF_FMT, i));
                 db[j].next = NOTHING;
             }
         }
@@ -2763,10 +2763,10 @@ void info_db(dbref player)
         return;
     }
 
-    notify(player, tprintf("db_top: #" DBREF_FMT, db_top));
-    notify(player, tprintf("first_free: #" DBREF_FMT, first_free));
-    notify(player, tprintf("update_bytes_counter: #" DBREF_FMT, update_bytes_counter));
-    notify(player, tprintf("garbage point: #" DBREF_FMT, thing));
+    notify(player, tprintf("db_top: #%" DBREF_FMT, db_top));
+    notify(player, tprintf("first_free: #%" DBREF_FMT, first_free));
+    notify(player, tprintf("update_bytes_counter: #%" DBREF_FMT, update_bytes_counter));
+    notify(player, tprintf("garbage point: #%" DBREF_FMT, thing));
     do_stats(player, "");
 }
 
@@ -2947,7 +2947,7 @@ void do_incremental(void)
                      zon = get_zone_next(zon), zone_depth++) {
 
                     if (!GoodObject(zon)) {
-                        log_error(tprintf("Invalid zone in chain for #" DBREF_FMT, thing));
+                        log_error(tprintf("Invalid zone in chain for #%" DBREF_FMT, thing));
                         db[thing].zone = db[0].zone;
                         break;
                     }

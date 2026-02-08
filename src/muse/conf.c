@@ -67,7 +67,7 @@ static void donum(dbref player, int *var, char *arg2)
     }
   }
 
-  (*var) = atoi(arg2);
+  (*var) = (int)strtol(arg2, NULL, 10);
   notify(player, "Set.");
 }
 
@@ -191,7 +191,7 @@ void info_config(dbref player)
   /* Display all configuration values using macros from conf.h */
 #define DO_NUM(str, var) notify(player, tprintf("  %-22s: %d", str, var));
 #define DO_STR(str, var) notify(player, tprintf("  %-22s: %s", str, var));
-#define DO_REF(str, var) notify(player, tprintf("  %-22s: #" DBREF_FMT, str, var));
+#define DO_REF(str, var) notify(player, tprintf("  %-22s: #%" DBREF_FMT, str, var));
 #define DO_LNG(str, var) notify(player, tprintf("  %-22s: %ld", str, var));
 #include "conf.h"
 #undef DO_NUM

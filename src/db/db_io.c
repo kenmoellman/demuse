@@ -404,7 +404,7 @@ dbref db_write(FILE *f)
     for (i = 0; i < db_top; i++) {
         fprintf(f, "&%ld\n", i);
         if (db_write_object(f, i) < 0) {
-            log_error(tprintf("db_write: Failed to write object #" DBREF_FMT, i));
+            log_error(tprintf("db_write: Failed to write object #%" DBREF_FMT, i));
             return 0;
         }
     }
@@ -655,7 +655,7 @@ static void getboolexp(dbref i, FILE *f)
     }
     
     if (!GoodObject(i)) {
-        log_error(tprintf("getboolexp: Invalid object #" DBREF_FMT, i));
+        log_error(tprintf("getboolexp: Invalid object #%" DBREF_FMT, i));
         /* Skip the line anyway */
         while ((c = getc(f)) != '\n' && c != EOF)
             ;
@@ -664,7 +664,7 @@ static void getboolexp(dbref i, FILE *f)
     
     while ((c = getc(f)) != '\n' && c != EOF) {
         if (p - buffer >= DB_MSGLEN - 2) {
-            log_error(tprintf("getboolexp: Buffer overflow on object #" DBREF_FMT, i));
+            log_error(tprintf("getboolexp: Buffer overflow on object #%" DBREF_FMT, i));
             break;
         }
         
@@ -1173,14 +1173,14 @@ void get_univ_info(FILE *f, struct object *o)
             }
             
             *(i_str++) = '\0';
-            int attr_index = atoi(s);
+            int attr_index = (int)strtol(s, NULL, 10);
             
             if ((attr_index < NUM_UA) && (attr_index > -1) &&
                 ((o->flags & TYPE_MASK) == TYPE_UNIVERSE)) {
                 switch (univ_config[attr_index].type) {
                 case UF_BOOL:
                 case UF_INT:
-                    o->ua_int[attr_index] = atoi(i_str);
+                    o->ua_int[attr_index] = (int)strtol(i_str, NULL, 10);
                     break;
                 case UF_FLOAT:
                     o->ua_float[attr_index] = atof(i_str);
@@ -1526,7 +1526,7 @@ void atr_clr(dbref thing, ATTR *atr)
     ALIST *ptr;
     
     if (!GoodObject(thing)) {
-        log_error(tprintf("atr_clr: Invalid object #" DBREF_FMT, thing));
+        log_error(tprintf("atr_clr: Invalid object #%" DBREF_FMT, thing));
         return;
     }
     
@@ -1561,12 +1561,12 @@ void atr_add(dbref thing, ATTR *atr, char *s)
     char *d;
     
     if (!GoodObject(thing)) {
-        log_error(tprintf("atr_add: Invalid object #" DBREF_FMT, thing));
+        log_error(tprintf("atr_add: Invalid object #%" DBREF_FMT, thing));
         return;
     }
 
     if (!atr) {
-        log_error(tprintf("atr_add: NULL attribute on object #" DBREF_FMT, thing));
+        log_error(tprintf("atr_add: NULL attribute on object #%" DBREF_FMT, thing));
         return;
     }
     
@@ -1693,7 +1693,7 @@ char *atr_get(dbref thing, ATTR *atr)
                 if (*buf) {
                     /* Append to existing string */
                     size_t len = strlen(buf);
-                    snprintf(buf + len, sizeof(buf) - len, " #" DBREF_FMT, list[i]);
+                    snprintf(buf + len, sizeof(buf) - len, " #%" DBREF_FMT, list[i]);
                 } else {
                     snprintf(buf, sizeof(buf), "#%" DBREF_FMT, list[i]);
                 }
@@ -1706,7 +1706,7 @@ char *atr_get(dbref thing, ATTR *atr)
                 if (GoodObject(it)) {
                     if (*buf) {
                         size_t len = strlen(buf);
-                        snprintf(buf + len, sizeof(buf) - len, " #" DBREF_FMT, it);
+                        snprintf(buf + len, sizeof(buf) - len, " #%" DBREF_FMT, it);
                     } else {
                         snprintf(buf, sizeof(buf), "#%" DBREF_FMT, it);
                     }
@@ -1720,7 +1720,7 @@ char *atr_get(dbref thing, ATTR *atr)
                 if (GoodObject(it)) {
                     if (*buf) {
                         size_t len = strlen(buf);
-                        snprintf(buf + len, sizeof(buf) - len, " #" DBREF_FMT, it);
+                        snprintf(buf + len, sizeof(buf) - len, " #%" DBREF_FMT, it);
                     } else {
                         snprintf(buf, sizeof(buf), "#%" DBREF_FMT, it);
                     }

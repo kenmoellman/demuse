@@ -332,7 +332,7 @@ void send_message(dbref from, dbref to, const char *message,
 //    msg_copy = malloc(strlen(message) + 1);
     SAFE_MALLOC(msg_copy, char, strlen(message) + 1);
     if (!msg_copy) return;
-    strcpy(msg_copy, message);
+    strncpy(msg_copy, message, strlen(message) + 1);
     
     /* Fill in message data */
     mdb[i].from = from;
@@ -650,7 +650,7 @@ void read_messages(FILE *fp)
                 (s = strchr(s, ':')) &&
                 (s++, date = atol(s)) &&
                 (s = strchr(s, ':')) &&
-                (s++, flags = atoi(s)) &&
+                (s++, flags = (int)strtol(s, NULL, 10)) &&
                 (s = strchr(s, ':'))) {
                 
                 safe_copy(message, s + 1, sizeof(message));

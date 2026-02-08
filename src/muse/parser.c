@@ -1773,7 +1773,7 @@ static void cmd_upfront(dbref player, char *arg1, char *arg2)
 /**
  * cmd_wait - Wrapper for @wait command
  *
- * Core: wait_que(player, atoi(arg1), arg2, cause)
+ * Core: wait_que(player, (int)strtol(arg1, NULL, 10), arg2, cause)
  * Note: arg1 is converted to int, requires cause parameter
  */
 static void cmd_wait(dbref player, char *arg1, char *arg2)
@@ -1789,7 +1789,7 @@ static void cmd_wait(dbref player, char *arg1, char *arg2)
         unpack_argv(arg2_copy, &cause, argv_array);
     }
 
-    delay = atoi(arg1);
+    delay = (int)strtol(arg1, NULL, 10);
     extern void wait_que(dbref, int, char *, dbref);
     wait_que(player, delay, argv_array[0] ? argv_array[0] : "", cause);
 }
@@ -3040,7 +3040,7 @@ void list_universes(dbref player)
         if (u->description) {
             notify(player, tprintf("   %s", u->description));
         }
-        notify(player, tprintf("   Players: %d | Starting location: #" DBREF_FMT,
+        notify(player, tprintf("   Players: %d | Starting location: #%" DBREF_FMT,
                               u->player_count, u->config.starting_location));
     }
 

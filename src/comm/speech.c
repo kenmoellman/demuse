@@ -206,9 +206,11 @@ void do_pose(dbref player, char *arg1, char *arg2, int possessive)
         /* Get last character of player's name for proper possessive */
         size_t namelen = strlen(db[player].name);
         lastchar = to_lower(db[player].name[namelen - 1]);
-        strcpy(format, (lastchar == 's') ? "%s' %s" : "%s's %s");
+        strncpy(format, (lastchar == 's') ? "%s' %s" : "%s's %s", sizeof(format) - 1);
+        format[sizeof(format) - 1] = '\0';
     } else {
-        strcpy(format, "%s %s");
+        strncpy(format, "%s %s", sizeof(format) - 1);
+        format[sizeof(format) - 1] = '\0';
     }
     
     message = reconstruct_message(arg1, arg2);

@@ -284,9 +284,9 @@ char *process_lock(dbref player, char *arg)
         return NULL;
       
       /* Replace object name with #dbref */
-      snprintf(t, BUFFER_LEN - (size_t)(t - buffer), DBREF_FMT, thing);
+      snprintf(t, BUFFER_LEN - (size_t)(t - buffer), "%" DBREF_FMT, thing);
       t += strlen(t);
-      
+
       /* Copy the dot */
       if (t - buffer < BUFFER_LEN - 1)
         *t++ = *s++;
@@ -299,7 +299,7 @@ char *process_lock(dbref player, char *arg)
         /* Validate the attribute exists on this object */
         if ((!atr_str(player, thing, t)) && (type != FUN_CALL)) {
           if (GoodObject(player)) {
-            notify(player, tprintf("Warning: no such attribute '%s' on " DBREF_FMT, 
+            notify(player, tprintf("Warning: no such attribute '%s' on %" DBREF_FMT,
                                   t, thing));
           }
         }
@@ -335,7 +335,7 @@ char *process_lock(dbref player, char *arg)
           return NULL;
         
         /* Replace name with #dbref */
-        snprintf(t, BUFFER_LEN - (size_t)(t - buffer), DBREF_FMT, thing);
+        snprintf(t, BUFFER_LEN - (size_t)(t - buffer), "%" DBREF_FMT, thing);
       }
       t += strlen(t);
     }
@@ -556,7 +556,7 @@ int eval_boolexp(dbref player, dbref object, char *key, dbref zone)
   
   /* Validate object */
   if (!GoodObject(object)) {
-    log_error(tprintf("eval_boolexp: Invalid object " DBREF_FMT, object));
+    log_error(tprintf("eval_boolexp: Invalid object %" DBREF_FMT, object));
     return 0;
   }
   
@@ -780,7 +780,7 @@ static int grab_num(char **buf)
   *s = '\0';
   
   /* Convert to integer */
-  num = atoi(*buf);
+  num = (int)strtol(*buf, NULL, 10);
   
   /* Restore and advance */
   *s = save;

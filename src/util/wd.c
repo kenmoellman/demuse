@@ -137,10 +137,13 @@ void restart_loop(char *argv[])
     system("cat logs/commands* >> cmd_crash");
 /*     system("cat logs/commands~ logs/commands >> cmd_crash"); */
 #ifdef TECH_EMAIL
+    /* TODO: Replace this with the email mechanism in comm/email.c
+     * instead of shelling out to sendmail directly. Also fix sprintf
+     * to snprintf when this is reworked. */
     {
       char buf[1024];
 
-      sprintf(buf, "/usr/lib/sendmail %s <cmd_crash", TECH_EMAIL);
+      snprintf(buf, sizeof(buf), "/usr/lib/sendmail %s <cmd_crash", TECH_EMAIL);
       system(buf);
     }
 #endif

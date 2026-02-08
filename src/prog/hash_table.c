@@ -261,8 +261,12 @@ hash_table_t *hash_create(const char *name, size_t size, int case_sensitive,
     SAFE_MALLOC(table, hash_table_t, 1);
     
     /* Allocate and copy name */
-    SAFE_MALLOC(table->name, char, strlen(name) + 1);
-    strcpy(table->name, name);
+    {
+        size_t name_len = strlen(name) + 1;
+        SAFE_MALLOC(table->name, char, name_len);
+        memcpy(table->name, name, name_len - 1);
+        table->name[name_len - 1] = '\0';
+    }
     
     /* Allocate buckets array (initially all NULL) */
     SAFE_MALLOC(table->buckets, hash_entry_t *, size);
@@ -395,8 +399,12 @@ int hash_insert(hash_table_t *table, const char *key, void *value)
     SAFE_MALLOC(new_entry, hash_entry_t, 1);
     
     /* Copy key */
-    SAFE_MALLOC(new_entry->key, char, strlen(key) + 1);
-    strcpy(new_entry->key, key);
+    {
+        size_t key_len = strlen(key) + 1;
+        SAFE_MALLOC(new_entry->key, char, key_len);
+        memcpy(new_entry->key, key, key_len - 1);
+        new_entry->key[key_len - 1] = '\0';
+    }
     
     /* Set fields */
     new_entry->value = value;
