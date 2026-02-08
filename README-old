@@ -1,9 +1,0 @@
-deMUSE was created by Ken Moellman as a branch project of MUSE '97 (aka TinyMUSE 1.97) with the goal to create a MUSE server which would be more stable, secure and configurable, and less platform specific.   
-
-You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
-
-deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
-
-This software come with no guarentee, and any wording that suggests such should be taken as bragging and not as official policy.
-
-Most recently, the code has undergone significant overhaul. 
