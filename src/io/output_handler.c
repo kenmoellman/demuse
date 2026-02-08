@@ -189,7 +189,7 @@ void raw_notify_internal(dbref player, char *msg, int color)
     /* Build message with speaker info if puppet */
     if (IS(player, TYPE_PLAYER, PUPPET)) {
         if (speaker != player) {
-            temp = tprintf(" [#%ld/%s]", speaker, 
+            temp = tprintf(" [#%" DBREF_FMT "/%s]", speaker,
                           short_name(real_owner(db[speaker].owner)));
         } else {
             temp = tprintf("");

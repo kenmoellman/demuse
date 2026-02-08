@@ -41,14 +41,14 @@ void announce_connect(dbref player)
     int connect_again;
 
     if (player < 0 || player >= db_top) {
-        log_error(tprintf("announce_connect called with invalid player %ld", 
+        log_error(tprintf("announce_connect called with invalid player %" DBREF_FMT,
                          player));
         return;
     }
 
     loc = getloc(player);
     if (loc == NOTHING) {
-        log_error(tprintf("announce_connect: player %ld has no location", 
+        log_error(tprintf("announce_connect: player %" DBREF_FMT " has no location",
                          player));
         return;
     }

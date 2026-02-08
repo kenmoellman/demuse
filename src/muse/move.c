@@ -341,7 +341,7 @@ int enter_room(dbref player, dbref loc)
   /* Can't move to exits */
   if (GoodObject(loc) && Typeof(loc) == TYPE_EXIT)
   {
-    log_error(tprintf("Attempt to move %ld to exit %ld", player, loc));
+    log_error(tprintf("Attempt to move %" DBREF_FMT " to exit %" DBREF_FMT, player, loc));
     report();
     enter_room_depth--;
     return 0;

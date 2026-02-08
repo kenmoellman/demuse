@@ -173,11 +173,11 @@ void report(void)
   
   /* Validate player reference before accessing database */
   if (GoodObject(cplr)) {
-    snprintf(repbuf, sizeof(repbuf), "Player: %ld location: %ld", 
+    snprintf(repbuf, sizeof(repbuf), "Player: %" DBREF_FMT " location: %" DBREF_FMT,
              cplr, db[cplr].location);
     log_error(repbuf);
   } else {
-    snprintf(repbuf, sizeof(repbuf), "Player: %ld (INVALID)", cplr);
+    snprintf(repbuf, sizeof(repbuf), "Player: %" DBREF_FMT " (INVALID)", cplr);
     log_error(repbuf);
   }
   
@@ -224,7 +224,7 @@ void dest_info(dbref thing, dbref tt)
     /* Handle disconnected room notification */
     if (GoodObject(tt) && db[tt].name) {
       snprintf(buff, sizeof(buff), 
-               "You own a disconnected room, %s(#%ld)", 
+               "You own a disconnected room, %s(#%" DBREF_FMT ")",
                db[tt].name, tt);
       if (GoodObject(db[tt].owner)) {
         notify(db[tt].owner, buff);
@@ -1138,7 +1138,7 @@ static char *pack_argv(char **argv_array, dbref cause, char *buffer, size_t bufs
   }
 
   /* Start with cause dbref */
-  offset = (size_t)snprintf(buffer, bufsize, "%ld", cause);
+  offset = (size_t)snprintf(buffer, bufsize, "%" DBREF_FMT, cause);
 
   /* Pack argv elements (starting from argv[1], as argv[0] is unused) */
   for (i = 1; i < MAX_ARG && argv_array[i] != NULL; i++) {
@@ -1213,7 +1213,7 @@ void process_command(dbref player, char *command, dbref cause)
 
   /* Validate player reference first */
   if (!GoodObject(player)) {
-    log_error(tprintf("process_command: Bad player %ld", player));
+    log_error(tprintf("process_command: Bad player %" DBREF_FMT, player));
     return;
   }
 
@@ -1233,7 +1233,7 @@ void process_command(dbref player, char *command, dbref cause)
     if (cause == NOTHING) {
       log_sensitive(tprintf("(direct) %s", command));
     } else {
-      log_sensitive(tprintf("(cause %ld) %s", cause, command));
+      log_sensitive(tprintf("(cause %" DBREF_FMT ") %s", cause, command));
     }
   } else {
     if (GoodObject(db[player].location)) {

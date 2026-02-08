@@ -165,7 +165,7 @@ void rlpage_tick(void)
                db[rlqc->from].cname, rlqc->to);
     } else {
       snprintf(logmsg, sizeof(logmsg),
-               "Error sending page from #%ld to %.200s", 
+               "Error sending page from #%" DBREF_FMT " to %.200s",
                rlqc->from, rlqc->to);
     }
     log_io(logmsg);

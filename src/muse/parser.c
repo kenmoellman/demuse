@@ -2909,7 +2909,7 @@ int set_player_universe(dbref player, int universe_id)
      * For now, this is a no-op
      */
 
-    log_important(tprintf("set_player_universe: Player #%ld assigned to universe %d",
+    log_important(tprintf("set_player_universe: Player #%" DBREF_FMT " assigned to universe %d",
                          player, universe_id));
 
     return 1;

@@ -933,7 +933,7 @@ dbref real_owner(dbref object)
   }
 
   if (x >= 1000) {
-    log_security(tprintf("Object recursion occurred looking up owner of %s (#%ld)",
+    log_security(tprintf("Object recursion occurred looking up owner of %s (#%" DBREF_FMT ")",
                          db[object].name, object));
     return NOTHING;
   }

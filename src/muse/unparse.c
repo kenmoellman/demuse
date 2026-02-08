@@ -242,7 +242,7 @@ char *unparse_object(dbref player, dbref loc)
    * Use ValidObject() instead of GoodObject() to allow displaying objects
    * marked with GOING flag (@poof recycle bin feature) */
   if (!ValidObject(loc)) {
-    return tprintf("<invalid #%ld>", loc);
+    return tprintf("<invalid #%" DBREF_FMT ">", loc);
   }
 
   /* Determine if viewer can see full details */
@@ -254,7 +254,7 @@ char *unparse_object(dbref player, dbref loc)
       (db[loc].flags & SEE_OK) ||
       power(player, POW_EXAMINE)) {
     /* Show full format with dbref and flags */
-    return tprintf("%s(#%ld%s)", db[loc].cname, loc, unparse_flags(loc));
+    return tprintf("%s(#%" DBREF_FMT "%s)", db[loc].cname, loc, unparse_flags(loc));
   } else {
     /* Show name only */
     return stralloc(db[loc].cname);
@@ -299,7 +299,7 @@ char *unparse_object_caption(dbref player, dbref thing)
 
   /* Validate dbref */
   if (!GoodObject(thing)) {
-    return tprintf("<invalid #%ld>", thing);
+    return tprintf("<invalid #%" DBREF_FMT ">", thing);
   }
 
   /* Start with basic object reference */
