@@ -10,7 +10,7 @@
 #include <ctype.h>
 
 
-#define EMERGENCY_BYPASS_PASSWORD "tempemergency123"
+/* #define EMERGENCY_BYPASS_PASSWORD "tempemergency123" */
 
 
 /* Connection failure messages */
@@ -203,6 +203,7 @@ void check_connect(struct descriptor_data *d, char *msg)
                     queue_string(d, connect_fail_char);
                     return;
                 }
+                d->emergency_bypass = 1;
             } else {
                 player = connect_player(user, password);
             }

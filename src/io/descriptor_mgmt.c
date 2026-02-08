@@ -30,6 +30,19 @@ struct ctrace_int {
 //    }
 //}
 
+/* Check if a player is connected via emergency bypass */
+int is_emergency_session(dbref player)
+{
+    struct descriptor_data *d;
+
+    for (d = descriptor_list; d; d = d->next) {
+        if (d->state == CONNECTED && d->player == player && d->emergency_bypass) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* Announce a player connection to the game world */
 void announce_connect(dbref player)
 {

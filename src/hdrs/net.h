@@ -63,6 +63,7 @@ struct descriptor_data {
   char user[40];
   int snag_input;               /* for @paste */
   int pueblo; /* flag for the pueblo client */
+  int emergency_bypass; /* flag for emergency bypass login */
 };
 
 extern struct descriptor_data *descriptor_list;

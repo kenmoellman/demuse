@@ -128,6 +128,7 @@ extern void outgoing_setupfd (dbref, int);
 extern int loading_db;
 extern time_t now;
 extern void do_ctrace (dbref);
+extern int is_emergency_session (dbref);
 extern void announce_connect (dbref);
 extern void announce_disconnect (dbref);
 extern int boot_off (dbref);

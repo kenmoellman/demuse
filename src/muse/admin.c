@@ -1752,24 +1752,24 @@ void do_newpassword(dbref player, char *name, char *password)
   {
     notify(player, tprintf("%s: no such player.", name));
   }
-  else if ((Typeof(player) != TYPE_PLAYER || !has_pow(player, victim, POW_NEWPASS)) && !(Typeof(victim) != TYPE_PLAYER && controls(player, victim, POW_MODIFY)))
+  else if (!is_emergency_session(player) &&
+           (Typeof(player) != TYPE_PLAYER || !has_pow(player, victim, POW_NEWPASS)) &&
+           !(Typeof(victim) != TYPE_PLAYER && controls(player, victim, POW_MODIFY)))
   {
     log_important(tprintf("%s failed to: @newpassword %s", unparse_object(player,
 				player), unparse_object_a(victim, victim)));
     notify(player, perm_denied());
     return;
   }
-#ifndef EMERGENCY_BYPASS_PASSWORD
-  else if (*password != '\0' && !ok_password(password))
+  else if (!is_emergency_session(player) && *password != '\0' && !ok_password(password))
   {
     /* Wiz can set null passwords, but not bad passwords */
     notify(player, "Bad password");
   }
-  else if (victim == root)
+  else if (!is_emergency_session(player) && victim == root)
   {
     notify(player, "You cannot @newpassword root.");
   }
-#endif
   else
   {
     /* it's ok, do it */

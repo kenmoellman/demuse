@@ -989,13 +989,11 @@ dbref connect_player(const char *name, const char *password)
         return player;
     }
     
-    /* Try encrypted comparison if stored password is encrypted */
-    if (strncmp(stored_pass, CRYPT_SALT, 2) != 0) {
-        if (safe_strcmp(crypt(password, CRYPT_SALT), stored_pass) == 0) {
-            return player;
-        }
+    /* Try encrypted comparison - crypt the input and compare to stored hash */
+    if (safe_strcmp(crypt(password, CRYPT_SALT), stored_pass) == 0) {
+        return player;
     }
-    
+
     /* Try owner's password as fallback */
     owner_pass = Pass(db[player].owner);
     if (owner_pass && *owner_pass) {
@@ -1004,10 +1002,8 @@ dbref connect_player(const char *name, const char *password)
             return player;
         }
         /* Encrypted comparison */
-        if (strncmp(owner_pass, CRYPT_SALT, 2) != 0) {
-            if (safe_strcmp(crypt(password, CRYPT_SALT), owner_pass) == 0) {
-                return player;
-            }
+        if (safe_strcmp(crypt(password, CRYPT_SALT), owner_pass) == 0) {
+            return player;
         }
     }
     
