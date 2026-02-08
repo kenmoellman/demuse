@@ -1,10 +1,8 @@
 
-Welcome to a new MUSE 
-                                                       
-Standard commands:
-            connect guest -- to connect as a guest
-connect <name> <password> -- to connect as a player
-                    QUIT  -- leave
+                        Welcome to deMUSE
 
-Type your command now:
+     To connect to an existing character, type: connect <name> <password>
+     To create a new character, type: create <name> <password>
+
+     Use "help" for more information after connecting.
 

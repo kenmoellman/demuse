@@ -1620,7 +1620,11 @@ static void sstrcat(char *old, char *string, const char *app)
   }
 
   /* Copy and process characters */
-  strcpy(s, app);
+  {
+    size_t remaining = SSTRCAT_MAX_LEN - (size_t)(s - old);
+    strncpy(s, app, remaining);
+    s[remaining] = '\0';
+  }
   for (; *s; s++) {
     if ((*s == '(') && !hasnonalpha) {
       *s = '<';
@@ -1722,8 +1726,10 @@ void pronoun_substitute(char *result, dbref player, char *str, dbref privs)
       char buff[PRONOUN_BUF_SIZE];
       str++;
       museexec(&str, buff, privs, player, 0);
-      if ((strlen(buff) + (result - ores)) <= SSTRCAT_MAX_LEN) {
-        strcpy(result, buff);
+      if ((strlen(buff) + (size_t)(result - ores)) <= SSTRCAT_MAX_LEN) {
+        size_t remaining = PRONOUN_BUF_SIZE - (size_t)(result - ores);
+        strncpy(result, buff, remaining - 1);
+        result[remaining - 1] = '\0';
         result += strlen(result);
       }
       if (*str == ']') {

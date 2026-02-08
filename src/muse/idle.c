@@ -239,7 +239,7 @@ void set_unidle(dbref player, time_t lasttime)
   /* Fix #6: Add bounds checking */
   if (player <= 0 || player >= db_top)
   {
-    log_io(tprintf("problem with set_unidle -- player = %d lasttime = %ld", (int)player, lasttime));
+    log_io(tprintf("problem with set_unidle -- player = %" DBREF_FMT " lasttime = %ld", player, lasttime));
     return;
   }
 

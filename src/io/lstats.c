@@ -370,19 +370,19 @@ void read_loginstats(void)
     
     /* Read highest day */
     if (fgets(buf, LOGINSTATS_BUF, fp)) {
-        nl.highest_day = atoi(buf);
+        nl.highest_day = (int)strtol(buf, NULL, 10);
         old_highest_day = nl.highest_day;
     }
     
     /* Read highest week */
     if (fgets(buf, LOGINSTATS_BUF, fp)) {
-        nl.highest_week = atoi(buf);
+        nl.highest_week = (int)strtol(buf, NULL, 10);
         old_highest_week = nl.highest_week;
     }
     
     /* Read highest at once */
     if (fgets(buf, LOGINSTATS_BUF, fp)) {
-        nl.highest_atonce = atoi(buf);
+        nl.highest_atonce = (int)strtol(buf, NULL, 10);
     }
     
     /* Read date strings - safely */
@@ -406,21 +406,21 @@ void read_loginstats(void)
     
     /* Read statistics */
     if (fgets(buf, LOGINSTATS_BUF, fp)) nl.total = atol(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.today = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_sun = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_mon = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_tue = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_wed = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_thu = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_fri = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_sat = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_sun = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_mon = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_tue = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_wed = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_thu = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_fri = atoi(buf);
-    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_sat = atoi(buf);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.today = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_sun = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_mon = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_tue = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_wed = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_thu = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_fri = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.a_sat = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_sun = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_mon = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_tue = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_wed = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_thu = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_fri = (int)strtol(buf, NULL, 10);
+    if (fgets(buf, LOGINSTATS_BUF, fp)) nl.b_sat = (int)strtol(buf, NULL, 10);
     
     fclose(fp);
 }

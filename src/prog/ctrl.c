@@ -436,7 +436,7 @@ void do_decompile(dbref player, char *arg1, char *arg2)
     for (i = 0; db[obj].parents[i] != NOTHING; i++) {
       /* Validate parent reference */
       if (GoodObject(db[obj].parents[i])) {
-        notify(player, tprintf("@addparent %s=" DBREF_FMT,
+        notify(player, tprintf("@addparent %s=%" DBREF_FMT,
                               prefix, db[obj].parents[i]));
       }
     }

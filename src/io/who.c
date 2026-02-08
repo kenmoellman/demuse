@@ -276,7 +276,7 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
     /* Get player's screen width preference */
     if (*(p = atr_get(w, A_COLUMNS)) != '\0')
     {
-      scr_cols = atoi(p);
+      scr_cols = (int)strtol(p, NULL, 10);
       if (scr_cols < 40) scr_cols = 40;
       if (scr_cols > WHO_BUF_SIZ) scr_cols = WHO_BUF_SIZ;
     }
@@ -667,7 +667,8 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
         size_t remaining = sizeof(buf) - (b - buf);
         if (remaining > 4)
         {
-          strcpy(b, "    ");
+          strncpy(b, "    ", remaining - 1);
+          b[4] = '\0';
           b += 4;
         }
       }

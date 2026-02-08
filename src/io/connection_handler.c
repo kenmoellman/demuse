@@ -181,7 +181,8 @@ void check_connect(struct descriptor_data *d, char *msg)
         /* Check for guest connection */
         if (string_prefix(user, guest_prefix) || 
             string_prefix(user, "guest")) {
-            strcpy(password, guest_prefix);
+            strncpy(password, guest_prefix, sizeof(password) - 1);
+            password[sizeof(password) - 1] = '\0';
             
             if (check_lockout(d, guest_lockout_file, guest_msg_file)) {
                 player = NOTHING;
@@ -235,7 +236,8 @@ void check_connect(struct descriptor_data *d, char *msg)
 //            d->charname = malloc(strlen(user) + 1);
             SAFE_MALLOC(d->charname, char, strlen(user) + 1);
             if (d->charname) {
-                strcpy(d->charname, user);
+                strncpy(d->charname, user, strlen(user));
+                d->charname[strlen(user)] = '\0';
             } else {
                 log_error("Failed to allocate charname buffer");
                 d->state = WAITCONNECT;

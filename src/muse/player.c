@@ -759,7 +759,7 @@ int get_connected_players(dbref *buffer, int maxsize)
         *__a = NULL; \
     } else { \
         SAFE_MALLOC(*__a, char, strlen(__b) + 1); \
-        strcpy(*__a, __b); \
+        { size_t __len = strlen(__b) + 1; strncpy(*__a, __b, __len - 1); (*__a)[__len - 1] = '\0'; } \
     } \
 } while(0)
 
@@ -903,7 +903,8 @@ static int safe_strcpy(char *dest, const char *src, size_t size)
         return 0;
     }
     
-    strcpy(dest, src);
+    strncpy(dest, src, size - 1);
+    dest[size - 1] = '\0';
     return 1;
 }
 

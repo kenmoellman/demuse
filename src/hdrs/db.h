@@ -266,7 +266,7 @@ extern int dozonetemp;            /* Temporary variable for DOZONE macro */
 /* Doomsday (scheduled destruction) checks */
 #define IS_DOOMED(x)    ((*atr_get((x), A_DOOMSDAY)) && \
                         (db[x].flags & GOING) && \
-                        (atoi(atr_get((x), A_DOOMSDAY)) > 0))
+                        ((int)strtol(atr_get((x), A_DOOMSDAY), NULL, 10) > 0))
 #define IS_GONE(x)      ((db[(x)].flags & GOING) && !*atr_get((x), A_DOOMSDAY))
 
 /* ============================================================================

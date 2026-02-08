@@ -162,7 +162,7 @@ static void init_args(int argc, char *argv[])
     /* Change port number? */
     if (argc > 1) {
         --argc;
-        inet_port = atoi(*++argv);
+        inet_port = (int)strtol(*++argv, NULL, 10);
     }
 }
 
@@ -377,8 +377,15 @@ static void shovechars(int port)
         time(&now);
         last_slice = update_quotas(last_slice, current_time);
 
-        sprintf(welcome_msg_file, "msgs/welcome%03d.txt",
-                rand() % NUM_WELCOME_MESSAGES);
+#ifdef RANDOM_WELCOME
+        /* Randomize welcome message file each loop iteration */
+        {
+            static char welcome_buf[64];
+            snprintf(welcome_buf, sizeof(welcome_buf), "msgs/welcome%03d.txt",
+                    (int)(random() % NUM_WELCOME_MESSAGES));
+            welcome_msg_file = welcome_buf;
+        }
+#endif
 
         clear_stack();
         process_commands();

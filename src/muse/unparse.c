@@ -192,7 +192,9 @@ char *unparse_object_a(dbref player, dbref loc)
   xx = stack_em(strlen(zz) + 1);
   
   if (xx) {
-    strcpy(xx, zz);
+    size_t zz_len = strlen(zz) + 1;
+    strncpy(xx, zz, zz_len - 1);
+    xx[zz_len - 1] = '\0';
   }
   
   return xx;

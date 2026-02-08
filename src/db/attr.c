@@ -86,8 +86,8 @@ void do_set(dbref player, char *name, char *flag, int allow_commands)
 
     if (attr == A_NICE)
     {
-      /* Fix #7: Evaluate atoi() once and store result */
-      nice_value = atoi(p);
+      /* Fix #7: Evaluate strtol() once and store result */
+      nice_value = (int)strtol(p, NULL, 10);
 
       if ((nice_value > 20) || (nice_value < -20))
       {

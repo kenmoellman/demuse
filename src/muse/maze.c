@@ -676,7 +676,7 @@ void do_setbit(dbref player, char *arg1, char *arg2)
     return;
   }
 
-  bit = atoi(arg2);
+  bit = (int)strtol(arg2, NULL, 10);
 
   if (bit >= num_entries || bit < 0) {
     notify(player, "No such bit entry.");
@@ -782,7 +782,7 @@ void do_sbar(dbref player, char *arg)
   } else if (!string_compare(arg, "off")) {
     remove_sbar(player);
   } else {
-    if (atoi(atr_get(player, A_SBAR))) {
+    if ((int)strtol(atr_get(player, A_SBAR), NULL, 10)) {
       remove_sbar(player);
     } else {
       init_sbar(player);
@@ -811,12 +811,12 @@ void update_sbar(dbref player)
     return;
   }
   
-  if (Typeof(player) != TYPE_PLAYER || !atoi(atr_get(player, A_SBAR))) {
+  if (Typeof(player) != TYPE_PLAYER || !(int)strtol(atr_get(player, A_SBAR), NULL, 10)) {
     return;
   }
 
-  hp = atoi(atr_get(player, A_HITPOINTS));
-  maxhp = atoi(atr_get(player, A_MAXHP));
+  hp = (int)strtol(atr_get(player, A_HITPOINTS), NULL, 10);
+  maxhp = (int)strtol(atr_get(player, A_MAXHP), NULL, 10);
 
   /* Color HP red if below 25% */
   if (hp < maxhp / 4) {
@@ -829,8 +829,8 @@ void update_sbar(dbref player)
     tprintf("\33[1;44m\33[1;1H\33[K\33[1;1HHitPoints: %3s/%3d   "
             "MagicPoints: %3d/%3d   Exp to Next: %ld",
             hpbuf, maxhp,
-            atoi(atr_get(player, A_MAGICPOINTS)), 
-            atoi(atr_get(player, A_MAXMP)),
+            (int)strtol(atr_get(player, A_MAGICPOINTS), NULL, 10),
+            (int)strtol(atr_get(player, A_MAXMP), NULL, 10),
             atol(atr_get(player, A_NEXTEXP)) - atol(atr_get(player, A_EXP))));
   
   notify(player, "|n|\33[24;1H");
