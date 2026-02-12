@@ -81,7 +81,10 @@ void open_sockets(void)
   fcntl(sock, F_SETFD, 1);
   close(sock);
   
-  for (sock = 0; sock < 1000; sock++)
+  /* Set FD_CLOEXEC on all fds except stdin/stdout/stderr (0,1,2).
+   * Those must survive a future execv (@reload) so the new process
+   * has working I/O before init_io() runs. */
+  for (sock = 3; sock < 1000; sock++)
     fcntl(sock, F_SETFD, 1);
     
   while (fgets(buf, 1024, x))

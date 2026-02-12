@@ -21,5 +21,6 @@ src/muse/netmuse
 src/util/mkindx
 src/util/mycompress
 src/util/wd
+run/db/mariadb.conf
 CLAUDE.md
 .claude/

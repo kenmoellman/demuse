@@ -118,15 +118,17 @@ void muse_log(struct log *l, const char *str)
     return;
   }
 
-  /* Broadcast to communication channel if configured */
-  if (l->com_channel && l->com_channel[0] != '\0')
+  /* Broadcast to communication channel if configured.
+   * Skip if the game database is not yet loaded (early startup / reload)
+   * because com_send() iterates descriptors and accesses db[]. */
+  if (db && l->com_channel && l->com_channel[0] != '\0')
   {
     /* Safely copy channel name with bounds checking */
     snprintf(channel, sizeof(channel), "%s", l->com_channel);
-    
+
     /* Build message with safe bounds */
     snprintf(buf, sizeof(buf), "|Y!+*| %s", str);
-    
+
     /* Send to communication channel */
     com_send(channel, buf);
   }
