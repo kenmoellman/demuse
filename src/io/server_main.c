@@ -43,6 +43,9 @@ struct descriptor_data *descriptor_list = 0;
 /* Main entry point */
 int main(int argc, char *argv[])
 {
+    fprintf(stderr, "netmuse starting (pid=%d, argv[0]=%s)\n",
+            getpid(), argv[0] ? argv[0] : "(null)");
+
     /* Initialize the safe memory system FIRST */
     safe_memory_init();
 #ifdef MEMORY_DEBUG_LOG
@@ -52,13 +55,30 @@ int main(int argc, char *argv[])
 #endif
     atexit(safe_memory_cleanup);
 
-    /* Initialize global state */
+    /* Initialize MariaDB and load config FIRST - all config values come
+     * from the database. This must happen before init_args() and init_io()
+     * which use config variables like def_db_in and stdout_logfile. */
+    if (!mariadb_init()) {
+        fprintf(stderr, "FATAL: MariaDB initialization failed.\n");
+        fprintf(stderr, "The database must be set up before starting the server.\n");
+        fprintf(stderr, "Run: bash config/install.sh\n");
+        exit(1);
+    }
+    if (mariadb_config_load() < 0) {
+        fprintf(stderr, "FATAL: Failed to load config from MariaDB.\n");
+        fprintf(stderr, "Ensure the config table is populated.\n");
+        fprintf(stderr, "Run: bash config/install.sh\n");
+        mariadb_cleanup();
+        exit(1);
+    }
+
+    /* Initialize global state - config variables now have values from DB */
     init_io_globals();
     init_args(argc, argv);
     init_io();
 
 
-    
+
     printf("--------------------------------\n");
     printf("MUSE online (pid=%d)\n", getpid());
 
@@ -90,6 +110,7 @@ int main(int argc, char *argv[])
     close_sockets();
     do_haltall(1);
     dump_database();
+    mariadb_cleanup();
     free_database();
     free_mail();
     free_hash();
@@ -114,20 +135,35 @@ int main(int argc, char *argv[])
         mnem_writestats();
 #endif
         if (fork() == 0) {
-            exit(0);  /* Child exits cleanly */
+            _exit(0);  /* Child exits — use _exit to skip atexit handlers */
         }
 
         alarm(0);  /* Cancel any pending alarms */
         wait(0);   /* Wait for child to exit */
 
+        /* Ensure stdout/stderr survive exec so the new process has
+         * working I/O before its init_io() runs. open_sockets() sets
+         * FD_CLOEXEC on all fds; we must clear it on 0/1/2. */
+        fcntl(fileno(stdout), F_SETFD, 0);
+        fcntl(fileno(stderr), F_SETFD, 0);
+
+        fprintf(stderr, "RELOAD: execv argv[0]='%s'\n",
+                argv[0] ? argv[0] : "(null)");
+
         /* Try to exec the new server */
         execv(argv[0], argv);
+        fprintf(stderr, "RELOAD: execv('%s') failed: %s\n",
+                argv[0] ? argv[0] : "(null)", strerror(errno));
         execv("../bin/netmuse", argv);
+        fprintf(stderr, "RELOAD: execv('../bin/netmuse') failed: %s\n",
+                strerror(errno));
         execvp("netmuse", argv);
-        
-        /* If exec fails, cleanup and exit */
+        fprintf(stderr, "RELOAD: execvp('netmuse') failed: %s\n",
+                strerror(errno));
+
+        /* If exec fails, cleanup and exit with status 1 so wd restarts */
         unlink("logs/socket_table");
-        _exit(exit_status);
+        _exit(1);
     }
 
 

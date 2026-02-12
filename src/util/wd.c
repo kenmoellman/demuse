@@ -9,8 +9,10 @@
 #include <fcntl.h>
 #include "config.h"
 #include "credits.h"
-#include "externs.h"
-#include "config.c"
+
+/* Watchdog only needs the log file path - hardcoded since wd.c
+ * runs as a separate process and doesn't use the MariaDB config system */
+static char *wd_logfile = "logs/wd.log";
 
 /* #if defined(SYSV) || defined(HPUX) || defined(SYSV_MAYBE) */
 #define  mklinebuf(fp)	setvbuf(fp, NULL, _IOLBF, 0)

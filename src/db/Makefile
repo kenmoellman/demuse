@@ -30,6 +30,18 @@ ifneq ($(CURL_LIBS),)
 LDFLAGS += $(CURL_LIBS)
 endif
 
+# Get MariaDB flags dynamically (try pkg-config first, then mariadb_config)
+MARIADB_CFLAGS := $(shell pkg-config --cflags libmariadb 2>/dev/null || mariadb_config --cflags 2>/dev/null)
+MARIADB_LIBS := $(shell pkg-config --libs libmariadb 2>/dev/null || mariadb_config --libs 2>/dev/null)
+
+# Add MariaDB support if available
+ifneq ($(MARIADB_CFLAGS),)
+CFLAGS += $(MARIADB_CFLAGS) -DUSE_MARIADB
+endif
+ifneq ($(MARIADB_LIBS),)
+LDFLAGS += $(MARIADB_LIBS)
+endif
+
 # Top directory
 TOPDIR = ../..
 
@@ -37,12 +49,20 @@ TOPDIR = ../..
 # Refactored from bsd.c into logical modules:
 # NOTE: attr.c added from comm/set.c (2025 reorganization)
 # NOTE: destroy.c merged into object.c (2025 consolidation)
-SRCS = boolexp.c \
+# Base source files
+SRCS_BASE = boolexp.c \
        db_io.c \
        inherit.c \
        object.c \
        warnings.c \
        attr.c
+
+# Conditionally add mariadb.c if MariaDB is available
+ifneq ($(MARIADB_CFLAGS),)
+SRCS = $(SRCS_BASE) mariadb.c
+else
+SRCS = $(SRCS_BASE)
+endif
 
 # Object files
 OBJS = $(SRCS:.c=.o)

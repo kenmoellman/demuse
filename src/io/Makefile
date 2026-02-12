@@ -37,6 +37,14 @@ ifneq ($(CURL_LIBS),)
 LDFLAGS += $(CURL_LIBS)
 endif
 
+# Get MariaDB flags dynamically (for server_main.c startup/shutdown)
+MARIADB_CFLAGS := $(shell pkg-config --cflags libmariadb 2>/dev/null || mariadb_config --cflags 2>/dev/null)
+
+# Add MariaDB define if available (actual linking done in muse/Makefile)
+ifneq ($(MARIADB_CFLAGS),)
+CFLAGS += -DUSE_MARIADB
+endif
+
 # Top directory
 TOPDIR = ../..
 

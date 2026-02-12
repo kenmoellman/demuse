@@ -1,0 +1,28 @@
+# MariaDB Configuration for deMUSE
+#
+# RECOMMENDED: Run the interactive setup script instead of editing manually:
+#   bash config/setup_mariadb.sh
+#
+# The script prompts for all values, creates the database/user/table,
+# and writes run/db/mariadb.conf automatically.
+#
+# For manual setup, copy this file to run/db/mariadb.conf and edit.
+# DO NOT commit run/db/mariadb.conf to version control!
+#
+# If this file is missing or the connection fails, deMUSE will fall back
+# to the hardcoded defaults in config/config.c.
+
+# Database host (use 127.0.0.1 instead of localhost to force TCP)
+host=localhost
+
+# Database port (default MariaDB port)
+port=3306
+
+# Database user
+user=demuse
+
+# Database password
+password=CHANGE_ME
+
+# Database name
+database=demuse

@@ -48,6 +48,8 @@ typedef long dbref;
 /* for FIFO * */
 #include "fifo.h"
 #include "log.h"
+/* for MariaDB integration */
+#include "mariadb.h"
 
 #ifndef SOCK_STREAM
 #include <sys/socket.h>
@@ -171,22 +173,9 @@ extern int ok_channel_name (char *);
 extern void info_config (dbref);
 void info_pid (dbref);
 
-/* From config.c */
-extern char *perm_denied (void);
+/* From config_vars.c - runtime config variables and perm_denied() */
+#include "config_vars.h"
 extern void do_config (dbref, char *, char *);
-#define DO_NUM(nam,var) extern int var;
-#define DO_STR(nam,var) extern char *var;
-/* okay. this pisses me off. I don't know why, but the compiler
-    is throwing a fit over using dbref, wanting to make it an 
-    int instead of a long.  So I'll force it. *sigh*           
-#define DO_REF(nam,var) extern dbref var;  */
-#define DO_REF(nam,var) DO_LNG(nam,var)
-#define DO_LNG(nam,var) extern long var;
-#include "conf.h"
-#undef DO_NUM
-#undef DO_STR
-#undef DO_REF
-#undef DO_LNG
 
 /* From cque.c */
 extern void do_jobs (int);

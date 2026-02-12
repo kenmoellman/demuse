@@ -15,13 +15,25 @@ CFLAGS = -Wall -Wextra -pedantic -std=c11 -g -O2 \
 LDFLAGS = -pie
 LIBS = -lm -lcrypt
 
+# Get MariaDB flags dynamically (try pkg-config first, then mariadb_config)
+MARIADB_CFLAGS := $(shell pkg-config --cflags libmariadb 2>/dev/null || mariadb_config --cflags 2>/dev/null)
+MARIADB_LIBS := $(shell pkg-config --libs libmariadb 2>/dev/null || mariadb_config --libs 2>/dev/null)
+
+# Add MariaDB support if available
+ifneq ($(MARIADB_CFLAGS),)
+CFLAGS += $(MARIADB_CFLAGS) -DUSE_MARIADB
+endif
+ifneq ($(MARIADB_LIBS),)
+LIBS += $(MARIADB_LIBS)
+endif
+
 # Top directory
 TOPDIR = ..
 
 # Source files
 # NOTE: datetime.c, info.c, economy.c, idle.c moved from comm/ directory (2025 reorganization)
 SRCS = admin.c cque.c game.c match.c move.c parser.c player.c powers.c  predicates.c \
-       stringutil.c timer.c unparse.c utils.c wild.c conf.c maze.c zones.c datetime.c info.c economy.c idle.c
+       stringutil.c timer.c unparse.c utils.c wild.c conf.c config_vars.c maze.c zones.c datetime.c info.c economy.c idle.c
 
 # Object files
 OBJS = $(SRCS:.c=.o)
