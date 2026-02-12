@@ -660,8 +660,8 @@ void do_queue(dbref player)
       
       if ((db[tmp->player].owner == db[player].owner) || can_see) {
         /* Format player name with truncation */
-        snprintf(mytmp, sizeof(mytmp), "[#%d %-20.20s", 
-                 tmp->player, 
+        snprintf(mytmp, sizeof(mytmp), "[#%" DBREF_FMT " %-20.20s",
+                 tmp->player,
                  GoodObject(tmp->player) ? db[tmp->player].name : "INVALID");
         mytmp[sizeof(mytmp) - 1] = '\0';
         

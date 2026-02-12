@@ -995,6 +995,9 @@ dbref connect_player(const char *name, const char *password)
     }
 
     /* Try owner's password as fallback */
+    if (!GoodObject(db[player].owner)) {
+        return PASSWORD;
+    }
     owner_pass = Pass(db[player].owner);
     if (owner_pass && *owner_pass) {
         /* Direct comparison */
@@ -1310,7 +1313,10 @@ char *pow_to_name(ptype pow)
 char *get_class(dbref player)
 {
     extern char *type_to_name();
-    
+
+    if (!GoodObject(player)) {
+        return stralloc("*INVALID*");
+    }
     if (Typeof(player) == TYPE_PLAYER) {
         return class_to_name(*db[player].pows);
     } else {
@@ -1508,7 +1514,8 @@ void do_empower(dbref player, const char *whostr, const char *powstr)
     /* Set power */
     for (k = 0; k < NUM_POWS; k++) {
         if (powers[k].num == pow) {
-            if (powers[k].max[class_to_list_pos(*db[db[who].owner].pows)] >= powval) {
+            if (GoodObject(db[who].owner) && db[db[who].owner].pows &&
+                powers[k].max[class_to_list_pos(*db[db[who].owner].pows)] >= powval) {
                 set_pow(who, pow, powval);
                 log_important(tprintf("%s executed: @empower %s=%s:%s",
                                      unparse_object_a(player, player), 

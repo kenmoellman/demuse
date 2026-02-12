@@ -345,7 +345,7 @@ void do_page(dbref player, char *arg1, char *arg2)
     for (k = 1; k <= targets[0]; k++) {
         /* Validate target dbref */
         if (!GoodObject(targets[k])) {
-            notify(player, tprintf("Invalid target #%d.", targets[k]));
+            notify(player, tprintf("Invalid target #%" DBREF_FMT ".", targets[k]));
             continue;
         }
         
@@ -475,7 +475,7 @@ void record_last_pager(dbref target, dbref pager)
     }
     
     /* Store in attribute for "page last" functionality */
-    atr_add(target, A_LASTPAGE, tprintf("#%d", pager));
+    atr_add(target, A_LASTPAGE, tprintf("#%" DBREF_FMT, pager));
     
     /* Update timestamp */
     now_time = time(NULL);

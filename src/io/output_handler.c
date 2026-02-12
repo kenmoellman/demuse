@@ -53,7 +53,7 @@ char *short_name(dbref obj)
     const char *alias;
     size_t alias_len, name_len;
 
-    if (obj < 0 || obj >= db_top) {
+    if (!GoodObject(obj)) {
         return "?";
     }
 
@@ -91,6 +91,9 @@ char *format_player_output(dbref player, int color, const char *msg, int pueblo)
     }
     
     /* Apply color parsing based on player preferences */
+    if (!GoodObject(player)) {
+        return stralloc(buffer);
+    }
     if (db[player].flags & PLAYER_NOBEEP) {
         if (db[player].flags & PLAYER_ANSI) {
             return stralloc(parse_color_nobeep(buffer, pueblo));
@@ -119,6 +122,10 @@ char *add_pre_suf(dbref player, int color, char *msg, int pueblo)
 
     if (!msg) {
         return stralloc("");
+    }
+
+    if (!GoodObject(player)) {
+        return stralloc(msg);
     }
 
     /* Check if player is actually connected */
@@ -176,6 +183,10 @@ void raw_notify_internal(dbref player, char *msg, int color)
     char *temp;
 
     if (!msg) {
+        return;
+    }
+
+    if (!GoodObject(player)) {
         return;
     }
 

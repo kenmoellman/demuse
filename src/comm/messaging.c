@@ -164,7 +164,7 @@ mdbref get_mailk(dbref player)
     char *attr;
     
     if (player < 0 || player >= db_top) return NOMAIL;
-    
+
     attr = atr_get(player, A_MAILK);
     if (!attr || !*attr) return NOMAIL;
     
@@ -177,7 +177,7 @@ void set_mailk(dbref player, mdbref mailk)
     char buf[32];
     
     if (player < 0 || player >= db_top) return;
-    
+
     snprintf(buf, sizeof(buf), "%ld", mailk);
     atr_add(player, A_MAILK, buf);
 }
@@ -189,7 +189,7 @@ long mail_size(dbref player)
     mdbref j;
     
     if (player < 0 || player >= db_top) return 0;
-    
+
     for (j = get_mailk(player); j != NOMAIL; j = mdb[j].next) {
         size += sizeof(MDB_ENTRY) + strlen(mdb[j].message) + 1;
     }
@@ -257,7 +257,7 @@ long count_messages(dbref mailbox, int include_deleted)
     mdbref i;
     
     if (mailbox < 0 || mailbox >= db_top) return 0;
-    
+
     for (i = get_mailk(mailbox); i != NOMAIL; i = mdb[i].next) {
         if (include_deleted || !(mdb[i].flags & MF_DELETED)) {
             count++;
@@ -274,7 +274,7 @@ long count_unread(dbref player)
     mdbref i;
     
     if (player < 0 || player >= db_top) return 0;
-    
+
     for (i = get_mailk(player); i != NOMAIL; i = mdb[i].next) {
         if (!(mdb[i].flags & MF_READ) && !(mdb[i].flags & MF_DELETED)) {
             count++;
@@ -294,7 +294,7 @@ void send_message(dbref from, dbref to, const char *message,
     
     if (!message || !*message) return;
     if (to < 0 || to >= db_top) return;
-    
+
     /* Validate sender */
     if (from != NOTHING && (from < 0 || from >= db_top)) return;
     
@@ -395,7 +395,7 @@ void purge_deleted(dbref player, dbref mailbox)
     int is_board = (mailbox == default_room);
     
     if (mailbox < 0 || mailbox >= db_top) return;
-    
+
     for (i = get_mailk(mailbox); i != NOMAIL; i = next) {
         next = mdb[i].next;
         
@@ -432,7 +432,7 @@ void list_messages(dbref player, dbref mailbox, msg_dest_type type)
     const char *sys_name = is_board ? "+board" : "+mail";
     
     if (mailbox < 0 || mailbox >= db_top) return;
-    
+
     /* Print header */
     if (is_board) {
         notify(player, 
@@ -474,9 +474,10 @@ void list_messages(dbref player, dbref mailbox, msg_dest_type type)
             char date_buf[32];
             char *preview;
             
-            /* Format sender name */
-            safe_copy(name_buf, 
-                     truncate_color(db[mdb[j].from].cname, 20),
+            /* Format sender name - validate sender still exists */
+            safe_copy(name_buf,
+                     GoodObject(mdb[j].from) ?
+                     truncate_color(db[mdb[j].from].cname, 20) : "*deleted*",
                      sizeof(name_buf));
             
             /* Format date */

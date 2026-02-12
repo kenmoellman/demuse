@@ -43,10 +43,14 @@ static int check_auditorium_permission(dbref player, dbref loc);
  */
 static int check_auditorium_permission(dbref player, dbref loc)
 {
+    if (!GoodObject(loc)) {
+        return 1;  /* No valid location, allow speech */
+    }
     if (IS(loc, TYPE_ROOM, ROOM_AUDITORIUM) &&
         !controls(player, loc, POW_REMOTE) &&
         (!could_doit(player, loc, A_SLOCK) ||
-         !could_doit(player, db[loc].zone, A_SLOCK))) {
+         (GoodObject(db[loc].zone) &&
+          !could_doit(player, db[loc].zone, A_SLOCK)))) {
         did_it(player, loc, A_SFAIL, "Shh.", A_OSFAIL, NULL, A_ASFAIL);
         return 0;
     }
@@ -92,7 +96,7 @@ static int can_emit_msg(dbref player, dbref loc, const char *msg)
     
     /* Check if first word is a player name they can't spoof */
     thing = lookup_player(first_word);
-    if (thing != NOTHING && !string_compare(db[thing].name, first_word)) {
+    if (GoodObject(thing) && !string_compare(db[thing].name, first_word)) {
         if (!controls(player, thing, POW_REMOTE)) {
             return 0;  /* Can't spoof this player */
         }
@@ -105,7 +109,7 @@ static int can_emit_msg(dbref player, dbref loc, const char *msg)
         first_word[word_len - 2] = '\0';
         
         thing = lookup_player(first_word);
-        if (thing != NOTHING && !string_compare(db[thing].name, first_word)) {
+        if (GoodObject(thing) && !string_compare(db[thing].name, first_word)) {
             if (!controls(player, thing, POW_REMOTE)) {
                 return 0;  /* Can't spoof this player's possessive */
             }
@@ -113,7 +117,7 @@ static int can_emit_msg(dbref player, dbref loc, const char *msg)
     }
     
     /* Check if it matches an object in the location */
-    if (loc != NOTHING && loc >= 0 && loc < db_top) {
+    if (GoodObject(loc)) {
         save_loc = db[player].location;
         db[player].location = loc;
         init_match(player, first_word, NOTYPE);
@@ -122,7 +126,7 @@ static int can_emit_msg(dbref player, dbref loc, const char *msg)
         db[player].location = save_loc;
         
         /* Can't spoof objects in the room */
-        if (thing != NOTHING && thing != AMBIGUOUS) {
+        if (GoodObject(thing)) {
             return 0;
         }
     }
@@ -299,10 +303,11 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
     }
     
     /* Check auditorium restrictions */
-    if (!check_auditorium_permission(player, db[who].location)) {
+    if (GoodObject(db[who].location) &&
+        !check_auditorium_permission(player, db[who].location)) {
         return;
     }
-    
+
     /* Handle different emit types */
     switch (emittype) {
         case 0: /* pemit - to a specific player/object */
@@ -334,7 +339,8 @@ void do_general_emit(dbref player, char *arg1, char *arg2, int emittype)
             break;
             
         case 2: /* oemit - to everyone except target */
-            if (needs_spoof_check && can_emit_msg(player, db[who].location, bf)) {
+            if (GoodObject(db[who].location) &&
+                needs_spoof_check && can_emit_msg(player, db[who].location, bf)) {
                 notify_in(db[who].location, who, bf);
                 if (!(db[player].flags & QUIET)) {
                     notify(player, tprintf("Everyone except %s saw \"%s\".",
@@ -431,7 +437,7 @@ void do_cemit(dbref player, char *arg1, char *arg2)
     }
     
     /* Send to target */
-    if (d->state == CONNECTED) {
+    if (d->state == CONNECTED && GoodObject(d->player)) {
         notify(d->player, bf);
     } else {
         /* Not connected - send raw with newline */

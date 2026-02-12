@@ -782,7 +782,8 @@ void do_examine(dbref player, char *name, char *arg2)
     }
     
     notify(player, tprintf("Owner:%s%s%s%s%s",
-                          db[db[thing].owner].cname, crm, cr, rqm, rq));
+                          GoodObject(db[thing].owner) ? db[db[thing].owner].cname : "*INVALID*",
+                          crm, cr, rqm, rq));
     notify(player, flag_description(thing));
     
     if (db[thing].zone != NOTHING) {
@@ -1104,9 +1105,12 @@ void do_sweep(dbref player, char *arg1)
     
     if (*arg1) {
         dbref i;
-        
+
         notify(player, tprintf("All places that respond to %s:", arg1));
-        
+
+        if (!GoodObject(db[player].location)) {
+            return;
+        }
         for (i = db[db[player].location].contents; i != NOTHING; i = db[i].next) {
             if (Typeof(i) != TYPE_PLAYER || i == player) {
                 print_atr_match(i, player, arg1);
@@ -1120,24 +1124,26 @@ void do_sweep(dbref player, char *arg1)
         }
         
         print_atr_match(db[player].location, player, arg1);
-        
+
         for (i = db[db[player].location].exits; i != NOTHING; i = db[i].next) {
             if (Typeof(i) != TYPE_PLAYER || i == player) {
                 print_atr_match(i, player, arg1);
             }
         }
         
-        print_atr_match(db[player].zone, player, arg1);
-        
-        if (db[player].zone != db[0].zone) {
+        if (GoodObject(db[player].zone)) {
+            print_atr_match(db[player].zone, player, arg1);
+        }
+
+        if (GoodObject(db[0].zone) && db[player].zone != db[0].zone) {
             print_atr_match(db[0].zone, player, arg1);
         }
     } else {
         dbref here = db[player].location;
         dbref test;
-        
+
         test = here;
-        if (here == NOTHING) {
+        if (!GoodObject(here)) {
             return;
         }
         
