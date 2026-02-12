@@ -35,6 +35,9 @@ static int check_auditorium_permission(dbref player, dbref loc);
  */
 char *spname(dbref thing)
 {
+    if (!GoodObject(thing)) {
+        return "*INVALID*";
+    }
     return db[thing].cname;
 }
 
@@ -66,9 +69,13 @@ char *reconstruct_message(char *arg1, char *arg2)
  */
 static int check_auditorium_permission(dbref player, dbref loc)
 {
+    if (!GoodObject(loc)) {
+        return 1;  /* No location, allow speech */
+    }
     if (IS(loc, TYPE_ROOM, ROOM_AUDITORIUM) &&
         (!could_doit(player, loc, A_SLOCK) ||
-         !could_doit(player, db[loc].zone, A_SLOCK))) {
+         (GoodObject(db[loc].zone) &&
+          !could_doit(player, db[loc].zone, A_SLOCK)))) {
         did_it(player, loc, A_SFAIL, "Shh.", A_OSFAIL, NULL, A_ASFAIL);
         return 0;
     }
@@ -147,6 +154,10 @@ void do_whisper(dbref player, char *arg1, char *arg2)
             break;
             
         default:
+            if (!GoodObject(who)) {
+                notify(player, "That object is no longer valid.");
+                break;
+            }
             if (*bf == POSE_TOKEN || *bf == NOSP_POSE) {
                 const char *possessive = (*bf == NOSP_POSE) ? "'s" : "";
                 notify(player,
@@ -154,16 +165,16 @@ void do_whisper(dbref player, char *arg1, char *arg2)
                              db[who].cname, spname(player),
                              possessive, bf + 1));
                 notify(who,
-                      tprintf("%s whisper-poses: %s%s %s", 
-                             spname(player), spname(player), 
+                      tprintf("%s whisper-poses: %s%s %s",
+                             spname(player), spname(player),
                              possessive, bf + 1));
                 did_it(player, who, NULL, 0, NULL, 0, A_AWHISPER);
             } else if (*bf == THINK_TOKEN) {
-                notify(player, 
+                notify(player,
                       tprintf("You whisper-thought %s with \"%s . o O ( %s )\".",
                              db[who].cname, spname(player), bf + 1));
-                notify(who, 
-                      tprintf("%s whisper-thinks: %s . o O ( %s )", 
+                notify(who,
+                      tprintf("%s whisper-thinks: %s . o O ( %s )",
                              spname(player), spname(player), bf + 1));
                 did_it(player, who, NULL, 0, NULL, 0, A_AWHISPER);
             } else {
@@ -301,7 +312,7 @@ void do_to(dbref player, char *arg1, char *arg2)
         thing = NOTHING;
     }
     
-    if (thing != NOTHING) {
+    if (GoodObject(thing)) {
         snprintf(buf2, sizeof(buf2), "%s", db[thing].cname);
     } else {
         snprintf(buf2, sizeof(buf2), "%s", message);

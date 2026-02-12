@@ -46,7 +46,10 @@ void do_gripe(dbref player, char *arg1, char *arg2)
     dbref loc;
     char *message;
     char buf[BUFFER_LEN];
-    
+
+    if (!GoodObject(player)) {
+        return;
+    }
     loc = db[player].location;
     
     /* Reconstruct message if split by = */
@@ -75,17 +78,21 @@ void do_gripe(dbref player, char *arg1, char *arg2)
 void do_pray(dbref player, char *arg1, char *arg2)
 {
     dbref loc;
-    
+
+    if (!GoodObject(player)) {
+        return;
+    }
+
     if (!arg1 || !*arg1) {
         notify(player, "Pray to whom?");
         return;
     }
-    
+
     if (!arg2 || !*arg2) {
         notify(player, "What do you want to pray for?");
         return;
     }
-    
+
     loc = db[player].location;
     
     /* Log the prayer */
@@ -304,7 +311,7 @@ void do_who_admin(dbref player)
     notify(player, "-----------|------------|------|------------------------------");
     
     for (d = descriptor_list; d; d = d->next) {
-        if (d->state == CONNECTED) {
+        if (d->state == CONNECTED && GoodObject(d->player)) {
             notify(player, tprintf("%10ld | %10s | %4s | %s",
                                  d->descriptor,
                                  db[d->player].name,
@@ -1541,7 +1548,8 @@ int owns_stuff(dbref player)
 
   for (i = 0; i < db_top; i++)
   {
-    if (db[db[i].owner].owner == player && i != player)
+    if (GoodObject(db[i].owner) &&
+        db[db[i].owner].owner == player && i != player)
       matches++;
   }
   return matches;
@@ -1916,15 +1924,16 @@ void do_join(dbref player, char *arg1)
   victim = player;
   to = lookup_player(arg1);
 
-  if (!controls(victim, to, POW_JOIN) && !controls(victim, db[to].location, POW_JOIN) && !(could_doit(victim, to, A_LJOIN) && Typeof(to) == TYPE_PLAYER))
+  /* Validate target exists BEFORE accessing db[to] */
+  if (!GoodObject(to) || db[to].location == NOTHING)
   {
-    notify(player, "Sorry. You don't have wings.");
+    notify(player, tprintf("%s: no such player.", arg1));
     return;
   }
 
-  if (to == NOTHING || db[to].location == NOTHING)
+  if (!controls(victim, to, POW_JOIN) && !controls(victim, db[to].location, POW_JOIN) && !(could_doit(victim, to, A_LJOIN) && Typeof(to) == TYPE_PLAYER))
   {
-    notify(player, tprintf("%s: no such player.", arg1));
+    notify(player, "Sorry. You don't have wings.");
     return;
   }
 
@@ -1947,21 +1956,16 @@ void do_summon(dbref player, char *arg1)
   dest = db[player].location;
   victim = lookup_player(arg1);
 
-  if (!controls(player, victim, POW_SUMMON) && !controls(player, db[victim].location, POW_SUMMON))
-  {
-    notify(player, "Sorry. That player doesn't have wings.");
-    return;
-  }
-
-  if (victim == NOTHING)
+  /* Validate target exists BEFORE accessing db[victim] */
+  if (!GoodObject(victim))
   {
     notify(player, tprintf("%s: no such player", arg1));
     return;
   }
 
-  if (db[victim].flags & GOING)
+  if (!controls(player, victim, POW_SUMMON) && !controls(player, db[victim].location, POW_SUMMON))
   {
-    notify(player, "That's a silly thing to summon!");
+    notify(player, "Sorry. That player doesn't have wings.");
     return;
   }
 

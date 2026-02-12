@@ -53,7 +53,7 @@ void announce_connect(dbref player)
     time_t tt;
     int connect_again;
 
-    if (player < 0 || player >= db_top) {
+    if (!GoodObject(player)) {
         log_error(tprintf("announce_connect called with invalid player %" DBREF_FMT,
                          player));
         return;
@@ -145,11 +145,13 @@ void announce_connect(dbref player)
 
         /* Determine zone */
         zone = db[0].zone;
-        if (Typeof(db[player].location) == TYPE_ROOM) {
+        if (GoodObject(db[player].location) &&
+            Typeof(db[player].location) == TYPE_ROOM) {
             zone = db[db[player].location].zone;
-        } else {
+        } else if (GoodObject(db[player].location)) {
             thing = db[player].location;
-            for (depth = 10; depth && !find; depth--, thing = db[thing].location) {
+            for (depth = 10; depth && !find && GoodObject(thing);
+                 depth--, thing = db[thing].location) {
                 if (Typeof(thing) == TYPE_ROOM) {
                     zone = db[thing].zone;
                     find = 1;
@@ -158,16 +160,17 @@ void announce_connect(dbref player)
         }
 
         /* Zone @aconnect */
-        if (db[0].zone != zone && Typeof(db[0].zone) != TYPE_PLAYER) {
+        if (GoodObject(db[0].zone) && db[0].zone != zone &&
+            Typeof(db[0].zone) != TYPE_PLAYER) {
             did_it(player, db[0].zone, NULL, NULL, NULL, NULL, A_ACONN);
         }
-        if (Typeof(zone) != TYPE_PLAYER) {
+        if (GoodObject(zone) && Typeof(zone) != TYPE_PLAYER) {
             did_it(player, zone, NULL, NULL, NULL, NULL, A_ACONN);
         }
 
         /* Inventory @aconnect */
         thing = db[player].contents;
-        if (thing != NOTHING) {
+        if (GoodObject(thing)) {
             DOLIST(thing, thing) {
                 if (Typeof(thing) != TYPE_PLAYER) {
                     did_it(player, thing, NULL, NULL, NULL, NULL, A_ACONN);
@@ -176,11 +179,13 @@ void announce_connect(dbref player)
         }
 
         /* Room contents @aconnect */
-        thing = db[db[player].location].contents;
-        if (thing != NOTHING) {
-            DOLIST(thing, thing) {
-                if (Typeof(thing) != TYPE_PLAYER) {
-                    did_it(player, thing, NULL, NULL, NULL, NULL, A_ACONN);
+        if (GoodObject(db[player].location)) {
+            thing = db[db[player].location].contents;
+            if (GoodObject(thing)) {
+                DOLIST(thing, thing) {
+                    if (Typeof(thing) != TYPE_PLAYER) {
+                        did_it(player, thing, NULL, NULL, NULL, NULL, A_ACONN);
+                    }
                 }
             }
         }
@@ -197,7 +202,7 @@ void announce_disconnect(dbref player)
     extern dbref speaker;
     int partial_disconnect;
 
-    if (player < 0 || player >= db_top) {
+    if (!GoodObject(player)) {
         return;
     }
 
@@ -265,12 +270,13 @@ void announce_disconnect(dbref player)
 
             /* Determine zone */
             zone = db[0].zone;
-            if (Typeof(db[player].location) == TYPE_ROOM) {
+            if (GoodObject(db[player].location) &&
+                Typeof(db[player].location) == TYPE_ROOM) {
                 zone = db[db[player].location].zone;
-            } else {
+            } else if (GoodObject(db[player].location)) {
                 thing = db[player].location;
-                for (depth = 10; depth && !find; depth--, 
-                     thing = db[thing].location) {
+                for (depth = 10; depth && !find && GoodObject(thing);
+                     depth--, thing = db[thing].location) {
                     if (Typeof(thing) == TYPE_ROOM) {
                         zone = db[thing].zone;
                         find = 1;
@@ -279,16 +285,17 @@ void announce_disconnect(dbref player)
             }
 
             /* Zone @adisconnect */
-            if (db[0].zone != zone && Typeof(db[0].zone) != TYPE_PLAYER) {
+            if (GoodObject(db[0].zone) && db[0].zone != zone &&
+                Typeof(db[0].zone) != TYPE_PLAYER) {
                 did_it(player, db[0].zone, NULL, NULL, NULL, NULL, A_ADISC);
             }
-            if (Typeof(zone) != TYPE_PLAYER) {
+            if (GoodObject(zone) && Typeof(zone) != TYPE_PLAYER) {
                 did_it(player, zone, NULL, NULL, NULL, NULL, A_ADISC);
             }
 
             /* Inventory @adisconnect */
             thing = db[player].contents;
-            if (thing != NOTHING) {
+            if (GoodObject(thing)) {
                 DOLIST(thing, thing) {
                     if (Typeof(thing) != TYPE_PLAYER) {
                         did_it(player, thing, NULL, NULL, NULL, NULL, A_ADISC);
@@ -297,11 +304,13 @@ void announce_disconnect(dbref player)
             }
 
             /* Room contents @adisconnect */
-            thing = db[db[player].location].contents;
-            if (thing != NOTHING) {
-                DOLIST(thing, thing) {
-                    if (Typeof(thing) != TYPE_PLAYER) {
-                        did_it(player, thing, NULL, NULL, NULL, NULL, A_ADISC);
+            if (GoodObject(db[player].location)) {
+                thing = db[db[player].location].contents;
+                if (GoodObject(thing)) {
+                    DOLIST(thing, thing) {
+                        if (Typeof(thing) != TYPE_PLAYER) {
+                            did_it(player, thing, NULL, NULL, NULL, NULL, A_ADISC);
+                        }
                     }
                 }
             }
