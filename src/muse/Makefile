@@ -39,7 +39,10 @@ SRCS = admin.c cque.c game.c match.c move.c parser.c player.c powers.c  predicat
 OBJS = $(SRCS:.c=.o)
 
 # Library dependencies
-LIBDEPS = ../comm/libcomm.a ../db/libdb.a ../io/libio.a ../prog/libprog.a
+# NOTE: libio.a must come before libdb.a because server_main.c (in libio.a)
+# references mariadb_mail_init/mariadb_board_init (in libdb.a).
+# With static archives, the linker resolves symbols left-to-right.
+LIBDEPS = ../comm/libcomm.a ../io/libio.a ../db/libdb.a ../prog/libprog.a
 
 # Executable name
 EXECUTABLE = netmuse

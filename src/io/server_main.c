@@ -7,6 +7,8 @@
 #include "io_internal.h"
 #include "sock.h"
 #include "net.h"
+#include "mariadb_mail.h"
+#include "mariadb_board.h"
 
 #include <stddef.h>
 #include <sys/time.h>
@@ -68,6 +70,18 @@ int main(int argc, char *argv[])
         fprintf(stderr, "FATAL: Failed to load config from MariaDB.\n");
         fprintf(stderr, "Ensure the config table is populated.\n");
         fprintf(stderr, "Run: bash config/install.sh\n");
+        mariadb_cleanup();
+        exit(1);
+    }
+
+    /* Initialize mail and board tables in MariaDB */
+    if (!mariadb_mail_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize mail table.\n");
+        mariadb_cleanup();
+        exit(1);
+    }
+    if (!mariadb_board_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize board table.\n");
         mariadb_cleanup();
         exit(1);
     }

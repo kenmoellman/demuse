@@ -4,7 +4,7 @@ deMUSE is a TinyMUSE-derived Multi-User Simulation Environment (MUSE) server, or
 
 deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
 
-Future planned improvements include moving the database from flat file to MySQL/MariaDB.
+Future planned improvements include moving the object database from flat file to MySQL/MariaDB.
 
 You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
 
@@ -56,6 +56,7 @@ Individual utilities are built in `src/util/`:
 - `wd` - Watchdog daemon
 - `mycompress` - Database compression utility
 - `mkindx` - Help/news index builder
+- `convert_db` - Database migration tool (flat-file mail/board to MariaDB)
 
 ## Architecture Overview
 
@@ -66,9 +67,9 @@ Individual utilities are built in `src/util/`:
 - **src/io/** - Network I/O layer (socket handling, connections, input/output processing, idle monitoring, guest management)
 - **src/muse/** - Core game engine (main loop, command queue, game logic, player management, movement, powers, matching)
 - **src/prog/** - Expression parser and function evaluator (hash-based function dispatch, merged from funcs.c)
-- **src/util/** - Standalone utilities (compression, indexing, password tools)
+- **src/util/** - Standalone utilities (compression, indexing, password tools, database conversion)
 - **src/hdrs/** - Header files
-- **config/** - Configuration system (config.h and config.c)
+- **config/** - Configuration system (config.h, MariaDB setup SQL, defaults)
 - **run/** - Runtime directory (database, logs, message files)
 - **doc/** - Installation and administration documentation
 
@@ -134,11 +135,35 @@ The codebase has been significantly modernized with:
    - Binary search for function dispatch
    - Unified hash system across components
 
+### MariaDB Integration (2026)
+
+MariaDB is now required for server operation. The following subsystems use MariaDB:
+
+1. **Configuration** - All `@config` settings stored in MariaDB `config` table (config.c eliminated)
+2. **Private Mail (+mail)** - Player-to-player mail stored in MariaDB `mail` table
+3. **Public Board (+board)** - Board posts stored in MariaDB `board` table
+
+The object database continues to use the flat-file format for backward compatibility.
+
+**Automatic migration:** On first startup after upgrading, the server detects legacy mail/board data in the flat-file database and automatically runs `bin/convert_db` to migrate messages into MariaDB. This is a one-time process; subsequent startups skip conversion.
+
+**Key files:**
+- `src/db/mariadb.c` - Connection management and config operations
+- `src/db/mariadb_mail.c` - SQL operations for private mail
+- `src/db/mariadb_board.c` - SQL operations for board posts
+- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` - Declarations and stubs
+- `src/util/convert_db.c` - Standalone database migration tool
+- `config/setup_mariadb.sql` - Table definitions
+
+**Dependencies:** `libmariadb-dev` (auto-detected by Makefiles via pkg-config)
+
 ## Configuration
 
 **Primary config files:**
 - `config/config.h` - Compile-time configuration (network options, features, limits)
-- `config/config.c` - Runtime configuration values
+- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board)
+- `config/defaults.sql` - Default configuration values (seeded on install)
+- `run/db/mariadb.conf` - MariaDB credentials (not in version control)
 
 **Key configuration options in config.h:**
 - `MULTIHOME` - Multi-homed server support
@@ -150,8 +175,10 @@ The codebase has been significantly modernized with:
 ## Runtime Files
 
 **Database:**
-- `run/db/mdb` - Main database file
+- `run/db/mdb` - Main object database file (flat-file format)
 - `run/db/initial.mdb` - Starting database for new installations
+- `run/db/mariadb.conf` - MariaDB connection credentials
+- MariaDB tables: `config`, `mail`, `board` (created automatically on startup)
 
 **Logs:**
 - `run/logs/` - Server logs (connections, commands, errors)
@@ -227,12 +254,14 @@ The muse/ Makefile uses strict compilation:
 
 ### Database Format
 
-The database is a flat-file format that remains compatible with:
+The object database is a flat-file format that remains compatible with:
 - TinyMUSE 1.8a4 and earlier
 - TinyMUSE '97
 - Earlier deMUSE versions
 
 Do not change the database I/O functions without ensuring backward compatibility.
+
+Mail and board messages are stored in MariaDB (migrated from the flat-file format as of 2026). Legacy databases with messages appended after `***END OF DUMP***` are automatically converted on first startup.
 
 ## Known Issues and Limitations
 
