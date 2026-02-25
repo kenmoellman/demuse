@@ -98,7 +98,8 @@ Individual utilities are built in `src/util/`:
 
 **Command System** (`src/comm/`)
 - Player commands (@-commands, say, pose, etc.)
-- Communication channels (pages, broadcasts, mail)
+- Communication channels (`+channel` for admin/config, `+com`/`=` for speaking)
+- Private mail (`+mail`) and public board (`+board`)
 - Help system with indexed text files
 - Object creation and manipulation
 
@@ -156,6 +157,21 @@ The object database continues to use the flat-file format for backward compatibi
 - `config/setup_mariadb.sql` - Table definitions
 
 **Dependencies:** `libmariadb-dev` (auto-detected by Makefiles via pkg-config)
+
+### Channel System (2026)
+
+The channel system uses a unified command structure:
+
+- **`+channel <subcommand>`** - All channel administration and control:
+  `create`, `destroy`, `join`, `leave`, `default`, `alias`, `op`, `lock`, `password`, `boot`, `ban`, `unban`, `list`, `search`, `log`, `color`, `who`, `mute`, `unmute`
+- **`+com <channel>=<message>`** - Speaking on channels (say, pose, think, directed messages)
+- **`=<message>`** - Shortcut to speak on default channel
+
+**Function naming convention** in `src/comm/com.c`:
+- `channel_*` - Subcommand handlers (e.g., `channel_create`, `channel_join`)
+- `channel_int_*` - Internal helpers (e.g., `channel_int_lookup`, `channel_int_bancheck`)
+- `channel_dbinit_*` - Database initialization (e.g., `channel_dbinit_clear`)
+- `do_channel`, `do_com`, `do_chemit` - Parser hooks (unchanged)
 
 ## Configuration
 

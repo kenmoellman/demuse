@@ -1384,7 +1384,7 @@ void do_destroy(dbref player, char *name)
   }
   else if (Typeof(thing) == TYPE_CHANNEL)
   {
-    do_channel_destroy(player, name);
+    channel_destroy(player, name);
   }
   else
   {

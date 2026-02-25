@@ -2018,9 +2018,9 @@ void do_swap(dbref player, char *arg1, char *arg2)
     delete_player(thing2);
 
   if (Typeof(thing1) == TYPE_CHANNEL)
-    delete_channel(thing1);
+    channel_int_delete(thing1);
   if (Typeof(thing2) == TYPE_CHANNEL)
-    delete_channel(thing2);
+    channel_int_delete(thing2);
 
   swapbuf = db[thing2];
   db[thing2] = db[thing1];
@@ -2059,9 +2059,9 @@ void do_swap(dbref player, char *arg1, char *arg2)
     add_player(thing2);
 
   if (Typeof(thing1) == TYPE_CHANNEL)
-    add_channel(thing1);
+    channel_int_add(thing1);
   if (Typeof(thing2) == TYPE_CHANNEL)
-    add_channel(thing2);
+    channel_int_add(thing2);
 
 
   notify(player, tprintf("%s and %s.",

@@ -12,7 +12,7 @@
  * - Fixed const qualifier issues in notify_internal signature
  * - Fixed variable shadowing (depth in get_zone_first)
  * - Added explicit type casts to resolve conversion warnings
- * - Added forward declaration for is_channel_alias
+ * - Added forward declaration for channel_int_is_alias
  * 
  * SAFETY IMPROVEMENTS:
  * - Replaced sprintf() with snprintf() throughout to prevent buffer overruns
@@ -121,7 +121,7 @@ static char *do_argtwo(dbref player, char *rest, dbref cause, char *buff);
 static char **do_argbee(dbref player, char *rest, dbref cause, char *arge[], char *buff);
 
 /* Forward declaration for channel system function */
-extern char *is_channel_alias(dbref player, const char *command);
+extern char *channel_int_is_alias(dbref player, const char *command);
 
 /* ============================================================================
  * DATABASE DUMP FUNCTIONS
@@ -1626,7 +1626,7 @@ void process_command(dbref player, char *command, dbref cause)
   command_not_found:
 
   /* Try channel alias */
-  channel_result = is_channel_alias(player, command);
+  channel_result = channel_int_is_alias(player, command);
   if (channel_result != NULL) {
     channel_talk(player, command, arg1, arg2);
   } else {
