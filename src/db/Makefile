@@ -57,9 +57,9 @@ SRCS_BASE = boolexp.c \
        warnings.c \
        attr.c
 
-# Conditionally add mariadb.c if MariaDB is available
+# Conditionally add MariaDB sources if MariaDB is available
 ifneq ($(MARIADB_CFLAGS),)
-SRCS = $(SRCS_BASE) mariadb.c
+SRCS = $(SRCS_BASE) mariadb.c mariadb_mail.c mariadb_board.c
 else
 SRCS = $(SRCS_BASE)
 endif

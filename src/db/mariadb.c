@@ -256,6 +256,20 @@ int mariadb_is_connected(void)
 }
 
 /*
+ * mariadb_get_connection - Get the shared MariaDB connection handle
+ *
+ * Used by mariadb_mail.c and mariadb_board.c to share the connection
+ * established by mariadb_init(). Returns void* to match header
+ * declaration (avoids requiring mysql.h in all compilation units).
+ *
+ * RETURNS: MYSQL* connection handle (as void*), or NULL if not connected
+ */
+void *mariadb_get_connection(void)
+{
+    return (void *)mariadb_conn;
+}
+
+/*
  * mariadb_cleanup - Close MariaDB connection and free resources
  *
  * Safe to call even if not connected.

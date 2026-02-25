@@ -20,10 +20,8 @@ CFLAGS = -Wall -Wextra -pedantic -std=c11 -g -O2 \
          -Wconversion -Wsign-conversion \
          -Wshadow -Wstrict-overflow=5
 
-
-
-LDFLAGS = 
-LIBS = -lcrypt 
+LDFLAGS =
+LIBS = -lcrypt
 
 # Get curl flags dynamically
 CURL_CFLAGS := $(shell pkg-config --cflags libcurl 2>/dev/null)
@@ -32,6 +30,14 @@ CURL_LIBS := $(shell pkg-config --libs libcurl 2>/dev/null)
 # Add curl to existing CFLAGS and LDFLAGS
 CFLAGS += $(CURL_CFLAGS)
 LDFLAGS += $(CURL_LIBS)
+
+# Get MariaDB flags dynamically (for messaging.c MariaDB mail/board)
+MARIADB_CFLAGS := $(shell pkg-config --cflags libmariadb 2>/dev/null || mariadb_config --cflags 2>/dev/null)
+
+# Add MariaDB define if available (actual linking done in muse/Makefile)
+ifneq ($(MARIADB_CFLAGS),)
+CFLAGS += -DUSE_MARIADB
+endif
 
 # Top directory
 TOPDIR = ../..

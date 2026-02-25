@@ -121,6 +121,18 @@ int mariadb_config_save_array(const char *prefix, char **array, int count);
 int mariadb_is_connected(void);
 
 /*
+ * mariadb_get_connection - Get the shared MariaDB connection handle
+ *
+ * Used by mariadb_mail.c and mariadb_board.c to share the connection
+ * established by mariadb_init(). Returns void* to avoid requiring
+ * mysql.h in every compilation unit that includes this header.
+ * Callers with mysql.h should cast to MYSQL*.
+ *
+ * RETURNS: MYSQL* connection handle (as void*), or NULL if not connected
+ */
+void *mariadb_get_connection(void);
+
+/*
  * mariadb_cleanup - Close MariaDB connection and free resources
  *
  * Called during server shutdown. Safe to call even if not connected.
@@ -153,6 +165,7 @@ static inline int mariadb_config_save_array(const char *prefix __attribute__((un
                                              int count __attribute__((unused)))
 { return -1; }
 static inline int mariadb_is_connected(void) { return 0; }
+static inline void *mariadb_get_connection(void) { return NULL; }
 static inline void mariadb_cleanup(void) { }
 
 #endif /* USE_MARIADB */

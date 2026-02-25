@@ -47,5 +47,44 @@ CREATE TABLE IF NOT EXISTS config (
   COLLATE=utf8mb4_unicode_ci
   COMMENT='deMUSE runtime configuration values';
 
+-- ============================================================================
+-- MAIL TABLE - Private player-to-player mail
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS mail (
+  mail_id      BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  sender       BIGINT       NOT NULL,
+  recipient    BIGINT       NOT NULL,
+  sent_date    BIGINT       NOT NULL,
+  flags        INT          NOT NULL DEFAULT 0,
+  message      TEXT         NOT NULL,
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_recipient       (recipient),
+  INDEX idx_sender          (sender),
+  INDEX idx_recipient_flags (recipient, flags)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE private player-to-player mail';
+
+-- ============================================================================
+-- BOARD TABLE - Public board posts
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS board (
+  post_id      BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  author       BIGINT       NOT NULL,
+  board_room   BIGINT       NOT NULL DEFAULT 0,
+  posted_date  BIGINT       NOT NULL,
+  flags        INT          NOT NULL DEFAULT 0,
+  message      TEXT         NOT NULL,
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_board_room (board_room),
+  INDEX idx_author     (author)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE public board posts';
+
 -- After starting deMUSE, run @config/seed in-game to populate
 -- all config values from the running server into this table.
