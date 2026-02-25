@@ -760,18 +760,6 @@ static void cmd_config(dbref player, char *arg1, char *arg2)
     do_config(player, arg1, arg2);
 }
 
-/**
- * cmd_cpaste - Wrapper for @cpaste command
- *
- * Core: do_paste(player, "channel", arg1)
- * Note: Includes deprecation warning
- */
-static void cmd_cpaste(dbref player, char *arg1, char *arg2)
-{
-    (void)arg2;
-    notify(player, "WARNING: @cpaste antiquated. Use '@paste channel=<channel>'");
-    do_paste(player, "channel", arg1);
-}
 
 /**
  * cmd_cset - Wrapper for @cset command
@@ -1851,15 +1839,6 @@ static void cmd_zlink(dbref player, char *arg1, char *arg2)
 /*                          + COMMAND WRAPPERS                               */
 /* ========================================================================== */
 
-/**
- * cmd_ban - Wrapper for +ban command
- *
- * Core: do_ban(player, arg1, arg2)
- */
-static void cmd_ban(dbref player, char *arg1, char *arg2)
-{
-    do_ban(player, arg1, arg2);
-}
 
 /**
  * cmd_cmdav - Wrapper for +cmdav command
@@ -1930,15 +1909,6 @@ static void cmd_status(dbref player, char *arg1, char *arg2)
 #endif
 }
 
-/**
- * cmd_unban - Wrapper for +unban command
- *
- * Core: do_unban(player, arg1, arg2)
- */
-static void cmd_unban(dbref player, char *arg1, char *arg2)
-{
-    do_unban(player, arg1, arg2);
-}
 
 /* ========================================================================== */
 /*                      REGULAR COMMAND WRAPPERS                             */
@@ -2566,12 +2536,9 @@ static void register_demuse_commands(parser_t *parser)
         /* ==================================================================
          * CHANNEL COMMANDS - Communication channels
          * ================================================================== */
-        {"+ban",        cmd_ban,       2, 0, 0, 0, 0},
         {"+channel",    cmd_channel,   2, 0, 0, 0, 0},
         {"+com",        cmd_com,       2, 0, 0, 0, 0},
-        {"+unban",      cmd_unban,     2, 0, 0, 0, 0},
         {"@cname",      cmd_cname,     2, 0, 0, 0, 0},
-        {"@cpaste",     cmd_cpaste,    2, 0, 0, 0, 0},
         {"@cset",       cmd_cset,      2, 0, 0, 0, 0},
         {"@ctrace",     cmd_ctrace,    2, 0, 0, 0, 0},
         {"@ncset",      cmd_ncset,     2, 0, 0, 0, 0},

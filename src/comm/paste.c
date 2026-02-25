@@ -268,12 +268,12 @@ void do_paste_int(dbref player, char *arg1, char *arg2, int code)
     }
     /* Handle channel paste */
     else if (*arg2 && string_prefix("channel", arg1)) {
-        target = lookup_channel(arg2);
+        target = channel_int_lookup(arg2);
         if (target == NOTHING) {
             notify(player, "@paste channel: Channel doesn't exist.");
             return;
         }
-        if (is_on_channel(player, db[target].name) < 0) {
+        if (channel_int_is_on_channel(player, db[target].name) < 0) {
             notify(player, "@paste channel: You're not on that channel.");
             return;
         }

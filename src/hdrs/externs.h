@@ -153,21 +153,17 @@ extern void shutdown_stack (void);
 extern void com_send (char *,char *);
 extern void com_send_as (char *channel, char *message, dbref player);
 extern void com_send_as_hidden (char *channel, char *message, dbref player);
+extern void com_send_int (char *, char *, dbref, int);
 extern void do_com (dbref, char *, char *);
 extern void do_channel (dbref, char *, char *);
-extern void do_ban (dbref, char *, char *);
-extern void do_unban (dbref, char *, char *);
-extern void make_default_channel (dbref,char *);
-extern int is_on_channel (dbref, const char *);
 extern char *add_stamp (char *);
-extern void com_send_int (char *, char *, dbref, int);
-extern void do_channel_destroy(dbref, char *);
-extern void add_channel (dbref);
-extern void clear_channels (void);
-extern void delete_channel (dbref);
-extern dbref lookup_channel (const char *);
 extern void channel_talk (dbref, char *, char *, char *);
-extern int ok_channel_name (char *);
+extern void channel_destroy (dbref, char *);
+extern int  channel_int_is_on_channel (dbref, const char *);
+extern void channel_int_add (dbref);
+extern void channel_int_delete (dbref);
+extern dbref channel_int_lookup (const char *);
+extern void channel_dbinit_clear (void);
 
 /* From conf.c */
 extern void info_config (dbref);

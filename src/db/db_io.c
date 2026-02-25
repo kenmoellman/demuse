@@ -818,7 +818,7 @@ void load_more_db(void)
     if (i == NOTHING) {
         /* First call - initialize */
         clear_players();
-        clear_channels();
+        channel_dbinit_clear();
         db_free();
         i = 0;
     }
@@ -948,7 +948,7 @@ static int db_read_object(dbref i, FILE *f)
         if (Typeof(i) == TYPE_PLAYER)
             add_player(i);
         else if (Typeof(i) == TYPE_CHANNEL)
-            add_channel(i);
+            channel_int_add(i);
         break;
         
     case '!':  /* Non-zone database */
@@ -1070,7 +1070,7 @@ static int db_read_object(dbref i, FILE *f)
             (db_version < 6 && Typeof(i) > TYPE_PLAYER)) {
             add_player(i);
         } else if (Typeof(i) == TYPE_CHANNEL) {
-            add_channel(i);
+            channel_int_add(i);
         }
         break;
         
