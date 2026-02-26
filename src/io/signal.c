@@ -115,7 +115,7 @@ static signal_type reaper(int sig)
 
   /* Notify database dump completion
    * Note: com_send should be async-signal-safe or this should be deferred */
-  com_send(dbinfo_chan, "|Y!+*| Database dump complete.");
+  com_send(chan_dbinfo, "|Y!+*| Database dump complete.");
 
 #ifndef void_signal_type
   return 0;

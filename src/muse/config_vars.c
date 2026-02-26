@@ -22,8 +22,11 @@
  * STRING CONFIG VARIABLES
  * ============================================================================ */
 char *muse_name = NULL;
-char *dbinfo_chan = NULL;
-char *dc_chan = NULL;
+char *chan_dbinfo = NULL;
+char *chan_dc = NULL;
+char *chan_pubio = NULL;
+char *chan_connect = NULL;
+char *chan_warn_prefix = NULL;
 char *start_quota = NULL;
 char *guest_prefix = NULL;
 char *guest_alias_prefix = NULL;

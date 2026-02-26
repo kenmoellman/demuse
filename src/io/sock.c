@@ -348,10 +348,10 @@ void shutdownsock(struct descriptor_data *d)
     log_io(tprintf("|R+DISCONNECT| concid %ld player %s at %s",
                    d->concid, unparse_object_a(d->player, d->player), 
                    ct ? ct : "unknown"));
-    com_send_as_hidden("pub_io", 
+    com_send_as_hidden(chan_pubio,
                        tprintf("|R+DISCONNECT| %s - %s",
-                               unparse_object_a(d->player, d->player), 
-                               ct ? ct : "unknown"), 
+                               unparse_object_a(d->player, d->player),
+                               ct ? ct : "unknown"),
                        d->player);
 
     announce_disconnect(d->player);

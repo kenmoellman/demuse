@@ -20,8 +20,11 @@ USE demuse;
 
 INSERT INTO config (config_key, config_value, config_type) VALUES
 ('muse_name', 'YourMUSE', 'STR'),
-('dbinfo_chan', 'dbinfo', 'STR'),
-('dc_chan', '*dc', 'STR'),
+('chan_dbinfo', 'dbinfo', 'STR'),
+('chan_dc', '*dc', 'STR'),
+('chan_pubio', 'pub_io', 'STR'),
+('chan_connect', 'connect', 'STR'),
+('chan_warn_prefix', 'warn_', 'STR'),
 ('start_quota', '100', 'STR'),
 ('guest_prefix', 'Guest', 'STR'),
 ('guest_alias_prefix', 'G', 'STR'),

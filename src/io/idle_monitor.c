@@ -158,9 +158,9 @@ void check_for_connect_unidlers(dbref player)
             if (conn > 1) {
                 log_io(tprintf("%s unidled due to reconnect.", 
                               db[player].cname));
-                com_send_as_hidden("pub_io", 
-                    tprintf("%s unidled due to reconnect.", 
-                           db[player].cname), 
+                com_send_as_hidden(chan_pubio,
+                    tprintf("%s unidled due to reconnect.",
+                           db[player].cname),
                     player);
                 set_unidle(player, INT_MAX);
                 found = 1;

@@ -111,8 +111,8 @@ void do_announce(dbref player, char *arg1, char *arg2)
                   message));
     
     /* Send to monitoring channel */
-    com_send_as_hidden("pub_io", 
-                      tprintf("%s [owner=%s] executes: @announce %s", 
+    com_send_as_hidden(chan_pubio,
+                      tprintf("%s [owner=%s] executes: @announce %s",
                              unparse_object_a(player, player),
                              unparse_object_a(db[player].owner, db[player].owner), 
                              message), 
@@ -369,7 +369,7 @@ void announce_connection(dbref player, int connected)
     }
     
     /* Send to monitoring channel */
-    com_send("connect", buf);
+    com_send(chan_connect, buf);
     
     /* Optionally send to all players */
     if (announce_connects) {

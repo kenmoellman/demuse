@@ -24,8 +24,11 @@
  * STRING CONFIG VARIABLES
  * ============================================================================ */
 extern char *muse_name;
-extern char *dbinfo_chan;
-extern char *dc_chan;
+extern char *chan_dbinfo;
+extern char *chan_dc;
+extern char *chan_pubio;
+extern char *chan_connect;
+extern char *chan_warn_prefix;
 extern char *start_quota;
 extern char *guest_prefix;
 extern char *guest_alias_prefix;
