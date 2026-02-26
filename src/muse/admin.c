@@ -2107,7 +2107,7 @@ void do_su(dbref player, char *arg1, char *arg2, dbref cause)
       return;
     }
     log_io(tprintf("|Y!+SU|: %s becomes %s", unparse_object_a(root, player), unparse_object_a(root, thing)));
-    com_send_as_hidden("pub_io",tprintf("|Y!+SU|: %s becomes %s", unparse_object_a(root, player), unparse_object_a(root, thing)), player);
+    com_send_as_hidden(chan_pubio,tprintf("|Y!+SU|: %s becomes %s", unparse_object_a(root, player), unparse_object_a(root, thing)), player);
   }
   else
   {

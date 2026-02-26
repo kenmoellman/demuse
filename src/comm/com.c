@@ -2489,6 +2489,11 @@ int channel_int_is_on(dbref player, dbref channum)
         /* No onoff value found, default to on */
         return 1;
       }
+    } else {
+      /* Bare channel name with no :alias:onoff - default to on */
+      if (!strcmp(strip_color_nobeep(entry), channame)) {
+        return 1;
+      }
     }
 
     /* Advance to next entry */

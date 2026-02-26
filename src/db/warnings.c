@@ -204,7 +204,7 @@ static void complain(dbref i, char *name, char *desc)
   /* Notify interested parties on warning channels for monitoring */
   snprintf(buf, sizeof(buf), "* %s: %s", 
            unparse_object(db[i].owner, i), desc);
-  com_send(tprintf("warn_%s", name), buf);
+  com_send(tprintf("%s%s", chan_warn_prefix, name), buf);
 }
 
 /* ===================================================================

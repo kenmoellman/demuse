@@ -12,8 +12,11 @@ typedef long dbref;             /* offset into db */
 #endif
 
 
-DO_STR("dbinfo_chan",dbinfo_chan)
-DO_STR("dc_chan",dc_chan)
+DO_STR("chan_dbinfo",chan_dbinfo)
+DO_STR("chan_dc",chan_dc)
+DO_STR("chan_pubio",chan_pubio)
+DO_STR("chan_connect",chan_connect)
+DO_STR("chan_warn_prefix",chan_warn_prefix)
 DO_NUM("allow_create",allow_create)
 DO_STR("muse_name",muse_name)
 DO_REF("player_start",player_start)

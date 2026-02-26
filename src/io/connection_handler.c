@@ -268,7 +268,7 @@ void check_connect(struct descriptor_data *d, char *msg)
 
             log_io(tprintf("CONNECTED: %s on concid %ld",
                           unparse_object_a(player, player), d->concid));
-            com_send_as_hidden("pub_io",
+            com_send_as_hidden(chan_pubio,
                 tprintf("CONNECTED: %s - %s",
                        unparse_object_a(player, player),
                        ct ? ct : "unknown"),

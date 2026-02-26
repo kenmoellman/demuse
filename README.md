@@ -173,6 +173,26 @@ The channel system uses a unified command structure:
 - `channel_dbinit_*` - Database initialization (e.g., `channel_dbinit_clear`)
 - `do_channel`, `do_com`, `do_chemit` - Parser hooks (unchanged)
 
+**Configurable system channels** (via `@config`):
+- `chan_dbinfo` - Database info channel (default: `dbinfo`)
+- `chan_dc` - Disconnect channel (default: `*dc`)
+- `chan_pubio` - Public I/O monitoring channel (default: `pub_io`)
+- `chan_connect` - Connection announcement channel (default: `connect`)
+- `chan_warn_prefix` - Prefix for warning channels (default: `warn_`), e.g. `warn_security`, `warn_roomdesc`
+
+Channel names prefixed with `*` are admin-only. Use `@config chan_pubio=*pub_io` to make a system channel admin-only.
+
+**Log channels** (hardcoded in `src/io/log.c`):
+- `log_imp` - Important events (shutdowns, name changes, admin commands)
+- `*log_sens` - Sensitive events (admin-only)
+- `log_err` - Errors
+- `*log_io` - I/O events (admin-only)
+- `log_gripe` - Player gripes
+- `*log_force` - @force usage (admin-only)
+- `log_prayer` - Player prayers
+- `log_combat` - Combat events
+- `*log_suspect` - Suspect player activity (admin-only)
+
 ## Configuration
 
 **Primary config files:**
