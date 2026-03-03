@@ -2422,6 +2422,7 @@ static void register_demuse_commands(parser_t *parser)
          * ================================================================== */
         {"equip",       cmd_equip,     1, 0, 0, 0, 0},
         {"fight",       cmd_fight,     1, 0, 0, 0, 0},
+#ifdef USE_COMBAT_TM97
         {"flee",        cmd_flee,      1, 0, 0, 0, 0},
         {"money",       cmd_money,     1, 0, 0, 0, 0},
         {"slay",        cmd_slay,      1, 0, 0, 0, 0},
@@ -2429,6 +2430,7 @@ static void register_demuse_commands(parser_t *parser)
         {"unwield",     cmd_unwield,   1, 0, 0, 0, 0},
         {"wear",        cmd_wear,      1, 0, 0, 0, 0},
         {"wield",       cmd_wield,     1, 0, 0, 0, 0},
+#endif
 
         /* ==================================================================
          * BUILDING COMMANDS - Object creation and modification
@@ -2567,11 +2569,13 @@ static void register_demuse_commands(parser_t *parser)
         /* ==================================================================
          * CLASS/SKILL COMMANDS - Character class and skill system
          * ================================================================== */
+        {"@class",      cmd_class,     2, 0, 0, 0, 0},
+#ifdef USE_COMBAT_TM97
         {"+skills",     cmd_skills,    2, 0, 0, 0, 0},
         {"+status",     cmd_status,    2, 0, 0, 0, 0},
-        {"@class",      cmd_class,     2, 0, 0, 0, 0},
         {"@racelist",   cmd_racelist,  2, 0, 0, 0, 0},
         {"@skillset",   cmd_skillset,  2, 0, 0, 0, 0},
+#endif
 
         /* ==================================================================
          * SOCIAL/STATUS COMMANDS - Player status and social features
