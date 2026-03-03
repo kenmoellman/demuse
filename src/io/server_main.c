@@ -9,6 +9,7 @@
 #include "net.h"
 #include "mariadb_mail.h"
 #include "mariadb_board.h"
+#include "mariadb_channel.h"
 
 #include <stddef.h>
 #include <sys/time.h>
@@ -85,6 +86,20 @@ int main(int argc, char *argv[])
         mariadb_cleanup();
         exit(1);
     }
+    if (!mariadb_channel_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize channel tables.\n");
+        mariadb_cleanup();
+        exit(1);
+    }
+
+    /* Initialize channel cache and load from MariaDB */
+    channel_cache_init();
+    if (channel_cache_load() < 0) {
+        fprintf(stderr, "WARNING: Failed to load channel cache from MariaDB.\n");
+    }
+
+    /* Bind log channels to config variables (must be after config load) */
+    log_init_channels();
 
     /* Initialize global state - config variables now have values from DB */
     init_io_globals();
@@ -124,6 +139,7 @@ int main(int argc, char *argv[])
     close_sockets();
     do_haltall(1);
     dump_database();
+    channel_cache_clear();
     mariadb_cleanup();
     free_database();
     free_mail();

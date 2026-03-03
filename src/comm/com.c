@@ -1,7 +1,17 @@
 /* com.c - Channel communication system
- * 
- * Handles all +channel related commands and functionality.
- * Converted from K&R C to ANSI C with security improvements.
+ *
+ * ============================================================================
+ * MODERNIZATION NOTES (2026)
+ * ============================================================================
+ * Fully migrated to MariaDB-backed storage with in-memory cache.
+ * Replaces legacy TYPE_CHANNEL db[] objects and A_CHANNEL attribute
+ * string parsing with channel_cache_t and channel_member_t lookups.
+ *
+ * All mutations write to MariaDB first, then update the cache.
+ * Message delivery (com_send_int) uses cache for O(1) membership checks.
+ *
+ * Legacy compatibility functions (channel_int_lookup, channel_int_add, etc.)
+ * are preserved as thin wrappers for external callers during transition.
  */
 
 #include <stdio.h>
@@ -14,6 +24,7 @@
 #include "externs.h"
 #include "player.h"
 #include "hash_table.h"
+#include "mariadb_channel.h"
 
 /* ===================================================================
  * Constants and Limits
@@ -21,73 +32,10 @@
 
 #define CHANNEL_BUF_SIZE 1024
 #define MESSAGE_BUF_SIZE 4096
-#define CHANNEL_LIST_SIZE (1 << 12)  /* must be power of 2 */
-
-/* ===================================================================
- * Data Structures
- * =================================================================== */
-
-//struct pl_elt {
-//  dbref channel;
-//  struct pl_elt *prev;
-//  struct pl_elt *next;
-//};
-
-/* Global channel hash table (replaces channel_list array) */
-static hash_table_t *channel_hash = NULL;
-
-//static dbref hash_chan_fun_table[256];
-//static int hft_chan_initialized = 0;
-//static struct pl_elt *channel_list[CHANNEL_LIST_SIZE];
-//static int pl_used = 0;
-
-/* ===================================================================
- * Utility Macros
- * =================================================================== */
-
-#define DOWNCASE(x) to_lower(x)
-
 
 /* ===================================================================
  * Forward Declarations
  * =================================================================== */
-
-
-//void channel_create(dbref, char *);
-//void channel_op(dbref, char *);
-//void channel_lock(dbref, char *);
-//void channel_password(dbref, char *);
-//void channel_join(dbref, char *);
-//void channel_leave(dbref, char *);
-//void channel_default(dbref, char *);
-//void channel_alias(dbref, char *);
-//void channel_boot(dbref, char *);
-//void channel_list(dbref, char *);
-//void channel_search(dbref, char *);
-//void channel_log(dbref, char *);
-//void channel_ban(dbref, char *);
-//void channel_unban(dbref, char *);
-//void channel_color(dbref, char *);
-//char *channel_int_find_alias(dbref, char *);
-//char *channel_int_find_level(dbref, char *, int);
-//char *channel_int_find_only(dbref, char *);
-//int channel_int_is_on_channel(dbref, char *);
-//int channel_int_is_on_only(dbref, char *);
-//int channel_int_is_on_level(dbref, char *, int);
-//void channel_int_list_player(dbref, dbref);
-//char *channel_int_find_color(dbref, char *);
-//int channel_int_remove_player(dbref, char *);
-//int is_in_attr(dbref, char *, ATTR *);
-//char *remove_from_attr(dbref, int, ATTR *);
-//char *channel_int_remove_attr(dbref, int);
-//static dbref hash_chan_function(char *);
-//int channel_int_is_on(dbref, dbref);
-//void channel_mute(dbref, char *, char *);
-//void do_chemit(dbref player, char *channel, char *message);
-
-static int channel_int_bancheck(dbref, const char *);
-static void channel_who(dbref, const char *);
-static dbref hash_chan_function(const char *);
 
 /* Channel management functions */
 void channel_create(dbref, char *);
@@ -109,30 +57,21 @@ void channel_color(dbref, char *);
 
 /* Helper functions */
 char *channel_int_find_alias(dbref, const char *);
-char *channel_int_find_level(dbref, const char *, int);
-char *channel_int_find_only(dbref, const char *);
 char *channel_int_is_alias(dbref, const char *);
 int channel_int_is_on_channel(dbref, const char *);
 int channel_int_is_on_only(dbref, const char *);
-int channel_int_is_on_level(dbref, const char *, int);
-void channel_int_list_player(dbref, dbref);
 char *channel_int_find_color(dbref, const char *);
 int channel_int_remove_player(dbref, const char *);
-int is_in_attr(dbref, const char *, ATTR *);
-char *remove_from_attr(dbref, int, ATTR *);
-char *channel_int_remove_attr(dbref, int);
 int channel_int_is_on(dbref, dbref);
 void channel_mute(dbref, const char *, const char *);
 void do_chemit(dbref, char *, char *);
 void channel_talk(dbref, char *, char *, char *);
 void com_send_int(char *, char *, dbref, int);
 
-/* Channel hash management */
-void channel_dbinit_populate_hash(void);
-void channel_dbinit_populate(dbref);
-void channel_debug_hash(dbref);
-static void channel_int_debug_callback(const char *, void *, void *);
+/* Channel hash management (legacy compatibility wrappers) */
+void channel_dbinit_clear(void);
 
+static void channel_who(dbref, const char *);
 
 
 /* ===================================================================
@@ -142,36 +81,36 @@ static void channel_int_debug_callback(const char *, void *, void *);
 /**
  * channel_int_get_default - Get the name of a player's default channel
  *
- * Extracts the channel name from the first entry in A_CHANNEL,
- * which is formatted as "channelname:alias:onoff ...".
+ * Searches the player's membership list for the entry with is_default=1.
  *
  * @return Channel name string (from tprintf), or NULL if none set
  */
 static const char *channel_int_get_default(dbref player)
 {
-  char *chanattr, *copy, *colon;
+  channel_member_t *m;
+  channel_cache_t *chan;
 
-  chanattr = atr_get(player, A_CHANNEL);
-  if (!chanattr || !*chanattr) {
-    return NULL;
+  m = channel_cache_get_member_list(player);
+  while (m) {
+    if (m->is_default) {
+      chan = channel_cache_lookup_by_id(m->channel_id);
+      if (chan) {
+        return chan->name;
+      }
+    }
+    m = m->next;
   }
 
-  /* Make a working copy via tprintf - extract first channel name */
-  copy = tprintf("%s", chanattr);
-
-  /* Trim at first space (rest is other channels) */
-  char *space = strchr(copy, ' ');
-  if (space) {
-    *space = '\0';
+  /* No default set — return first channel membership */
+  m = channel_cache_get_member_list(player);
+  if (m) {
+    chan = channel_cache_lookup_by_id(m->channel_id);
+    if (chan) {
+      return chan->name;
+    }
   }
 
-  /* Trim at first colon (rest is alias:onoff) */
-  colon = strchr(copy, ':');
-  if (colon) {
-    *colon = '\0';
-  }
-
-  return (*copy) ? copy : NULL;
+  return NULL;
 }
 
 /* ===================================================================
@@ -204,7 +143,11 @@ void com_send_as_hidden(char *channel, char *message, dbref player)
 
 /**
  * Internal channel message sending with full options
- * @param channel Channel name
+ *
+ * Uses the in-memory cache for O(1) membership and mute checks.
+ * Each player sees their own personalized color_name for the channel.
+ *
+ * @param channel Channel name (plain, no prefix)
  * @param message Message to send
  * @param player Player sending (0 for system message)
  * @param hidden 1 if hidden from blacklisted users
@@ -213,32 +156,37 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
 {
   struct descriptor_data *d;
   char *output_str, *output_str2;
+  channel_cache_t *chan;
 
   /* Validate input */
   if (!channel || !*channel || !message) {
     return;
   }
 
+  /* Look up channel in cache */
+  chan = channel_cache_lookup(channel);
+  if (!chan) {
+    return;
+  }
+
   /* Loop through all descriptors */
   for (d = descriptor_list; d; d = d->next) {
+    channel_member_t *m;
+
     /* Check if descriptor is valid and connected */
     if (!d || d->state != CONNECTED || !GoodObject(d->player)) {
       continue;
     }
 
-    /* Check if player is on this channel */
-    if (channel_int_is_on_only(d->player, channel) < 0) {
+    /* Check membership and mute status via cache */
+    m = channel_cache_get_member(d->player, chan->channel_id);
+    if (!m || m->is_banned || m->muted) {
       continue;
     }
 
-    /* Check if channel is enabled for this player */
-    if (channel_int_is_on(d->player, channel_int_lookup(channel)) != 1) {
-      continue;
-    }
-
-    /* Format the message with channel name */
+    /* Format the message with player's personalized color name */
     output_str = tprintf("[%s] %s",
-                        channel_int_find_color(d->player, channel),
+                        m->color_name ? m->color_name : chan->cname,
                         message);
 
     /* Check visibility permissions */
@@ -299,7 +247,7 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
 static void channel_who(dbref player, const char *channel)
 {
   struct descriptor_data *d;
-  dbref channum;
+  channel_cache_t *chan;
   int hidden = 0;
   int visible = 0;
 
@@ -308,38 +256,44 @@ static void channel_who(dbref player, const char *channel)
     return;
   }
 
-  channum = channel_int_lookup(channel);
+  chan = channel_cache_lookup(channel);
 
-  if (channum == NOTHING) {
+  if (!chan) {
     notify(player, "+channel: Sorry, this channel doesn't exist.");
     return;
   }
 
   /* Check if channel is dark */
-  if ((db[channum].flags & DARK) &&
-      (!controls(player, db[channum].owner, POW_CHANNEL)) &&
-      (!group_controls(player, channum))) {
+  if ((chan->flags & DARK) &&
+      !channel_controls(player, chan)) {
     notify(player, "+channel: Sorry, this channel is set DARK.");
     return;
   }
 
   /* Count visible and hidden users */
   for (d = descriptor_list; d; d = d->next) {
-    if (d->state == CONNECTED && d->player > 0 &&
-        channel_int_is_on_only(d->player, channel) >= 0) {
+    channel_member_t *m;
 
-      if ((could_doit(real_owner(d->player), real_owner(player), A_LHIDE))
-          && (((!strlen(atr_get(real_owner(d->player), A_BLACKLIST))) &&
-               (!strlen(atr_get(real_owner(player), A_BLACKLIST)))) ||
-              (!((could_doit(real_owner(player), real_owner(d->player), A_BLACKLIST)) &&
-                 (could_doit(real_owner(d->player), real_owner(player), A_BLACKLIST)))))
-         ) {
-        notify(player, tprintf("%s is on channel %s.",
-                              unparse_object(player, d->player), channel));
-        visible++;
-      } else {
-        hidden++;
-      }
+    if (d->state != CONNECTED || !GoodObject(d->player)) {
+      continue;
+    }
+
+    m = channel_cache_get_member(d->player, chan->channel_id);
+    if (!m || m->is_banned) {
+      continue;
+    }
+
+    if ((could_doit(real_owner(d->player), real_owner(player), A_LHIDE))
+        && (((!strlen(atr_get(real_owner(d->player), A_BLACKLIST))) &&
+             (!strlen(atr_get(real_owner(player), A_BLACKLIST)))) ||
+            (!((could_doit(real_owner(player), real_owner(d->player), A_BLACKLIST)) &&
+               (could_doit(real_owner(d->player), real_owner(player), A_BLACKLIST)))))
+       ) {
+      notify(player, tprintf("%s is on channel %s.",
+                            unparse_object(player, d->player), channel));
+      visible++;
+    } else {
+      hidden++;
     }
   }
 
@@ -364,53 +318,33 @@ void do_com(dbref player, char *arg1, char *arg2)
   char *nocolor;
   char *dispname;
   int onoff;
-  char *curr;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   onoff = 0;
 
   /* Default channel handling */
   if (!*arg1) {
-    char *buf_local;
-    char *alias;
-    char *q;
-    char *next;
-    char *default_channel;
-
-    /* Get default channel attribute - validate it exists and is not empty */
-    default_channel = atr_get(player, A_CHANNEL);
-    if (!default_channel || !*default_channel) {
+    const char *def = channel_int_get_default(player);
+    if (!def) {
       notify(player, "+channel: You don't have a default channel set. Use '+channel default <channel>' to set one.");
       return;
     }
-
-    next = curr = buf_local = tprintf("%s ", default_channel);
-
-    next = strchr(curr, ' ');
-    if (next) {
-      *next++ = '\0';
-    }
-
-    alias = strchr(curr, ':');
-    if (alias && *alias) {
-      *alias++ = '\0';
-      q = strchr(alias, ':');
-      if (q && *q) {
-        *q++ = '\0';
-        onoff = (int)strtol(q, NULL, 10);
-      } else {
-        channel_alias(player, tprintf("%s:%s", curr, alias));
-        onoff = 1;
-      }
-    } else {
-      channel_alias(player, tprintf("%s:%s", curr, curr));
-      onoff = 1;
+    arg1 = tprintf("%s", def);
+    chan = channel_cache_lookup(arg1);
+    if (chan) {
+      m = channel_cache_get_member(player, chan->channel_id);
+      onoff = (m && !m->muted) ? 1 : 0;
     }
   } else {
-    curr = arg1;
-    onoff = channel_int_is_on(player, channel_int_lookup(curr));
+    chan = channel_cache_lookup(arg1);
+    if (chan) {
+      m = channel_cache_get_member(player, chan->channel_id);
+      onoff = (m && !m->muted) ? 1 : 0;
+    }
   }
 
-  nocolor = strip_color_nobeep(curr);
+  nocolor = strip_color_nobeep(arg1);
   if (!*nocolor) {
     notify(player, "No channel.");
     return;
@@ -422,39 +356,37 @@ void do_com(dbref player, char *arg1, char *arg2)
   }
 
   /* Permission checks */
-  if (Typeof(player) == TYPE_CHANNEL) {
-    notify(player, "+channel: Channels can't talk on channels. Imagine the Spam.");
-    return;
-  }
-
   if (Typeof(player) != TYPE_PLAYER && !power(player, POW_COM_TALK)) {
     notify(player, "+channel: You don't have permission to talk on channels.");
     return;
   }
 
-  if (channel_int_bancheck(player, nocolor) >= 0) {
-    notify(player, "+channel: You have been banned from that channel.");
-    return;
-  }
-
-  if (channel_int_lookup(nocolor) == NOTHING) {
+  chan = channel_cache_lookup(nocolor);
+  if (!chan) {
     notify(player, "+channel: Sorry. You have old channels defined. Removing old channel..");
     channel_leave(player, nocolor);
     return;
   }
 
+  m = channel_cache_get_member(player, chan->channel_id);
+
+  /* Check if banned */
+  if (m && m->is_banned) {
+    notify(player, "+channel: You have been banned from that channel.");
+    return;
+  }
+
   /* Check speak lock */
-  if (((db[channel_int_lookup(nocolor)].flags & HAVEN) ||
-       (!could_doit(player, channel_int_lookup(nocolor), A_SLOCK))) &&
-      (!controls(player, db[channel_int_lookup(nocolor)].owner, POW_CHANNEL)) &&
-      (!group_controls(player, channel_int_lookup(nocolor)))) {
+  if (((chan->flags & HAVEN) ||
+       !channel_eval_lock(player, chan->owner, chan->speak_lock)) &&
+      !channel_controls(player, chan)) {
     notify(player, "+channel: You do not have permission to speak on this channel.");
     return;
   }
 
   /* Check if channel is on */
   if (onoff != 1) {
-    notify(player, tprintf("+channel: Channel %s is currently turned off. Sorry.", curr));
+    notify(player, tprintf("+channel: Channel %s is currently turned off. Sorry.", nocolor));
     return;
   }
 
@@ -516,7 +448,7 @@ void do_com(dbref player, char *arg1, char *arg2)
   com_send_int(nocolor, buf, player, 0);
 
   /* Notify sender if not on channel */
-  if (channel_int_is_on_only(player, nocolor) < 0) {
+  if (!m) {
     notify(player, "Your +com has been sent.");
   }
 }
@@ -531,38 +463,24 @@ void do_com(dbref player, char *arg1, char *arg2)
  */
 char *channel_int_find_alias(dbref player, const char *channel)
 {
-  char *clist, *clbegin, *alias, *s;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!channel || !*channel) {
     return NULL;
   }
 
-  clbegin = clist = tprintf("%s ", atr_get(player, A_CHANNEL));
-
-  while (*clist) {
-    char *space = strchr(clist, ' ');
-    if (space) {
-      *space = '\0';
-    }
-
-    alias = strchr(clist, ':');
-    if (alias && *alias) {
-      *alias++ = '\0';
-      s = strchr(alias, ':');
-      if (s && *s) {
-        *s++ = '\0';
-      }
-
-      if (!strcmp(strip_color_nobeep(clist), channel)) {
-        return tprintf("%s", alias);
-      }
-      clist += strlen(clist) + strlen(alias) + 2;
-    } else {
-      clist += strlen(clist) + 1;
-    }
+  chan = channel_cache_lookup(channel);
+  if (!chan) {
+    return NULL;
   }
 
-  return NULL;
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m || !m->alias || !*m->alias) {
+    return NULL;
+  }
+
+  return tprintf("%s", m->alias);
 }
 
 /**
@@ -571,35 +489,22 @@ char *channel_int_find_alias(dbref player, const char *channel)
  */
 char *channel_int_is_alias(dbref player, const char *al)
 {
-  char *clist, *clbegin, *alias, *s;
+  channel_member_t *m;
+  channel_cache_t *chan;
 
   if (!al || !*al) {
     return NULL;
   }
 
-  clbegin = clist = tprintf("%s ", atr_get(player, A_CHANNEL));
-
-  while (*clist) {
-    char *space = strchr(clist, ' ');
-    if (space) {
-      *space = '\0';
-    }
-
-    alias = strchr(clist, ':');
-    if (alias && *alias) {
-      *alias++ = '\0';
-      s = strchr(alias, ':');
-      if (s && *s) {
-        *s++ = '\0';
+  m = channel_cache_get_member_list(player);
+  while (m) {
+    if (m->alias && !strcmp(m->alias, al)) {
+      chan = channel_cache_lookup_by_id(m->channel_id);
+      if (chan) {
+        return tprintf("%s", m->alias);
       }
-
-      if (!strcmp(alias, al)) {
-        return tprintf("%s", alias);
-      }
-      clist += strlen(clist) + strlen(alias) + 2;
-    } else {
-      clist += strlen(clist) + 1;
     }
+    m = m->next;
   }
 
   return NULL;
@@ -608,65 +513,34 @@ char *channel_int_is_alias(dbref player, const char *al)
 /**
  * Find channel name (wrapper with alias checking)
  */
-char *channel_int_find(dbref player, const char *chan)
+char *channel_int_find(dbref player, const char *chan_name)
 {
-  return channel_int_find_level(player, chan, 1);
-}
+  channel_cache_t *chan;
+  channel_member_t *m;
 
-/**
- * Find channel name (exact match only, no alias)
- */
-char *channel_int_find_only(dbref player, const char *chan)
-{
-  return channel_int_find_level(player, chan, 0);
-}
-
-/**
- * Find channel in player's channel list
- * @param level 1 to check aliases, 0 for exact match only
- * @return Channel name or NULL
- */
-char *channel_int_find_level(dbref player, const char *chan, int level)
-{
-  char *clist, *clbegin, *alias, *s = NULL;
-
-  if (!chan || !*chan) {
+  if (!chan_name || !*chan_name) {
     return NULL;
   }
 
-  clbegin = clist = tprintf("%s ", atr_get(player, A_CHANNEL));
-
-  while (*clist) {
-    char *space = strchr(clist, ' ');
-    if (space) {
-      *space = '\0';
+  /* Try exact channel name match first */
+  chan = channel_cache_lookup(chan_name);
+  if (chan) {
+    m = channel_cache_get_member(player, chan->channel_id);
+    if (m) {
+      return tprintf("%s", chan->name);
     }
+  }
 
-    alias = strchr(clist, ':');
-    if (alias && *alias) {
-      *alias++ = '\0';
-      s = strchr(alias, ':');
-      if (s && *s) {
-        *s++ = '\0';
+  /* Try alias match */
+  m = channel_cache_get_member_list(player);
+  while (m) {
+    if (m->alias && !strcmp(m->alias, chan_name)) {
+      chan = channel_cache_lookup_by_id(m->channel_id);
+      if (chan) {
+        return tprintf("%s", chan->name);
       }
     }
-
-    if ((!strcmp(strip_color_nobeep(clist), chan)) ||
-        ((level == 1) && (alias && *alias && (!strcmp(alias, chan))))) {
-      if (channel_int_lookup(clist)) {
-        return tprintf("%s", clist);
-      }
-    }
-
-    if (alias && *alias) {
-      if (s && *s) {
-        clist += strlen(clist) + strlen(alias) + strlen(s) + 3;
-      } else {
-        clist += strlen(clist) + strlen(alias) + 2;
-      }
-    } else {
-      clist += strlen(clist) + 1;
-    }
+    m = m->next;
   }
 
   return NULL;
@@ -678,74 +552,59 @@ char *channel_int_find_level(dbref player, const char *chan, int level)
 
 /**
  * Check if player is on a channel (with alias checking)
- * @return Position in channel list or -1
+ * @return 0 if on channel, -1 if not (legacy return value compatibility)
  */
-int channel_int_is_on_channel(dbref player, const char *chan)
+int channel_int_is_on_channel(dbref player, const char *chan_name)
 {
-  if (chan && *chan) {
-    return channel_int_is_on_level(player, chan, 1);
+  channel_cache_t *chan;
+  channel_member_t *m;
+
+  if (!chan_name || !*chan_name) {
+    return -1;
   }
+
+  /* Try exact name */
+  chan = channel_cache_lookup(chan_name);
+  if (chan) {
+    m = channel_cache_get_member(player, chan->channel_id);
+    if (m && !m->is_banned) {
+      return 0;
+    }
+  }
+
+  /* Try alias */
+  m = channel_cache_get_member_list(player);
+  while (m) {
+    if (m->alias && !strcmp(m->alias, chan_name) && !m->is_banned) {
+      return 0;
+    }
+    m = m->next;
+  }
+
   return -1;
 }
 
 /**
  * Check if player is on a channel (exact match only)
- * @return Position in channel list or -1
+ * @return 0 if on channel, -1 if not (legacy return value compatibility)
  */
-int channel_int_is_on_only(dbref player, const char *chan)
+int channel_int_is_on_only(dbref player, const char *chan_name)
 {
-  if (chan && *chan) {
-    return channel_int_is_on_level(player, chan, 0);
-  }
-  return -1;
-}
+  channel_cache_t *chan;
+  channel_member_t *m;
 
-/**
- * Internal channel membership check
- * @param level 1 to check aliases, 0 for exact match
- * @return Position in string or -1 if not found
- */
-int channel_int_is_on_level(dbref player, const char *chan, int level)
-{
-  char *clist, *clbegin, *alias, *s = NULL;
-
-  if (!chan || !*chan) {
+  if (!chan_name || !*chan_name) {
     return -1;
   }
 
-  clbegin = clist = tprintf("%s ", atr_get(player, A_CHANNEL));
+  chan = channel_cache_lookup(chan_name);
+  if (!chan) {
+    return -1;
+  }
 
-  while (*clist) {
-    char *space = strchr(clist, ' ');
-    if (space) {
-      *space = '\0';
-    }
-
-    alias = strchr(clist, ':');
-    if (alias && *alias) {
-      *alias++ = '\0';
-      s = strchr(alias, ':');
-      if (s && *s) {
-        *s++ = '\0';
-      }
-    }
-
-    if ((!strcmp(strip_color_nobeep(clist), chan)) ||
-        ((level == 1) && (alias && *alias && (!strcmp(alias, chan))))) {
-      if (channel_int_lookup(clist)) {
-        return (clist - clbegin);
-      }
-    }
-
-    if (alias && *alias) {
-      if (s && *s) {
-        clist += strlen(clist) + strlen(alias) + strlen(s) + 3;
-      } else {
-        clist += strlen(clist) + strlen(alias) + 2;
-      }
-    } else {
-      clist += strlen(clist) + 1;
-    }
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (m && !m->is_banned) {
+    return 0;
   }
 
   return -1;
@@ -863,7 +722,7 @@ int channel_int_ok_name(char *name)
       strchr(name, OR_TOKEN) ||
       strchr(name, ';') ||
       strchr(name, ' ') ||
-      strlen(name) > channel_name_limit) {
+      strlen(name) > (size_t)channel_name_limit) {
     return 0;
   }
 
@@ -921,7 +780,7 @@ int channel_int_ok_name(char *name)
   }
 
   /* Check if already exists */
-  if (channel_int_lookup(name) != NOTHING) {
+  if (channel_cache_lookup(name) != NULL) {
     return 0;
   }
 
@@ -955,11 +814,12 @@ int channel_int_ok_name(char *name)
  */
 void channel_create(dbref player, char *arg2)
 {
-  dbref channel;
   ptype k;
   char *alias;
   long cost = channel_cost;
   char *nocolor;
+  long channel_id;
+  int min_level;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Create what?");
@@ -978,8 +838,12 @@ void channel_create(dbref player, char *arg2)
     *alias++ = '\0';
   }
 
+  /* Determine min_level from prefix */
+  min_level = channel_name_to_level(nocolor);
+  const char *plain_name = channel_strip_prefix(nocolor);
+
   /* Validate names */
-  if (!channel_int_ok_name(nocolor) ||
+  if (!channel_int_ok_name((char *)plain_name) ||
       (alias && *alias && !channel_int_ok_name(alias))) {
     notify(player, "+channel: That's a silly name for a channel!");
     return;
@@ -992,19 +856,19 @@ void channel_create(dbref player, char *arg2)
 
   k = *db[player].pows;
 
-  if (*nocolor == '*' &&
+  if (min_level == 3 &&
       !(k == CLASS_ADMIN || k == CLASS_DIR)) {
     notify(player, tprintf("+channel: %s", perm_denied()));
     return;
   }
 
-  if (*nocolor == '.' &&
+  if (min_level == 2 &&
       !(k == CLASS_DIR || k == CLASS_ADMIN || k == CLASS_BUILDER)) {
     notify(player, tprintf("+channel: %s", perm_denied()));
     return;
   }
 
-  if (*nocolor == '_' &&
+  if (min_level == 1 &&
       !(k == CLASS_DIR || k == CLASS_ADMIN || k == CLASS_BUILDER ||
         k == CLASS_OFFICIAL || k == CLASS_JUNOFF)) {
     notify(player, tprintf("+channel: %s", perm_denied()));
@@ -1012,45 +876,27 @@ void channel_create(dbref player, char *arg2)
   }
 
   /* Check if player can pay */
-  if (!can_pay_fees(def_owner(player), cost, QUOTA_COST)) {
+  if (!can_pay_fees(def_owner(player), (int)cost, QUOTA_COST)) {
     notify(player, "+channel: You don't have enough credits or quota.");
     return;
   }
 
-  /* Create the channel object */
-  channel = new_object();
+  /* Create the channel in MariaDB */
+  channel_id = mariadb_channel_create(plain_name, arg2, def_owner(player),
+                                       (long)SEE_OK, min_level, 0);
 
-  /* Initialize channel */
-  SET(db[channel].name, nocolor);
-  SET(db[channel].cname, arg2);
-  db[channel].zone = NOTHING;
-  db[channel].location = channel;
-  db[channel].link = channel;
-  db[channel].owner = def_owner(player);
-  s_Pennies(channel, (long)OBJECT_ENDOWMENT(cost));
-  db[channel].flags = TYPE_CHANNEL;
-  db[channel].flags |= SEE_OK;
-
-  /* Endow the object */
-  if (Pennies(channel) > MAX_OBJECT_ENDOWMENT) {
-    s_Pennies(channel, (long)MAX_OBJECT_ENDOWMENT);
+  if (channel_id < 0) {
+    notify(player, "+channel: Failed to create channel.");
+    return;
   }
 
-  atr_add(channel, A_LASTLOC, tprintf("%" DBREF_FMT, channel));
-  moveto(channel, channel);
-  db[channel].i_flags &= I_MARKED;
-
-  /* Add to channel hash table */
-  channel_int_add(channel);
-
-  notify(player, tprintf("+channel: %s created.",
-                        unparse_object(player, channel)));
+  notify(player, tprintf("+channel: Channel '%s' created.", plain_name));
 
   /* Auto-join creator to channel */
   if (alias && *alias) {
-    channel_join(player, tprintf("%s:%s", db[channel].name, alias));
+    channel_join(player, tprintf("%s:%s", plain_name, alias));
   } else {
-    channel_join(player, db[channel].name);
+    channel_join(player, (char *)plain_name);
   }
 }
 
@@ -1060,24 +906,23 @@ void channel_create(dbref player, char *arg2)
  */
 void channel_destroy(dbref player, char *name)
 {
-  dbref victim;
-  char *plist;
-  char *s;
+  channel_cache_t *chan;
 
   if (!name || !*name) {
     notify(player, "+channel: Destroy what?");
     return;
   }
 
-  victim = channel_int_lookup(name);
+  chan = channel_cache_lookup(channel_strip_prefix(name));
 
-  if (victim == NOTHING) {
+  if (!chan) {
     notify(player, "+channel: Invalid channel name.");
     return;
   }
 
-  if (Typeof(victim) != TYPE_CHANNEL) {
-    notify(player, "+channel: This isn't a channel!");
+  /* Check if system channel */
+  if (chan->is_system) {
+    notify(player, "+channel: Cannot destroy a system channel.");
     return;
   }
 
@@ -1087,55 +932,33 @@ void channel_destroy(dbref player, char *name)
     return;
   }
 
-  if ((db[victim].owner != player) &&
-      !power(player, POW_CHANNEL) &&
+  if (!channel_controls(player, chan) &&
       !power(player, POW_NUKE)) {
     notify(player, tprintf("+channel: %s", perm_denied()));
     return;
   }
 
-  if (!controls(player, victim, POW_NUKE)) {
-    log_important(tprintf("%s failed to: +channel destroy=%s",
-                         unparse_object_a(player, player),
-                         unparse_object_a(victim, victim)));
-    notify(player, perm_denied());
-    return;
-  }
-
-  if (owns_stuff(victim)) {
-    notify(player, "+channel: Problem. Channel owns something. That's bad.");
-    return;
-  }
-
-  /* Boot all players off the channel */
-  plist = tprintf("%s ", atr_get(victim, A_CHANNEL));
-
-  while (plist && *plist) {
-    s = strchr(plist, ' ');
-    if (s && *s) {
-      *s++ = '\0';
+  /* Notify all members */
+  {
+    struct descriptor_data *d;
+    for (d = descriptor_list; d; d = d->next) {
+      if (d->state == CONNECTED && GoodObject(d->player)) {
+        channel_member_t *m = channel_cache_get_member(d->player, chan->channel_id);
+        if (m && !m->is_banned) {
+          notify(d->player, tprintf("+channel: %s is being destroyed. You must leave now.",
+                                   chan->cname));
+        }
+      }
     }
-
-    dbref p = atol(plist);
-    if (GoodObject(p)) {
-      notify(p, tprintf("+channel: %s is being destroyed. You must leave now.",
-                       db[victim].cname));
-      channel_int_remove_player(p, db[victim].name);
-    }
-    plist = s;
   }
 
-  /* Clean up and destroy */
-  do_halt(victim, "", "");
-  db[victim].flags = TYPE_THING;
-  db[victim].owner = root;
-  channel_int_delete(victim);
-  destroy_obj(victim, 1);
+  log_important(tprintf("%s executed: +channel destroy %s",
+                       unparse_object_a(player, player), name));
 
-  notify(player, tprintf("+channel: %s destroyed.", db[victim].cname));
-  log_important(tprintf("%s executed: +channel destroy=%s",
-                       unparse_object_a(player, player),
-                       unparse_object_a(victim, victim)));
+  /* Destroy in MariaDB (CASCADE removes all memberships) */
+  mariadb_channel_destroy(chan->channel_id);
+
+  notify(player, tprintf("+channel: %s destroyed.", name));
 }
 
 /* ===================================================================
@@ -1150,9 +973,9 @@ void channel_op(dbref player, char *arg2)
 {
   char *user;
   dbref target;
-  dbref channum;
+  channel_cache_t *chan;
+  channel_member_t *m;
   int yesno = 1;
-  int place;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Invalid op format.");
@@ -1178,15 +1001,14 @@ void channel_op(dbref player, char *arg2)
     return;
   }
 
-  channum = channel_int_lookup(arg2);
-  if (channum == NOTHING) {
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
     notify(player, "+channel: Invalid channel specified in op operation.");
     return;
   }
 
   /* Check permissions */
-  if (!controls(player, db[channum].owner, POW_CHANNEL) &&
-      !group_controls(player, channum)) {
+  if (!channel_controls(player, chan)) {
     notify(player, "+channel: You don't have permission to set ops on this channel.");
     return;
   }
@@ -1197,48 +1019,94 @@ void channel_op(dbref player, char *arg2)
     return;
   }
 
-  place = is_in_attr(channum, tprintf("#%" DBREF_FMT, target), A_USERS);
+  m = channel_cache_get_member(target, chan->channel_id);
 
   if (yesno == 0) {
     /* Removing op status */
-    if (place != NOTHING) {
-      atr_add(channum, A_USERS, remove_from_attr(channum, place, A_USERS));
+    if (m && m->is_operator) {
+      mariadb_channel_set_operator(chan->channel_id, target, 0);
       notify(player, tprintf("+channel: %s is no longer an op on %s",
-                            unparse_object(player, target),
-                            unparse_object(player, channum)));
+                            unparse_object(player, target), chan->name));
     } else {
       notify(player, tprintf("+channel: %s was not an op on %s anyway!",
-                            unparse_object(player, target),
-                            unparse_object(player, channum)));
+                            unparse_object(player, target), chan->name));
     }
   } else {
     /* Adding op status */
-    if (place != NOTHING) {
+    if (m && m->is_operator) {
       notify(player, tprintf("+channel: %s is already an op on %s!",
-                            unparse_object(player, target),
-                            unparse_object(player, channum)));
-    } else {
-      char *tmp = atr_get(channum, A_USERS);
-
-      if (tmp && strlen(tmp)) {
-        atr_add(channum, A_USERS, tprintf("%s #%" DBREF_FMT, tmp, target));
-      } else {
-        atr_add(channum, A_USERS, tprintf("#%" DBREF_FMT, target));
-      }
-
+                            unparse_object(player, target), chan->name));
+    } else if (m) {
+      mariadb_channel_set_operator(chan->channel_id, target, 1);
       notify(player, tprintf("+channel: %s is now an op on %s",
-                            unparse_object(player, target),
-                            unparse_object(player, channum)));
+                            unparse_object(player, target), chan->name));
+    } else {
+      notify(player, tprintf("+channel: %s is not on channel %s.",
+                            unparse_object(player, target), chan->name));
     }
   }
 }
 
 /**
- * Set channel lock (placeholder - needs implementation)
+ * Set channel lock
+ * Syntax: +channel lock <channel>:<locktype>=<lock>
  */
 void channel_lock(dbref player, char *arg2)
 {
-  notify(player, "+channel: Lock functionality not yet implemented.");
+  char *locktype;
+  char *lock_str;
+  channel_cache_t *chan;
+  const char *field;
+
+  if (!arg2 || !*arg2) {
+    notify(player, "+channel: Bad lock syntax. Use: +channel lock <channel>:<type>=<lock>");
+    return;
+  }
+
+  locktype = strchr(arg2, ':');
+  if (!locktype || !*locktype) {
+    notify(player, "+channel: Bad lock syntax. Use: +channel lock <channel>:<type>=<lock>");
+    return;
+  }
+
+  *locktype++ = '\0';
+
+  lock_str = strchr(locktype, '=');
+  if (lock_str) {
+    *lock_str++ = '\0';
+  }
+
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
+    notify(player, "+channel: Invalid channel.");
+    return;
+  }
+
+  if (!channel_controls(player, chan)) {
+    notify(player, "+channel: You don't have permission to set locks on this channel.");
+    return;
+  }
+
+  /* Map lock type to field name */
+  if (!string_compare(locktype, "speak") || !string_compare(locktype, "slock")) {
+    field = "speak_lock";
+  } else if (!string_compare(locktype, "join") || !string_compare(locktype, "lock")) {
+    field = "join_lock";
+  } else if (!string_compare(locktype, "hide") || !string_compare(locktype, "lhide")) {
+    field = "hide_lock";
+  } else {
+    notify(player, "+channel: Invalid lock type. Use: speak, join, or hide");
+    return;
+  }
+
+  mariadb_channel_update_field(chan->channel_id, field,
+                                (lock_str && *lock_str) ? lock_str : NULL);
+
+  if (lock_str && *lock_str) {
+    notify(player, tprintf("+channel: %s lock set on %s.", locktype, chan->name));
+  } else {
+    notify(player, tprintf("+channel: %s lock cleared on %s.", locktype, chan->name));
+  }
 }
 
 /**
@@ -1247,18 +1115,15 @@ void channel_lock(dbref player, char *arg2)
  */
 void channel_password(dbref player, char *arg2)
 {
-  char *chan;
   char *password;
-  dbref channel;
+  channel_cache_t *chan;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Bad password syntax.");
     return;
   }
 
-  chan = arg2;
   password = strchr(arg2, ':');
-
   if (!password) {
     notify(player, "+channel: Bad password syntax.");
     return;
@@ -1266,29 +1131,26 @@ void channel_password(dbref player, char *arg2)
 
   *password++ = '\0';
 
-  channel = channel_int_lookup(chan);
-
-  if (!channel || (channel == NOTHING)) {
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
     notify(player, "+channel: Invalid channel.");
     return;
   }
 
   /* Check permissions */
-  if (!controls(player, db[channel].owner, POW_CHANNEL) &&
-      !group_controls(player, channel)) {
+  if (!channel_controls(player, chan)) {
     notify(player, "+channel: You do not have permission to set the password on this channel.");
     return;
   }
 
   /* Set or clear password */
   if (password && *password) {
-    s_Pass(channel, crypt(password, "XX"));
-    notify(player, tprintf("+channel: %s password changed.",
-                          unparse_object(player, channel)));
+    mariadb_channel_update_field(chan->channel_id, "password",
+                                  crypt(password, "XX"));
+    notify(player, tprintf("+channel: %s password changed.", chan->name));
   } else {
-    s_Pass(channel, "");
-    notify(player, tprintf("+channel: %s password erased.",
-                          unparse_object(player, channel)));
+    mariadb_channel_update_field(chan->channel_id, "password", NULL);
+    notify(player, tprintf("+channel: %s password erased.", chan->name));
   }
 }
 
@@ -1308,7 +1170,8 @@ void channel_join(dbref player, char *arg2)
   char *password;
   char *cryptpass;
   int pmatch = 0;
-  dbref channum;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Join what?");
@@ -1317,11 +1180,6 @@ void channel_join(dbref player, char *arg2)
 
   if (strchr(arg2, ' ')) {
     notify(player, "Sorry, channel names cannot have spaces in them.");
-    return;
-  }
-
-  if (Typeof(player) == TYPE_CHANNEL) {
-    notify(player, "+channel: Channels can't talk on channels. Imagine the Spam.");
     return;
   }
 
@@ -1351,36 +1209,33 @@ void channel_join(dbref player, char *arg2)
     }
   }
 
-  channum = channel_int_lookup(arg2);
+  chan = channel_cache_lookup(arg2);
 
-  if (channum == NOTHING) {
+  if (!chan) {
     notify(player, tprintf("+channel: Channel %s does not exist.", arg2));
     return;
   }
 
   /* Check if already on channel */
-  if (channel_int_is_on_channel(player, arg2) != NOTHING) {
-    if (channel_int_is_on_only(player, alias) != NOTHING) {
-      notify(player, "You are already on that channel. Try +ch alias to change aliases.");
-      return;
-    } else {
-      channel_alias(player, tprintf("%s:%s", arg2, alias));
-      return;
-    }
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (m && !m->is_banned) {
+    notify(player, "You are already on that channel. Try +ch alias to change aliases.");
+    return;
   }
 
+  /* Check if alias is already in use */
   if (channel_int_is_alias(player, alias)) {
     notify(player, tprintf("+channel: You're already using that alias. (%s)", alias));
     return;
   }
 
   /* Check if banned */
-  if (channel_int_bancheck(player, arg2) >= 0) {
+  if (m && m->is_banned) {
     notify(player, "You have been banned from that channel.");
     return;
   }
 
-  /* Permission checks for special channels */
+  /* Permission checks for min_level channels */
   if (!pmatch) {
     if (!db[player].pows) {
       return;
@@ -1388,62 +1243,45 @@ void channel_join(dbref player, char *arg2)
 
     k = *db[player].pows;
 
-    if (*arg2 == '*' && !(k == CLASS_ADMIN || k == CLASS_DIR)) {
+    if (chan->min_level == 3 && !(k == CLASS_ADMIN || k == CLASS_DIR)) {
       notify(player, perm_denied());
       return;
     }
 
-    if (*arg2 == '.' &&
+    if (chan->min_level == 2 &&
         !(k == CLASS_DIR || k == CLASS_ADMIN || k == CLASS_BUILDER)) {
       notify(player, perm_denied());
       return;
     }
 
-    if (*arg2 == '_' &&
+    if (chan->min_level == 1 &&
         !(k == CLASS_DIR || k == CLASS_ADMIN || k == CLASS_BUILDER ||
           k == CLASS_OFFICIAL || k == CLASS_JUNOFF)) {
       notify(player, perm_denied());
       return;
     }
 
-    /* Check channel lock */
-    if (!could_doit(player, channum, A_LOCK) &&
-        !controls(player, db[channum].owner, POW_CHANNEL)) {
+    /* Check channel join lock */
+    if (!channel_eval_lock(player, chan->owner, chan->join_lock) &&
+        !channel_controls(player, chan)) {
       notify(player, "+channel: Sorry, you are not permitted to join this channel.");
       return;
     }
   }
 
-  /* Add to player's channel list */
-  if (!*atr_get(player, A_CHANNEL)) {
-    atr_add(player, A_CHANNEL, tprintf("%s:%s:1", arg2, alias));
-  } else {
-    atr_add(player, A_CHANNEL, tprintf("%s %s:%s:1",
-                                       atr_get(player, A_CHANNEL),
-                                       arg2, alias));
-  }
-
-  /* Add to channel's player list */
-  if (!*atr_get(channum, A_CHANNEL)) {
-    atr_add(channum, A_CHANNEL, tprintf("%" DBREF_FMT, player));
-  } else {
-    atr_add(channum, A_CHANNEL, tprintf("%s %" DBREF_FMT,
-                                        atr_get(channum, A_CHANNEL),
-                                        player));
+  /* Join the channel in MariaDB + cache */
+  if (!mariadb_channel_join(chan->channel_id, player, alias, chan->cname)) {
+    notify(player, "+channel: Failed to join channel.");
+    return;
   }
 
   /* Announce join unless channel is QUIET */
-  if (!(db[channum].flags & QUIET)) {
-    char sayit[CHANNEL_BUF_SIZE];
-
-    strncpy(sayit, atr_get(channum, A_OENTER), sizeof(sayit) - 1);
-    sayit[sizeof(sayit) - 1] = '\0';
-
-    if (strlen(sayit)) {
+  if (!(chan->flags & QUIET)) {
+    if (chan->join_msg && *chan->join_msg) {
       char buf2[MESSAGE_BUF_SIZE];
       char *p;
 
-      pronoun_substitute(buf2, player, sayit, channum);
+      pronoun_substitute(buf2, player, chan->join_msg, chan->owner);
       p = buf2 + strlen(db[player].name) + 1;
       strncpy(buf, p, sizeof(buf) - 1);
       buf[sizeof(buf) - 1] = '\0';
@@ -1458,8 +1296,8 @@ void channel_join(dbref player, char *arg2)
                         arg2, alias));
 
   /* Show channel topic */
-  if (strlen(atr_get(channum, A_DESC))) {
-    notify(player, tprintf("+channel topic: %s", atr_get(channum, A_DESC)));
+  if (chan->topic && *chan->topic) {
+    notify(player, tprintf("+channel topic: %s", chan->topic));
   }
 }
 
@@ -1469,11 +1307,9 @@ void channel_join(dbref player, char *arg2)
  */
 void channel_leave(dbref player, char *arg2)
 {
-  int i, j;
   char buf[MESSAGE_BUF_SIZE];
-  char *pattr;
-  char *cattr;
-  dbref channum;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Leave what?");
@@ -1485,26 +1321,25 @@ void channel_leave(dbref player, char *arg2)
     return;
   }
 
-  i = channel_int_is_on_channel(player, arg2);
-  if ((i < 0) || (!channel_int_find_only(player, arg2))) {
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
     notify(player, "You aren't on that channel.");
     return;
   }
 
-  channum = channel_int_lookup(arg2);
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m) {
+    notify(player, "You aren't on that channel.");
+    return;
+  }
 
   /* Announce leave unless channel is QUIET */
-  if (channum != NOTHING && !(db[channum].flags & QUIET)) {
-    char sayit[CHANNEL_BUF_SIZE];
-
-    strncpy(sayit, atr_get(channum, A_OLEAVE), sizeof(sayit) - 1);
-    sayit[sizeof(sayit) - 1] = '\0';
-
-    if (strlen(sayit)) {
+  if (!(chan->flags & QUIET)) {
+    if (chan->leave_msg && *chan->leave_msg) {
       char buf2[MESSAGE_BUF_SIZE];
       char *p;
 
-      pronoun_substitute(buf2, player, sayit, player);
+      pronoun_substitute(buf2, player, chan->leave_msg, player);
       p = buf2 + strlen(db[player].name) + 1;
       strncpy(buf, p, sizeof(buf) - 1);
       buf[sizeof(buf) - 1] = '\0';
@@ -1517,21 +1352,8 @@ void channel_leave(dbref player, char *arg2)
 
   notify(player, tprintf("%s has been deleted from your channel list.", arg2));
 
-  /* Remove from player's list */
-  pattr = channel_int_remove_attr(player, i);
-
-  /* Remove from channel's list */
-  if (channum == NOTHING) {
-    notify(player, "+channel: Removing old channel");
-  } else {
-    j = channel_int_is_on_channel(channum, tprintf("%" DBREF_FMT, player));
-    if (j != NOTHING) {
-      cattr = channel_int_remove_attr(channum, j);
-      atr_add(channum, A_CHANNEL, cattr);
-    }
-  }
-
-  atr_add(player, A_CHANNEL, pattr);
+  /* Remove from MariaDB + cache */
+  mariadb_channel_leave(chan->channel_id, player);
 }
 
 /**
@@ -1540,47 +1362,27 @@ void channel_leave(dbref player, char *arg2)
  */
 void channel_default(dbref player, char *arg1)
 {
-  dbref channum;
-  int onoff;
-  int i;
-  char *alias;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!arg1 || !*arg1) {
     notify(player, "+channel: Set what as default?");
     return;
   }
 
-  i = channel_int_is_on_only(player, arg1);
-
-  if (i < 0) {
-    notify(player, "+channel default: Need to join the channel first.");
-    return;
-  }
-
-  channum = channel_int_lookup(arg1);
-  if (channum == NOTHING) {
+  chan = channel_cache_lookup(arg1);
+  if (!chan) {
     notify(player, "+channel: Invalid channel.");
     return;
   }
 
-  alias = channel_int_find_alias(player, arg1);
-  if (!(alias && *alias)) {
-    alias = arg1;
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m) {
+    notify(player, "+channel default: Need to join the channel first.");
+    return;
   }
 
-  onoff = channel_int_is_on(player, channum);
-
-  /* Remove from current position */
-  channel_int_remove_player(player, arg1);
-
-  /* Add at beginning */
-  if (!*atr_get(player, A_CHANNEL)) {
-    atr_add(player, A_CHANNEL, tprintf("%s:%s:%d", arg1, alias, onoff));
-  } else {
-    atr_add(player, A_CHANNEL, tprintf("%s:%s:%d %s",
-                                       arg1, alias, onoff,
-                                       atr_get(player, A_CHANNEL)));
-  }
+  mariadb_channel_set_default(player, chan->channel_id);
 
   notify(player, tprintf("+channel default: %s is now your default channel.", arg1));
 }
@@ -1593,9 +1395,8 @@ void channel_alias(dbref player, char *arg2)
 {
   char *channel;
   char *alias;
-  char *s;
-  int pos;
-  char *old1, *old2, *new;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Bad +channel alias syntax.");
@@ -1612,44 +1413,25 @@ void channel_alias(dbref player, char *arg2)
 
   *alias++ = '\0';
 
-  /* Check for on/off state */
-  s = strchr(alias, ':');
-  if (s && *s) {
-    *s++ = '\0';
-    if (!(s && *s)) {
-      s = "1";
-    }
-  } else {
-    s = "1";
+  /* Strip any trailing :onoff */
+  char *s = strchr(alias, ':');
+  if (s) {
+    *s = '\0';
   }
 
-  pos = channel_int_is_on_only(player, channel);
-  if (pos == NOTHING) {
+  chan = channel_cache_lookup(channel);
+  if (!chan) {
+    notify(player, "+channel: Invalid channel.");
+    return;
+  }
+
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m) {
     notify(player, "+channel: You must first join the channel before setting its alias.");
     return;
   }
 
-  /* Build new channel list */
-  old1 = tprintf("%s", atr_get(player, A_CHANNEL));
-  old2 = old1 + pos;
-
-  if (old2 && *old2) {
-    *old2++ = '\0';
-    old2 = strchr(old2, ' ');
-    if (old2 && *old2) {
-      old2++;
-    }
-
-    if (old2 && *old2) {
-      new = tprintf("%s%s:%s:%s %s", old1, channel, alias, s, old2);
-    } else {
-      new = tprintf("%s%s:%s:%s", old1, channel, alias, s);
-    }
-  } else {
-    new = tprintf("%s%s:%s:%s", old1, channel, alias, s);
-  }
-
-  atr_add(player, A_CHANNEL, new);
+  mariadb_channel_set_alias(chan->channel_id, player, alias);
   notify(player, tprintf("Alias for channel %s is now %s", channel, alias));
 }
 
@@ -1661,7 +1443,7 @@ void channel_boot(dbref player, char *channel)
 {
   char *vic;
   dbref victim;
-  dbref channum;
+  channel_cache_t *chan;
 
   if (!channel || !*channel) {
     notify(player, "+channel: Bad boot syntax.");
@@ -1681,15 +1463,14 @@ void channel_boot(dbref player, char *channel)
     return;
   }
 
-  channum = channel_int_lookup(channel);
-  if (channum == NOTHING) {
+  chan = channel_cache_lookup(channel);
+  if (!chan) {
     notify(player, "+channel: Invalid channel.");
     return;
   }
 
   /* Check permissions */
-  if (!controls(player, db[channum].owner, POW_CHANNEL) &&
-      !group_controls(player, channum)) {
+  if (!channel_controls(player, chan)) {
     notify(player, "+channel: You don't have permission to boot from this channel.");
     return;
   }
@@ -1700,7 +1481,7 @@ void channel_boot(dbref player, char *channel)
     return;
   }
 
-  if (channel_int_remove_player(victim, channel) != NOTHING) {
+  if (channel_int_remove_player(victim, channel) >= 0) {
     notify(player, tprintf("+channel: You have booted %s from %s.",
                           unparse_object(player, victim), channel));
     notify(victim, tprintf("+channel: You have been booted from %s by %s",
@@ -1717,37 +1498,6 @@ void channel_boot(dbref player, char *channel)
  * =================================================================== */
 
 /**
- * Check if player is banned from a channel
- * @return Position in ban list or -1
- */
-static int channel_int_bancheck(dbref player, const char *chan)
-{
-  char *blist, *blbegin, *buf;
-
-  if (!chan || !*chan) {
-    return -1;
-  }
-
-  buf = tprintf("%s ", atr_get(player, A_BANNED));
-  blbegin = blist = buf;
-
-  while (*blist) {
-    char *space = strchr(blist, ' ');
-    if (space) {
-      *space = '\0';
-    }
-
-    if (!strcmp(blist, chan)) {
-      return (blist - blbegin);
-    }
-
-    blist += strlen(blist) + 1;
-  }
-
-  return -1;
-}
-
-/**
  * Ban a player from a channel
  * Syntax: +channel ban <channel>:<player>
  */
@@ -1755,7 +1505,8 @@ void channel_ban(dbref player, char *arg2)
 {
   dbref victim;
   char *arg1;
-  dbref channum;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!power(player, POW_BAN)) {
     notify(player, perm_denied());
@@ -1802,28 +1553,24 @@ void channel_ban(dbref player, char *arg2)
     return;
   }
 
-  channum = channel_int_lookup(arg2);
-  if (channum == NOTHING) {
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
     notify(player, "+channel: Invalid channel.");
     return;
   }
 
-  if (channel_int_bancheck(victim, arg2) >= 0) {
+  m = channel_cache_get_member(victim, chan->channel_id);
+  if (m && m->is_banned) {
     notify(player, tprintf("%s has already been banned from %s.",
                           unparse_object(player, victim), arg2));
     return;
   }
 
-  /* Add to ban list */
-  if (!*atr_get(victim, A_BANNED)) {
-    atr_add(victim, A_BANNED, arg2);
-  } else {
-    atr_add(victim, A_BANNED, tprintf("%s %s", arg2,
-                                      atr_get(victim, A_BANNED)));
-  }
-
-  /* Remove from channel */
+  /* Remove from channel first, then ban */
   channel_int_remove_player(victim, arg2);
+
+  /* Set ban in MariaDB + cache */
+  mariadb_channel_set_ban(chan->channel_id, victim, 1);
 
   log_important(tprintf("%s executed: +channel ban %s=%s",
                        unparse_object_a(player, player),
@@ -1843,11 +1590,9 @@ void channel_ban(dbref player, char *arg2)
 void channel_unban(dbref player, char *arg2)
 {
   dbref victim;
-  int i;
-  char *end;
-  char buf[MESSAGE_BUF_SIZE];
-  char buf2[MESSAGE_BUF_SIZE];
   char *arg1;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!power(player, POW_BAN)) {
     notify(player, perm_denied());
@@ -1892,36 +1637,21 @@ void channel_unban(dbref player, char *arg2)
     return;
   }
 
-  i = channel_int_bancheck(victim, arg2);
-  if (i < 0) {
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
+    notify(player, "+channel: Invalid channel.");
+    return;
+  }
+
+  m = channel_cache_get_member(victim, chan->channel_id);
+  if (!m || !m->is_banned) {
     notify(player, tprintf("%s is not banned from channel %s.",
                           unparse_object(player, victim), arg2));
     return;
   }
 
-  /* Remove from ban list */
-  strncpy(buf, atr_get(victim, A_BANNED), sizeof(buf) - 1);
-  buf[sizeof(buf) - 1] = '\0';
-
-  end = strchr(buf + i, ' ');
-  if (!end) {
-    end = strchr(buf + i, '\0');
-  } else {
-    end++;
-  }
-
-  strncpy(buf2, atr_get(victim, A_BANNED), sizeof(buf2) - 1);
-  buf2[sizeof(buf2) - 1] = '\0';
-
-  snprintf(buf2 + i, sizeof(buf2) - (size_t)i, "%s", end);
-
-  /* Trim trailing space */
-  end = strchr(buf2, '\0');
-  if (end > buf2 && *--end == ' ') {
-    *end = '\0';
-  }
-
-  atr_add(victim, A_BANNED, buf2);
+  /* Clear ban — remove the membership entry entirely */
+  mariadb_channel_leave(chan->channel_id, victim);
 
   notify(player, tprintf("%s may now join channel %s again.",
                         unparse_object(player, victim), arg2));
@@ -1962,10 +1692,52 @@ void channel_list(dbref player, char *arg2)
     return;
   }
 
-  if (*atr_get(target, A_CHANNEL)) {
+  channel_member_t *m = channel_cache_get_member_list(target);
+  if (m) {
     notify(player, tprintf("+channel: %s is currently on the following channels:",
                           unparse_object(player, target)));
-    channel_int_list_player(player, target);
+
+    /* Display formatted list */
+    notify(player, "Channel:             Alias:     Status: Owner:");
+
+    while (m) {
+      channel_cache_t *chan = channel_cache_lookup_by_id(m->channel_id);
+
+      if (!chan) {
+        m = m->next;
+        continue;
+      }
+
+      if (m->is_banned) {
+        m = m->next;
+        continue;
+      }
+
+      {
+        char channame[MESSAGE_BUF_SIZE];
+        char filler[26] = "                         ";
+        const char *status = m->muted ? "OFF" : "ON ";
+        const char *prefix = channel_level_prefix(chan->min_level);
+        size_t name_len;
+
+        snprintf(channame, sizeof(channame), "%s%s", prefix, chan->name);
+        name_len = strlen(channame);
+        if (name_len < 20) {
+          filler[20 - name_len] = '\0';
+        } else {
+          filler[0] = '\0';
+        }
+
+        notify(player, tprintf("%s%s %-10.10s %s     %s",
+                              channame, filler,
+                              (m->alias && *m->alias) ? m->alias : "UNDEFINED",
+                              status,
+                              GoodObject(chan->owner) ?
+                                unparse_object(player, chan->owner) : "???"));
+      }
+
+      m = m->next;
+    }
   } else {
     notify(player, tprintf("+channel: %s isn't currently on any channels.",
                           unparse_object(player, target)));
@@ -1974,107 +1746,19 @@ void channel_list(dbref player, char *arg2)
 }
 
 /**
- * Display formatted list of channels
- */
-void channel_int_list_player(dbref player, dbref target)
-{
-  char *clist, *clbegin, *alias, *al, *status, *s = NULL;
-  dbref channum;
-
-  clbegin = clist = tprintf("%s ", atr_get(target, A_CHANNEL));
-
-  notify(player, "Channel:             Alias:     Status: Owner:");
-
-  while (*clist) {
-    char *space = strchr(clist, ' ');
-    if (space) {
-      *space = '\0';
-    }
-
-    alias = strchr(clist, ':');
-    if (alias && *alias) {
-      *alias++ = '\0';
-      s = strchr(alias, ':');
-      if (s && *s) {
-        *s++ = '\0';
-        status = (!strncmp(s, "0", 1)) ? "OFF" : "ON ";
-      } else {
-        status = "ON ";
-      }
-      al = alias;
-    } else {
-      al = "UNDEFINED";
-      status = "ON ";
-    }
-
-    channum = channel_int_lookup(strip_color_nobeep(clist));
-    if (channum == NOTHING) {
-      notify(player, tprintf("%-30.30s  Invalid Channel.", clist));
-    } else {
-      char channame[MESSAGE_BUF_SIZE];
-      char filler[26] = "                         ";
-
-      strncpy(channame, truncate_color(unparse_object(player, channum), 20),
-              sizeof(channame) - 1);
-      channame[sizeof(channame) - 1] = '\0';
-
-      size_t name_len = strlen(strip_color(channame));
-      if (name_len < 20) {
-        filler[20 - name_len] = '\0';
-      } else {
-        filler[0] = '\0';
-      }
-
-      notify(player, tprintf("%s%s %-10.10s %s     %s",
-                            channame, filler, al, status,
-                            unparse_object(player, db[channum].owner)));
-    }
-
-    if (alias && *alias) {
-      clist += strlen(clist) + strlen(alias) + 2;
-      if (s && *s) {
-        clist += strlen(s) + 1;
-      }
-    } else {
-      clist += strlen(clist) + 1;
-    }
-  }
-}
-
-/**
- * Search for channels
- * Syntax: +channel search <own|op|all|<n>>
- */
-/**
  * channel_search - Search and list channels
- * 
+ *
  * Syntax: +channel search [own|op|all|<channelname>]
- * 
- * SEARCH MODES:
- * - own: Channels owned by the player (marked with *)
- * - op: Channels where player is an operator (marked with #)
- * - all: All visible channels
- * - <name>: Search for specific channel by name
- * 
- * DISPLAY FORMAT: [status] channel_name owner_name
- * - status: "ON"/"OFF" if player is on channel, "HID" if hidden
- * 
- * SECURITY:
- * - Uses new hash table iterator
- * - Validates all channel dbrefs
- * - Respects channel visibility flags
- * - Buffer overflow protection throughout
  */
 void channel_search(dbref player, char *arg2)
 {
+  hash_table_t *ht;
   hash_iterator_t iter;
   char *key;
   void *value;
-  dbref channel;
+  channel_cache_t *chan;
   int level;
   char onoff[4];
-  size_t owner_len;
-  size_t chan_len;
   int found_specific = 0;
 
   /* Validate input */
@@ -2083,14 +1767,8 @@ void channel_search(dbref player, char *arg2)
     return;
   }
 
-  /* Initialize hash table if needed */
-  if (!channel_hash) {
-    notify(player, "+channel: Channel system not initialized.");
-    return;
-  }
-
-  /* Check if hash table is empty */
-  if (channel_hash->count == 0) {
+  ht = (hash_table_t *)channel_cache_get_hash();
+  if (!ht || ht->count == 0) {
     notify(player, "+channel: No channels exist.");
     return;
   }
@@ -2108,31 +1786,27 @@ void channel_search(dbref player, char *arg2)
   notify(player, "+channel search results:");
 
   /* Iterate through all channels in hash table */
-  hash_iterate_init(channel_hash, &iter);
+  hash_iterate_init(ht, &iter);
   while (hash_iterate_next(&iter, &key, &value)) {
     char owner[MESSAGE_BUF_SIZE];
-    char chan[MESSAGE_BUF_SIZE];
+    char chan_disp[MESSAGE_BUF_SIZE];
     char filler[26] = "                         ";
+    size_t owner_len, chan_len;
+    channel_member_t *m;
+    const char *prefix;
 
-    /* Extract channel dbref from hash value */
-    channel = (dbref)(intptr_t)value;
-
-    /* Validate channel object */
-    if (!GoodObject(channel)) {
-      log_error(tprintf("channel_search: Invalid channel dbref %" DBREF_FMT " for key '%s'",
-                       channel, key));
+    chan = (channel_cache_t *)value;
+    if (!chan) {
       continue;
     }
 
-    if (Typeof(channel) != TYPE_CHANNEL) {
-      log_error(tprintf("channel_search: Object %" DBREF_FMT " is not a channel (key '%s')",
-                       channel, key));
-      continue;
+    /* Format owner name */
+    if (GoodObject(chan->owner)) {
+      strncpy(owner, truncate_color(unparse_object(player, chan->owner), 20),
+              sizeof(owner) - 1);
+    } else {
+      strncpy(owner, "???", sizeof(owner) - 1);
     }
-
-    /* Format owner name with truncation and padding */
-    strncpy(owner, truncate_color(unparse_object(player, db[channel].owner), 20),
-            sizeof(owner) - 1);
     owner[sizeof(owner) - 1] = '\0';
 
     owner_len = strlen(strip_color(owner));
@@ -2143,62 +1817,52 @@ void channel_search(dbref player, char *arg2)
     }
     strncat(owner, filler, sizeof(owner) - strlen(owner) - 1);
 
-    /* Format channel name with truncation and padding */
+    /* Format channel name with prefix */
+    prefix = channel_level_prefix(chan->min_level);
     strncpy(filler, "                        ", sizeof(filler) - 1);
     filler[sizeof(filler) - 1] = '\0';
-    strncpy(chan, truncate_color(unparse_object(player, channel), 20),
-            sizeof(chan) - 1);
-    chan[sizeof(chan) - 1] = '\0';
 
-    chan_len = strlen(strip_color(chan));
+    snprintf(chan_disp, sizeof(chan_disp), "%s%s", prefix, chan->name);
+    chan_len = strlen(chan_disp);
     if (chan_len < 20) {
       filler[20 - chan_len] = '\0';
     } else {
       filler[0] = '\0';
     }
-    strncat(chan, filler, sizeof(chan) - strlen(chan) - 1);
+    strncat(chan_disp, filler, sizeof(chan_disp) - strlen(chan_disp) - 1);
 
     /* Determine on/off status */
-    if (channel_int_is_on_only(player, db[channel].name) != NOTHING) {
-      if (channel_int_is_on(player, channel)) {
-        strncpy(onoff, "ON ", sizeof(onoff) - 1);
-        onoff[sizeof(onoff) - 1] = '\0';
-      } else {
-        strncpy(onoff, "OFF", sizeof(onoff) - 1);
-        onoff[sizeof(onoff) - 1] = '\0';
-      }
+    m = channel_cache_get_member(player, chan->channel_id);
+    if (m && !m->is_banned) {
+      strncpy(onoff, m->muted ? "OFF" : "ON ", sizeof(onoff) - 1);
     } else {
       strncpy(onoff, "   ", sizeof(onoff) - 1);
-      onoff[sizeof(onoff) - 1] = '\0';
     }
+    onoff[sizeof(onoff) - 1] = '\0';
 
     /* Filter by search level and display */
     if (level == 0) {
       /* Searching for specific channel name */
-      if (!string_compare(db[channel].name, arg2)) {
-        notify(player, tprintf("  %s %s %s", onoff, chan, owner));
+      if (!string_compare(chan->name, arg2)) {
+        notify(player, tprintf("  %s %s %s", onoff, chan_disp, owner));
         found_specific = 1;
-        break;  /* Found the specific channel, stop searching */
+        break;
       }
-    } else if (db[channel].owner == player) {
+    } else if (chan->owner == player) {
       /* Player owns this channel */
-      notify(player, tprintf("* %s %s %s", onoff, chan, owner));
-    } else if ((level > 1) && group_controls(player, channel)) {
+      notify(player, tprintf("* %s %s %s", onoff, chan_disp, owner));
+    } else if ((level > 1) && channel_controls(player, chan)) {
       /* Player is operator on this channel */
-      notify(player, tprintf("# %s %s %s", onoff, chan, owner));
+      notify(player, tprintf("# %s %s %s", onoff, chan_disp, owner));
     } else if (level == 3) {
       /* Show all visible channels */
-      if (!((db[channel].flags & SEE_OK) &&
-            could_doit(player, channel, A_LHIDE))) {
-        /* Channel is hidden but player has permission to see it */
-        if (controls(player, channel, POW_CHANNEL)) {
-          strncpy(onoff, "HID", sizeof(onoff) - 1);
-          onoff[sizeof(onoff) - 1] = '\0';
-          notify(player, tprintf("  %s %s %s", onoff, chan, owner));
-        }
-      } else {
-        /* Channel is visible */
-        notify(player, tprintf("  %s %s %s", onoff, chan, owner));
+      if ((chan->flags & SEE_OK) &&
+          channel_eval_lock(player, chan->owner, chan->hide_lock)) {
+        notify(player, tprintf("  %s %s %s", onoff, chan_disp, owner));
+      } else if (channel_controls(player, chan)) {
+        strncpy(onoff, "HID", sizeof(onoff) - 1);
+        onoff[sizeof(onoff) - 1] = '\0';
+        notify(player, tprintf("  %s %s %s", onoff, chan_disp, owner));
       }
     }
   }
@@ -2214,6 +1878,7 @@ void channel_search(dbref player, char *arg2)
  */
 void channel_log(dbref player, char *arg2)
 {
+  (void)arg2;
   notify(player, "+channel: Log functionality not yet implemented.");
 }
 
@@ -2225,10 +1890,8 @@ void channel_color(dbref player, char *arg2)
 {
   char *channel;
   char *color;
-  char *alias;
-  int pos;
-  int onoff;
-  char *old1, *old2, *new;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!arg2 || !*arg2) {
     notify(player, "+channel: Bad color syntax.");
@@ -2245,19 +1908,18 @@ void channel_color(dbref player, char *arg2)
     *color++ = '\0';
   }
 
-  alias = channel_int_find_alias(player, channel);
-  if (!(alias && *alias)) {
-    alias = channel;
-  }
-
   if (!(color && *color)) {
     color = channel;
   }
 
-  onoff = channel_int_is_on(player, channel_int_lookup(channel));
+  chan = channel_cache_lookup(channel);
+  if (!chan) {
+    notify(player, "+channel: Invalid channel.");
+    return;
+  }
 
-  pos = channel_int_is_on_only(player, channel);
-  if (pos == -1) {
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m) {
     notify(player, "+channel: You must first join the channel before setting its color.");
     return;
   }
@@ -2267,27 +1929,14 @@ void channel_color(dbref player, char *arg2)
     return;
   }
 
-  /* Build new channel list */
-  old1 = tprintf("%s", atr_get(player, A_CHANNEL));
-  old2 = old1 + pos;
+  /* Update player's personalized color name */
+  mariadb_channel_set_color(chan->channel_id, player, color);
 
-  if (old2 && *old2) {
-    *old2++ = '\0';
-    old2 = strchr(old2, ' ');
-    if (old2 && *old2) {
-      old2++;
-    }
-
-    if (old2 && *old2) {
-      new = tprintf("%s%s:%s:%d %s", old1, color, alias, onoff, old2);
-    } else {
-      new = tprintf("%s%s:%s:%d", old1, color, alias, onoff);
-    }
-  } else {
-    new = tprintf("%s%s:%s:%d", old1, color, alias, onoff);
+  /* If owner, also update the channel default cname */
+  if (chan->owner == player || channel_controls(player, chan)) {
+    mariadb_channel_update_field(chan->channel_id, "cname", color);
   }
 
-  atr_add(player, A_CHANNEL, new);
   notify(player, tprintf("+channel: %s is now colored as %s", channel, color));
 }
 
@@ -2297,25 +1946,24 @@ void channel_color(dbref player, char *arg2)
  */
 char *channel_int_find_color(dbref player, const char *channel)
 {
-  char *color;
-  dbref channum;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!channel || !*channel) {
     return tprintf("%s", channel ? channel : "");
   }
 
-  color = channel_int_find_only(player, channel);
-
-  if (!color || !strcmp(channel, color)) {
-    channum = channel_int_lookup(channel);
-    if (channum != NOTHING) {
-      color = tprintf("%s", db[channum].cname);
-    } else {
-      color = tprintf("%s", channel);
-    }
+  chan = channel_cache_lookup(channel);
+  if (!chan) {
+    return tprintf("%s", channel);
   }
 
-  return color;
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (m && m->color_name && *m->color_name) {
+    return tprintf("%s", m->color_name);
+  }
+
+  return tprintf("%s", chan->cname);
 }
 
 /* ===================================================================
@@ -2324,112 +1972,29 @@ char *channel_int_find_color(dbref player, const char *channel)
 
 /**
  * Remove player from channel
- * @return Position removed from or NOTHING if not on channel
+ * @return 0 if removed, -1 if not on channel (legacy return value)
  */
 int channel_int_remove_player(dbref victim, const char *arg2)
 {
-  int i, j;
-  dbref channum;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
   if (!arg2 || !*arg2) {
-    return NOTHING;
+    return -1;
   }
 
-  i = channel_int_is_on_only(victim, arg2);
-  if (i == NOTHING) {
-    return NOTHING;
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
+    return -1;
   }
 
-  channum = channel_int_lookup(arg2);
-
-  /* Remove from player's channel list */
-  atr_add(victim, A_CHANNEL, channel_int_remove_attr(victim, i));
-
-  /* Remove from channel's player list */
-  if (channum != NOTHING) {
-    j = channel_int_is_on_only(channum, tprintf("%" DBREF_FMT, victim));
-    if (j >= 0) {
-      atr_add(channum, A_CHANNEL, channel_int_remove_attr(channum, j));
-    }
+  m = channel_cache_get_member(victim, chan->channel_id);
+  if (!m) {
+    return -1;
   }
 
-  return i;
-}
-
-/**
- * Check if string exists in attribute
- * @return Position of string or NOTHING
- */
-int is_in_attr(dbref player, const char *str, ATTR *attr)
-{
-  char *cur;
-  char *begin;
-  char *next;
-
-  if (!str || !*str || !attr) {
-    return NOTHING;
-  }
-
-  begin = cur = tprintf("%s ", atr_get(player, attr));
-
-  while (cur && *cur) {
-    next = strchr(cur, ' ');
-    if (next && *next) {
-      *next++ = '\0';
-      if (!strcmp(cur, str)) {
-        return (cur - begin);
-      }
-    }
-    cur = next;
-  }
-
-  return NOTHING;
-}
-
-/**
- * Remove entry from attribute at position
- * @return New attribute value
- */
-char *remove_from_attr(dbref player, int i, ATTR *attr)
-{
-  char *end;
-  char buf[MESSAGE_BUF_SIZE];
-  char buf2[MESSAGE_BUF_SIZE];
-
-  if (!attr || i < 0) {
-    return tprintf("");
-  }
-
-  strncpy(buf, atr_get(player, attr), sizeof(buf) - 1);
-  buf[sizeof(buf) - 1] = '\0';
-
-  end = strchr(buf + i, ' ');
-  if (!end) {
-    end = strchr(buf + i, '\0');
-  } else {
-    end++;
-  }
-
-  strncpy(buf2, atr_get(player, attr), sizeof(buf2) - 1);
-  buf2[sizeof(buf2) - 1] = '\0';
-
-  snprintf(buf2 + i, sizeof(buf2) - (size_t)i, "%s", end);
-
-  /* Trim trailing space */
-  end = strchr(buf2, '\0');
-  if (end > buf2 && *--end == ' ') {
-    *end = '\0';
-  }
-
-  return tprintf("%s", buf2);
-}
-
-/**
- * Remove entry from channel list attribute
- */
-char *channel_int_remove_attr(dbref player, int i)
-{
-  return remove_from_attr(player, i, A_CHANNEL);
+  mariadb_channel_leave(chan->channel_id, victim);
+  return 0;
 }
 
 /* ===================================================================
@@ -2439,378 +2004,138 @@ char *channel_int_remove_attr(dbref player, int i)
 /**
  * Check if channel is turned on for player
  *
- * Searches the player's A_CHANNEL list for the specified channel
- * and returns its on/off state. A_CHANNEL format is space-separated
- * entries: "channelname:alias:onoff channelname2:alias2:onoff2 ..."
- *
- * @return 1 if on, 0 if off
+ * @return 1 if on (not muted), 0 if off (muted)
  */
 int channel_int_is_on(dbref player, dbref channum)
 {
-  char *curr, *buf, *space, *colon, *q;
-  const char *channame;
+  channel_cache_t *chan;
+  channel_member_t *m;
 
+  /* Legacy compatibility: channum was a db[] object ref.
+   * Now we look up by name from the cache. */
   if (channum == NOTHING || !GoodObject(channum)) {
     return 0;
   }
 
-  channame = db[channum].name;
-  if (!channame || !*channame) {
+  /* Try to find channel by the object's name (for legacy callers) */
+  chan = channel_cache_lookup(db[channum].name);
+  if (!chan) {
     return 0;
   }
 
-  buf = tprintf("%s ", atr_get(player, A_CHANNEL));
-  curr = buf;
-
-  while (curr && *curr) {
-    /* Find end of this entry */
-    space = strchr(curr, ' ');
-    if (space) {
-      *space = '\0';
-    }
-
-    /* Parse channelname:alias:onoff */
-    char entry[512];
-    strncpy(entry, curr, sizeof(entry) - 1);
-    entry[sizeof(entry) - 1] = '\0';
-
-    /* Extract channel name (before first colon) */
-    colon = strchr(entry, ':');
-    if (colon) {
-      *colon++ = '\0';
-      /* Check if this is the channel we're looking for */
-      if (!strcmp(strip_color_nobeep(entry), channame)) {
-        /* Skip alias, find onoff value after second colon */
-        q = strchr(colon, ':');
-        if (q && *q) {
-          q++;
-          return (int)strtol(q, NULL, 10);
-        }
-        /* No onoff value found, default to on */
-        return 1;
-      }
-    } else {
-      /* Bare channel name with no :alias:onoff - default to on */
-      if (!strcmp(strip_color_nobeep(entry), channame)) {
-        return 1;
-      }
-    }
-
-    /* Advance to next entry */
-    curr = space ? space + 1 : NULL;
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m || m->is_banned) {
+    return 0;
   }
 
-  /* Channel not found in player's list */
-  return 0;
+  return m->muted ? 0 : 1;
 }
 
 /**
- * Set channel on/off state
- * Syntax: <channel> on|off
+ * Set channel mute/unmute state
  */
 void channel_mute(dbref player, const char *arg1, const char *arg2)
 {
-  char *alias;
-  dbref channel;
-  int pos;
-  int onoff;
+  channel_cache_t *chan;
+  channel_member_t *m;
   int change;
-  char *old1, *old2, *new;
 
   if (!arg1 || !*arg1 || !arg2 || !*arg2) {
     notify(player, "+channel: Bad on/off syntax.");
     return;
   }
 
-  channel = channel_int_lookup(arg1);
-  if (channel == NOTHING) {
+  chan = channel_cache_lookup(arg1);
+  if (!chan) {
     notify(player, "+channel: Invalid channel.");
     return;
   }
 
-  alias = channel_int_find_alias(player, db[channel].name);
-  if (!(alias && *alias)) {
-    notify(player, "+channel: Sorry, you must first leave and rejoin the channel.");
-    return;
-  }
-
-  onoff = channel_int_is_on(player, channel);
-
-  pos = channel_int_is_on_only(player, db[channel].name);
-  if (pos == NOTHING) {
+  m = channel_cache_get_member(player, chan->channel_id);
+  if (!m) {
     notify(player, "+channel: You must first join the channel before changing its status.");
     return;
   }
 
-  change = (!strcmp("on", arg2)) ? 1 : 0;
+  change = (!strcmp("on", arg2)) ? 0 : 1;  /* on = not muted, off = muted */
 
-  if (change == onoff) {
+  if (change == m->muted) {
     notify(player, tprintf("+channel: Channel %s is already %s!",
-                          db[channel].name, arg2));
+                          chan->name, arg2));
     return;
   }
 
-  /* Build new channel list */
-  old1 = tprintf("%s", atr_get(player, A_CHANNEL));
-  old2 = old1 + pos;
+  mariadb_channel_set_mute(chan->channel_id, player, change);
 
-  if (old2 && *old2) {
-    *old2++ = '\0';
-    old2 = strchr(old2, ' ');
-    if (old2 && *old2) {
-      old2++;
-      new = tprintf("%s%s:%s:%d %s", old1, db[channel].name, alias, change, old2);
-    } else {
-      new = tprintf("%s%s:%s:%d", old1, db[channel].name, alias, change);
-    }
+  if (change == 0) {
+    notify(player, tprintf("+channel: Channel %s unmuted.", chan->name));
   } else {
-    new = tprintf("%s%s:%s:%d", old1, db[channel].name, alias, change);
-  }
-
-  atr_add(player, A_CHANNEL, new);
-
-  if (change == 1) {
-    notify(player, tprintf("+channel: Channel %s unmuted.", db[channel].name));
-  } else {
-    notify(player, tprintf("+channel: Channel %s muted.", db[channel].name));
+    notify(player, tprintf("+channel: Channel %s muted.", chan->name));
   }
 }
 
 /* ===================================================================
- * Channel Hash Table Functions
+ * Legacy Compatibility - Hash Table Functions
  * =================================================================== */
 
 /**
- * Initialize channel hash table
- * 
- * NOTE: We don't call register_hashtab() here because it can cause
- * memory corruption when called during database load, especially if
- * old hash code is still present. Channels will work fine without
- * registration; you just won't see them in @showhash.
- */
-
-
-/**
- * channel_dbinit_init_hash - Initialize channel hash table
- */
-void channel_dbinit_init_hash(void)
-{
-    if (!channel_hash) {
-        channel_hash = hash_create("channels", HASH_SIZE_LARGE, 0, NULL);
-        if (!channel_hash) {
-            log_error("Failed to create channel hash table!");
-            exit_nicely(1);
-        }
-    }
-}
-
-/**
- * channel_dbinit_clear - Clear all channel entries
- * COMPATIBLE: Same signature as original
+ * channel_dbinit_clear - Legacy compatibility wrapper
+ *
+ * In the old system, this cleared the channel hash table.
+ * Now the cache is managed by mariadb_channel.c.
+ * This is kept for callers in db_io.c that call it during DB load.
  */
 void channel_dbinit_clear(void)
 {
-    if (!channel_hash) {
-        channel_dbinit_init_hash();
-    }
-    hash_clear(channel_hash);
+  /* No-op: cache is now managed by channel_cache_init/channel_cache_load */
 }
 
 /**
- * channel_int_add - Add channel to hash table
- * COMPATIBLE: Same signature as original
+ * channel_int_add - Legacy compatibility wrapper
+ *
+ * In the old system, this added a TYPE_CHANNEL db[] object to the hash.
+ * Now channels are managed in MariaDB. This is a no-op.
  */
 void channel_int_add(dbref channel)
 {
-    const char *name;
-
-    if (!GoodObject(channel)) {
-        return;
-    }
-
-    if (!channel_hash) {
-        channel_dbinit_init_hash();
-    }
-
-    name = db[channel].name;
-
-    /* Skip names with spaces */
-    if (strchr(name, ' ')) {
-        log_error(tprintf("Channel (%s) with a space in its name? Inconceivable!",
-                         name));
-        return;
-    }
-
-    hash_insert(channel_hash, name, (void*)(intptr_t)channel);
+  (void)channel;
+  /* No-op: channels are now in MariaDB cache */
 }
 
 /**
- * channel_int_lookup - Find channel by name
- * COMPATIBLE: Same signature as original
+ * channel_int_lookup - Legacy compatibility wrapper
  *
- * Returns channel dbref or NOTHING
+ * Returns NOTHING (channels are no longer db[] objects).
+ * Code should be migrated to use channel_cache_lookup() instead.
  */
 dbref channel_int_lookup(const char *name)
 {
-    void *result;
-    dbref channel;
+  channel_cache_t *chan;
 
-    if (!name || !*name) {
-        return NOTHING;
-    }
-
-    if (!channel_hash) {
-        channel_dbinit_init_hash();
-    }
-
-    /* Look up in hash table */
-    result = hash_lookup(channel_hash, name);
-    if (result) {
-        return (dbref)(intptr_t)result;
-    }
-
-    /* Handle #dbref format */
-    if (name[0] == '#' && name[1]) {
-        channel = (dbref)atol(name + 1);
-        if (channel >= 0 && channel < db_top) {
-            return channel;
-        }
-    }
-
+  if (!name || !*name) {
     return NOTHING;
+  }
+
+  chan = channel_cache_lookup(name);
+  if (chan) {
+    /* Return owner dbref as a reference point for legacy callers
+     * that need a valid dbref for permission checks */
+    return chan->owner;
+  }
+
+  return NOTHING;
 }
 
 /**
- * channel_int_delete - Remove channel from hash table
- * COMPATIBLE: Same signature as original
+ * channel_int_delete - Legacy compatibility wrapper
+ *
+ * No-op: channels are no longer db[] objects.
  */
 void channel_int_delete(dbref channel)
 {
-    const char *name;
-
-    if (!GoodObject(channel)) {
-        return;
-    }
-
-    if (!channel_hash) {
-        return;
-    }
-
-    name = db[channel].name;
-
-    if (strchr(name, ' ')) {
-        log_error(tprintf("Channel (%s) with a space in its name? Inconceivable!",
-                         name));
-        return;
-    }
-
-    hash_remove(channel_hash, name);
+  (void)channel;
+  /* No-op: channels are now in MariaDB cache */
 }
-
-
-///**
-// * Populate channel hash from database
-// * MUST be called after database load to make channels visible
-// * 
-// * This function scans the entire database for TYPE_CHANNEL objects
-// * and adds them to the channel hash table. Without this, all channels
-// * will show as "Invalid Channel" because channel_int_lookup() can't find them.
-// * 
-// * Call this from:
-// * - Database load completion
-// * - After @dbck or database repair
-// * - Any time channels seem "lost"
-// */
-//void channel_dbinit_populate_hash(void)
-//{
-//    dbref i;
-//    int count = 0;
-//    
-//    if (!channel_hash) {
-//        channel_dbinit_init_hash();
-//    }
-//    
-//    /* Clear existing entries to avoid duplicates */
-//    ht_clear(channel_hash);
-//    
-//    log_status("Populating channel hash table...");
-//    
-//    /* Scan database for all channels */
-//    for (i = 0; i < db_top; i++) {
-//        if (GoodObject(i) && Typeof(i) == TYPE_CHANNEL) {
-//            channel_int_add(i);
-//            count++;
-//        }
-//    }
-//    
-//    log_status("Channel hash populated with %d channels.", count);
-//}
-//
-///**
-// * Debug callback for showing channel hash contents
-// */
-//static void channel_int_debug_callback(const char *key, void *value, void *user_data)
-//{
-//    dbref *player_ptr = (dbref *)user_data;
-//    dbref channel = (dbref)(intptr_t)value;
-//    
-//    if (!GoodObject(channel)) {
-//        notify(*player_ptr, tprintf("  %s -> INVALID DBREF #" DBREF_FMT, key, channel));
-//    } else if (Typeof(channel) != TYPE_CHANNEL) {
-//        notify(*player_ptr, tprintf("  %s -> #" DBREF_FMT " (NOT A CHANNEL!)", key, channel));
-//    } else {
-//        notify(*player_ptr, tprintf("  %s -> %s(#" DBREF_FMT ")", 
-//                                   key, db[channel].name, channel));
-//    }
-//}
-//
-///**
-// * Debug command to show channel hash contents
-// * Usage: @channelhash
-// */
-//void channel_debug_hash(dbref player)
-//{
-//    size_t count, size, collisions;
-//    
-//    if (!channel_hash) {
-//        notify(player, "Channel hash table not initialized!");
-//        return;
-//    }
-//    
-//    ht_stats(channel_hash, &count, &size, &collisions);
-//    
-//    notify(player, "=== Channel Hash Table Debug ===");
-//    notify(player, tprintf("Entries: %lu", (unsigned long)count));
-//    notify(player, tprintf("Buckets: %lu", (unsigned long)size));
-//    notify(player, tprintf("Collisions: %lu", (unsigned long)collisions));
-//    
-//    if (size > 0) {
-//        float load = (float)count / (float)size;
-//        notify(player, tprintf("Load factor: %.2f%%", load * 100.0f));
-//    }
-//    
-//    notify(player, "");
-//    notify(player, "Hash table contents:");
-//    
-//    if (count == 0) {
-//        notify(player, "  (empty - run @populate_channels)");
-//    } else {
-//        ht_foreach(channel_hash, channel_int_debug_callback, &player);
-//    }
-//    
-//    notify(player, "=== End Debug ===");
-//}
-//
-///**
-// * Wrapper for channel_dbinit_populate_hash that can be called as a command
-// */
-//void channel_dbinit_populate(dbref player)
-//{
-//    notify(player, "Repopulating channel hash table from database...");
-//    channel_dbinit_populate_hash();
-//    notify(player, "Done. Use @channelhash to verify.");
-//}
-//
 
 
 /* ===================================================================
@@ -2870,7 +2195,7 @@ void do_chemit(dbref player, char *channel, char *message)
   }
 
   /* Check if channel exists */
-  if (channel_int_lookup(channel) == NOTHING) {
+  if (!channel_cache_lookup(channel)) {
     notify(player, "+channel: Invalid channel.");
     return;
   }

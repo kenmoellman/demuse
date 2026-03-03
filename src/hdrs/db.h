@@ -135,7 +135,8 @@ extern int dozonetemp;            /* Temporary variable for DOZONE macro */
 #define TYPE_THING      0x1    /* Thing/item object */
 #define TYPE_EXIT       0x2    /* Exit/link object */
 #define TYPE_UNIVERSE   0x3    /* Universe object (always enabled) */
-#define TYPE_CHANNEL    0x4    /* Communication channel object */
+#define TYPE_CHANNEL    0x4    /* Legacy channel type (deprecated - migrated to MariaDB) */
+#define TYPE_DEPRECATED TYPE_CHANNEL  /* Alias for clarity in switch statements */
 #define NOTYPE          0x7    /* No particular type (for searches) */
 #define TYPE_PLAYER     0x8    /* Player object */
 #define NUM_OBJ_TYPES   0x9    /* Total number of object types */

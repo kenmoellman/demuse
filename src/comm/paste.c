@@ -27,6 +27,7 @@
 #include "db.h"
 #include "externs.h"
 #include "interface.h"
+#include "mariadb_channel.h"
 
 void do_paste_int(dbref, char *, char *, int);
 
@@ -43,7 +44,8 @@ typedef struct pastey {
 /* Paste session state */
 typedef struct paste_struct {
     dbref player;           /* Player doing the pasting */
-    dbref target;           /* Target object/channel/player */
+    dbref target;           /* Target object/channel/player (NOTHING for channels) */
+    char *channel_name;     /* Channel name for channel paste (NULL otherwise) */
     int flag;               /* 0=normal, 1=mail */
     int code;               /* 0=strip leading spaces, 1=preserve */
     PASTEY *paste;          /* Linked list of pasted lines */
@@ -191,6 +193,7 @@ static void add_to_stack(dbref player, dbref target, ATTR *attr, int code, int f
     
     new_paste->player = player;
     new_paste->target = target;
+    new_paste->channel_name = NULL;
     new_paste->attr = attr;
     new_paste->code = code;
     new_paste->flag = flag;
@@ -218,7 +221,10 @@ void remove_paste(dbref player)
             
             /* Free all lines */
             free_paste_lines(p->paste);
-            
+
+            /* Free channel name if set */
+            SMART_FREE(p->channel_name);
+
             /* Free the paste structure */
             SMART_FREE(p);
             return;
@@ -268,15 +274,33 @@ void do_paste_int(dbref player, char *arg1, char *arg2, int code)
     }
     /* Handle channel paste */
     else if (*arg2 && string_prefix("channel", arg1)) {
-        target = channel_int_lookup(arg2);
-        if (target == NOTHING) {
+        channel_cache_t *chan = channel_cache_lookup(
+            channel_strip_prefix(arg2));
+        if (!chan) {
             notify(player, "@paste channel: Channel doesn't exist.");
             return;
         }
-        if (channel_int_is_on_channel(player, db[target].name) < 0) {
+        if (channel_int_is_on_channel(player, chan->name) < 0) {
             notify(player, "@paste channel: You're not on that channel.");
             return;
         }
+        /* Channel pastes use channel_name instead of target dbref */
+        target = NOTHING;
+        /* Store channel name after add_to_stack creates the paste */
+        add_to_stack(player, target, NULL, code, 0);
+        {
+            PASTE *p = find_paste(player);
+            if (p) {
+                size_t name_len = strlen(chan->name) + 1;
+                SAFE_MALLOC(p->channel_name, char, name_len);
+                if (p->channel_name) {
+                    strncpy(p->channel_name, chan->name, name_len);
+                    p->channel_name[name_len - 1] = '\0';
+                }
+            }
+        }
+        notify(player, "Enter lines to be pasted. End with '.' or type '@pasteabort'.");
+        return;
     }
     /* Handle mail paste */
     else if (*arg2 && string_prefix("mail", arg1)) {
@@ -505,24 +529,24 @@ static void do_end_paste(dbref player)
     snprintf(footer, sizeof(footer),
              "|W+----- ||C!+End @paste text from |%s |W+-----|",
              db[player].cname);
-    
+
     /* Send header */
-    if (Typeof(p->target) == TYPE_CHANNEL) {
-        com_send_as(db[p->target].name, header, player);
+    if (p->channel_name) {
+        com_send_as(p->channel_name, header, player);
     } else if (Typeof(p->target) == TYPE_ROOM) {
         notify(player, header);
         notify_in(p->target, player, header);
     } else if (Typeof(p->target) == TYPE_PLAYER) {
         notify(p->target, header);
     }
-    
+
     /* Send lines */
     for (line = p->paste; line; line = line->next) {
         text = (p->code == 1) ? line->str : strip_leading_spaces(line->str);
-        
+
         if (text && *text) {
-            if (Typeof(p->target) == TYPE_CHANNEL) {
-                com_send_as(db[p->target].name, text, player);
+            if (p->channel_name) {
+                com_send_as(p->channel_name, text, player);
             } else if (Typeof(p->target) == TYPE_ROOM) {
                 notify(player, text);
                 notify_in(p->target, player, text);
@@ -531,10 +555,10 @@ static void do_end_paste(dbref player)
             }
         }
     }
-    
+
     /* Send footer */
-    if (Typeof(p->target) == TYPE_CHANNEL) {
-        com_send_as(db[p->target].name, footer, player);
+    if (p->channel_name) {
+        com_send_as(p->channel_name, footer, player);
     } else if (Typeof(p->target) == TYPE_ROOM) {
         notify(player, footer);
         notify_in(p->target, player, footer);
@@ -590,7 +614,10 @@ void do_pastestats(dbref player, char *arg)
             }
             
             /* Build target description */
-            if (p->target == NOTHING) {
+            if (p->channel_name) {
+                snprintf(target_desc, sizeof(target_desc),
+                         "CHANNEL %s", p->channel_name);
+            } else if (p->target == NOTHING) {
                 strncpy(target_desc, "NOTHING", sizeof(target_desc) - 1);
                 target_desc[sizeof(target_desc) - 1] = '\0';
             } else {
@@ -599,9 +626,6 @@ void do_pastestats(dbref player, char *arg)
                 if (p->attr) {
                     strncat(target_desc, "/", sizeof(target_desc) - strlen(target_desc) - 1);
                     strncat(target_desc, p->attr->name, sizeof(target_desc) - strlen(target_desc) - 1);
-                }
-                if (Typeof(p->target) == TYPE_CHANNEL) {
-                    snprintf(target_desc, sizeof(target_desc), "CHANNEL %s", db[p->target].cname);
                 }
             }
             
@@ -632,7 +656,10 @@ void do_pastestats(dbref player, char *arg)
     }
     
     /* Build target description */
-    if (p->target == NOTHING) {
+    if (p->channel_name) {
+        snprintf(target_desc, sizeof(target_desc),
+                 "CHANNEL %s", p->channel_name);
+    } else if (p->target == NOTHING) {
         strncpy(target_desc, "NOTHING", sizeof(target_desc) - 1);
         target_desc[sizeof(target_desc) - 1] = '\0';
     } else {
@@ -642,11 +669,8 @@ void do_pastestats(dbref player, char *arg)
             strncat(target_desc, "/", sizeof(target_desc) - strlen(target_desc) - 1);
             strncat(target_desc, p->attr->name, sizeof(target_desc) - strlen(target_desc) - 1);
         }
-        if (Typeof(p->target) == TYPE_CHANNEL) {
-            snprintf(target_desc, sizeof(target_desc), "CHANNEL %s", db[p->target].cname);
-        }
     }
-    
+
     /* Display paste contents */
     notify(player, target_desc);
     notify(player, "|B+------ ||W+BEGIN ||B+------|");

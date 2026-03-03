@@ -21,7 +21,7 @@ USE demuse;
 INSERT INTO config (config_key, config_value, config_type) VALUES
 ('muse_name', 'YourMUSE', 'STR'),
 ('chan_dbinfo', 'dbinfo', 'STR'),
-('chan_dc', '*dc', 'STR'),
+('chan_dc', 'dc', 'STR'),
 ('chan_pubio', 'pub_io', 'STR'),
 ('chan_connect', 'connect', 'STR'),
 ('chan_warn_prefix', 'warn_', 'STR'),
@@ -44,7 +44,16 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('register_msg_file', 'msgs/register.txt', 'STR'),
 ('leave_msg_file', 'msgs/leave.txt', 'STR'),
 ('guest_lockout_file', '../config/guest-lockout', 'STR'),
-('welcome_lockout_file', '../config/welcome-lockout', 'STR')
+('welcome_lockout_file', '../config/welcome-lockout', 'STR'),
+('log_chan_important', 'log_imp', 'STR'),
+('log_chan_sensitive', 'log_sens', 'STR'),
+('log_chan_error', 'log_err', 'STR'),
+('log_chan_io', 'log_io', 'STR'),
+('log_chan_gripe', 'log_gripe', 'STR'),
+('log_chan_force', 'log_force', 'STR'),
+('log_chan_prayer', 'log_prayer', 'STR'),
+('log_chan_combat', 'log_combat', 'STR'),
+('log_chan_suspect', 'log_suspect', 'STR')
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
 
 -- ============================================================================
@@ -120,3 +129,26 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('perm_messages-2', 'Ummm... no.', 'STR'),
 ('perm_messages-3', 'Lemme think about that.. No.', 'STR')
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
+
+-- ============================================================================
+-- DEFAULT SYSTEM CHANNELS
+-- ============================================================================
+-- These are seeded once. Existing channels are not overwritten (INSERT IGNORE).
+-- Owner is set to dbref 1 (root). Prefix chars (*._) are NOT stored in the
+-- name; min_level controls access and prefix is prepended at display time.
+-- The SEE_OK flag is 0x80 (128).
+
+INSERT IGNORE INTO channels (name, cname, owner, flags, is_system, min_level) VALUES
+('log_imp',     'log_imp',     1, 128, 1, 0),
+('log_sens',    'log_sens',    1, 128, 1, 3),
+('log_err',     'log_err',     1, 128, 1, 0),
+('log_io',      'log_io',      1, 128, 1, 3),
+('log_gripe',   'log_gripe',   1, 128, 1, 0),
+('log_force',   'log_force',   1, 128, 1, 3),
+('log_prayer',  'log_prayer',  1, 128, 1, 0),
+('log_combat',  'log_combat',  1, 128, 1, 0),
+('log_suspect', 'log_suspect', 1, 128, 1, 3),
+('dbinfo',      'dbinfo',      1, 128, 1, 0),
+('dc',          'dc',          1, 128, 1, 3),
+('pub_io',      'pub_io',      1, 128, 1, 0),
+('connect',     'connect',     1, 128, 1, 0);
