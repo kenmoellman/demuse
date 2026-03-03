@@ -70,6 +70,7 @@
 
 #include "interface.h"
 #include "hash_table.h"
+#include "mariadb_channel.h"
 #undef __DO_DB_C__
 
 /* ============================================================================
@@ -848,6 +849,17 @@ void load_more_db(void)
         read_mail(db_read_file);
         read_loginstats();
         count_atrdef_refcounts();
+
+        /* Convert legacy TYPE_CHANNEL objects to MariaDB if found.
+         * Must run after DB is fully loaded but before startups. */
+        {
+            int converted = channel_convert_legacy();
+            if (converted > 0) {
+                log_important(tprintf("Converted %d legacy channels to MariaDB.",
+                                       converted));
+            }
+        }
+
         run_startups();
         welcome_descriptors();
         log_important(tprintf("|G+%s %s|", muse_name, ONLINE_MESSAGE));

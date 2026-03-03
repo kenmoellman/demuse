@@ -86,5 +86,56 @@ CREATE TABLE IF NOT EXISTS board (
   COLLATE=utf8mb4_unicode_ci
   COMMENT='deMUSE public board posts';
 
+-- ============================================================================
+-- CHANNELS TABLE - Channel definitions
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS channels (
+  channel_id   BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  name         VARCHAR(128) NOT NULL COMMENT 'plain name, no prefix chars',
+  cname        VARCHAR(256) NOT NULL COMMENT 'ANSI-colored display name',
+  owner        BIGINT       NOT NULL COMMENT 'owner player dbref',
+  flags        BIGINT       NOT NULL DEFAULT 0,
+  is_system    TINYINT      NOT NULL DEFAULT 0 COMMENT '1=built-in, cannot be deleted',
+  min_level    TINYINT      NOT NULL DEFAULT 0 COMMENT '0=anyone 1=official 2=builder 3=director',
+  password     VARCHAR(128) DEFAULT NULL COMMENT 'crypt password',
+  topic        TEXT         DEFAULT NULL,
+  join_msg     TEXT         DEFAULT NULL COMMENT 'was A_OENTER',
+  leave_msg    TEXT         DEFAULT NULL COMMENT 'was A_OLEAVE',
+  speak_lock   TEXT         DEFAULT NULL COMMENT 'boolexp string, was A_SLOCK',
+  join_lock    TEXT         DEFAULT NULL COMMENT 'boolexp string, was A_LOCK',
+  hide_lock    TEXT         DEFAULT NULL COMMENT 'boolexp string, was A_LHIDE',
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX idx_name (name),
+  INDEX idx_owner (owner)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE channel definitions';
+
+-- ============================================================================
+-- CHANNEL_MEMBERS TABLE - Channel membership, bans, operators
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS channel_members (
+  member_id    BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  channel_id   BIGINT       NOT NULL,
+  player       BIGINT       NOT NULL COMMENT 'player dbref',
+  alias        VARCHAR(128) NOT NULL DEFAULT '',
+  color_name   VARCHAR(256) NOT NULL COMMENT 'colored display name',
+  muted        TINYINT      NOT NULL DEFAULT 0,
+  is_default   TINYINT      NOT NULL DEFAULT 0,
+  is_operator  TINYINT      NOT NULL DEFAULT 0,
+  is_banned    TINYINT      NOT NULL DEFAULT 0,
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX idx_channel_player (channel_id, player),
+  INDEX idx_player (player),
+  INDEX idx_active (channel_id, is_banned, muted),
+  FOREIGN KEY (channel_id) REFERENCES channels(channel_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE channel membership, bans, and operators';
+
 -- After starting deMUSE, run @config/seed in-game to populate
 -- all config values from the running server into this table.

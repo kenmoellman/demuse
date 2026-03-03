@@ -24,3 +24,4 @@ src/util/wd
 run/db/mariadb.conf
 CLAUDE.md
 .claude/
+memory/

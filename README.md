@@ -4,7 +4,7 @@ deMUSE is a TinyMUSE-derived Multi-User Simulation Environment (MUSE) server, or
 
 deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
 
-Future planned improvements include moving the object database from flat file to MySQL/MariaDB.
+Future planned improvements include moving the object database from flat file to MariaDB.
 
 You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
 
@@ -56,7 +56,7 @@ Individual utilities are built in `src/util/`:
 - `wd` - Watchdog daemon
 - `mycompress` - Database compression utility
 - `mkindx` - Help/news index builder
-- `convert_db` - Database migration tool (flat-file mail/board to MariaDB)
+- `convert_db` - Database migration tool (flat-file mail/board/channels to MariaDB)
 
 ## Architecture Overview
 
@@ -78,7 +78,7 @@ Individual utilities are built in `src/util/`:
 **Database System** (`src/db/`)
 - Flat-file database stored in `run/db/`
 - Objects identified by `dbref` (typedef'd as `long`)
-- Object types: Player, Room, Exit, Thing
+- Object types: Player, Room, Exit, Thing (Channel type deprecated — migrated to MariaDB)
 - Attribute system for extensible object properties
 - Boolean expression locks for access control
 
@@ -143,34 +143,49 @@ MariaDB is now required for server operation. The following subsystems use Maria
 1. **Configuration** - All `@config` settings stored in MariaDB `config` table (config.c eliminated)
 2. **Private Mail (+mail)** - Player-to-player mail stored in MariaDB `mail` table
 3. **Public Board (+board)** - Board posts stored in MariaDB `board` table
+4. **Channels** - Channel definitions and memberships stored in MariaDB `channels` and `channel_members` tables (TYPE_CHANNEL objects deprecated)
 
 The object database continues to use the flat-file format for backward compatibility.
 
-**Automatic migration:** On first startup after upgrading, the server detects legacy mail/board data in the flat-file database and automatically runs `bin/convert_db` to migrate messages into MariaDB. This is a one-time process; subsequent startups skip conversion.
+**Automatic migration:** On first startup after upgrading, the server detects legacy data and automatically converts it:
+- **Mail/Board:** Legacy mail/board data appended to the flat-file database is converted via `bin/convert_db`.
+- **Channels:** Legacy TYPE_CHANNEL objects in the flat-file database are converted to MariaDB `channels` and `channel_members` tables. Player A_CHANNEL and A_BANNED attributes are parsed and migrated, then cleared. Old channel objects are marked for garbage collection. This is a one-time process; subsequent startups skip conversion.
 
 **Key files:**
 - `src/db/mariadb.c` - Connection management and config operations
 - `src/db/mariadb_mail.c` - SQL operations for private mail
 - `src/db/mariadb_board.c` - SQL operations for board posts
-- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` - Declarations and stubs
-- `src/util/convert_db.c` - Standalone database migration tool
+- `src/db/mariadb_channel.c` - SQL operations and in-memory cache for channels
+- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` / `mariadb_channel.h` - Declarations and stubs
+- `src/util/convert_db.c` - Standalone database migration tool (`--mail`, `--board`, `--channels`, `--all`)
 - `config/setup_mariadb.sql` - Table definitions
 
 **Dependencies:** `libmariadb-dev` (auto-detected by Makefiles via pkg-config)
 
 ### Channel System (2026)
 
-The channel system uses a unified command structure:
+Channels are stored in MariaDB with an in-memory cache for performance. The old TYPE_CHANNEL db[] objects have been deprecated. Channel definitions live in the `channels` table and per-player memberships (including bans, operators, aliases, per-player colors, mute state) live in the `channel_members` table.
+
+**Architecture:**
+- Three hash tables cache all channel data in memory: `channel_name_hash`, `channel_id_hash`, and `channel_members` (per-player linked lists)
+- All mutations use write-through: MariaDB first, then cache update
+- Message delivery (`com_send_int`) reads entirely from cache — no SQL queries per message
+- Lock evaluation uses `channel_eval_lock()` with the channel owner as context object
+- Channel access levels are controlled by `min_level` (0=anyone, 1=official, 2=builder, 3=director) instead of name prefixes; prefixes (`*`, `.`, `_`) are displayed but not stored
+
+**Commands:**
 
 - **`+channel <subcommand>`** - All channel administration and control:
   `create`, `destroy`, `join`, `leave`, `default`, `alias`, `op`, `lock`, `password`, `boot`, `ban`, `unban`, `list`, `search`, `log`, `color`, `who`, `mute`, `unmute`
 - **`+com <channel>=<message>`** - Speaking on channels (say, pose, think, directed messages)
 - **`=<message>`** - Shortcut to speak on default channel
 
+**Examining players** shows a `Channels:` line listing the player's default channel first, followed by remaining channels sorted alphabetically (ignoring access-level prefixes).
+
 **Function naming convention** in `src/comm/com.c`:
 - `channel_*` - Subcommand handlers (e.g., `channel_create`, `channel_join`)
-- `channel_int_*` - Internal helpers (e.g., `channel_int_lookup`, `channel_int_bancheck`)
-- `channel_dbinit_*` - Database initialization (e.g., `channel_dbinit_clear`)
+- `channel_cache_*` - Cache operations (e.g., `channel_cache_lookup`, `channel_cache_get_member`)
+- `channel_int_*` - Legacy compatibility wrappers (thin wrappers around cache, kept during transition)
 - `do_channel`, `do_com`, `do_chemit` - Parser hooks (unchanged)
 
 **Configurable system channels** (via `@config`):
@@ -180,24 +195,24 @@ The channel system uses a unified command structure:
 - `chan_connect` - Connection announcement channel (default: `connect`)
 - `chan_warn_prefix` - Prefix for warning channels (default: `warn_`), e.g. `warn_security`, `warn_roomdesc`
 
-Channel names prefixed with `*` are admin-only. Use `@config chan_pubio=*pub_io` to make a system channel admin-only.
+**Configurable log channels** (via `@config`):
+- `log_chan_important` - Important events (default: `log_imp`)
+- `log_chan_sensitive` - Sensitive events (default: `*log_sens`)
+- `log_chan_error` - Errors (default: `log_err`)
+- `log_chan_io` - I/O events (default: `*log_io`)
+- `log_chan_gripe` - Player gripes (default: `log_gripe`)
+- `log_chan_force` - @force usage (default: `*log_force`)
+- `log_chan_prayer` - Player prayers (default: `log_prayer`)
+- `log_chan_combat` - Combat events (default: `log_combat`)
+- `log_chan_suspect` - Suspect activity (default: `*log_suspect`)
 
-**Log channels** (hardcoded in `src/io/log.c`):
-- `log_imp` - Important events (shutdowns, name changes, admin commands)
-- `*log_sens` - Sensitive events (admin-only)
-- `log_err` - Errors
-- `*log_io` - I/O events (admin-only)
-- `log_gripe` - Player gripes
-- `*log_force` - @force usage (admin-only)
-- `log_prayer` - Player prayers
-- `log_combat` - Combat events
-- `*log_suspect` - Suspect player activity (admin-only)
+**System channels** have `is_system=1` in the database and cannot be destroyed. Default system channels are seeded by `config/defaults.sql`.
 
 ## Configuration
 
 **Primary config files:**
 - `config/config.h` - Compile-time configuration (network options, features, limits)
-- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board)
+- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board, channels, channel_members)
 - `config/defaults.sql` - Default configuration values (seeded on install)
 - `run/db/mariadb.conf` - MariaDB credentials (not in version control)
 
@@ -214,7 +229,7 @@ Channel names prefixed with `*` are admin-only. Use `@config chan_pubio=*pub_io`
 - `run/db/mdb` - Main object database file (flat-file format)
 - `run/db/initial.mdb` - Starting database for new installations
 - `run/db/mariadb.conf` - MariaDB connection credentials
-- MariaDB tables: `config`, `mail`, `board` (created automatically on startup)
+- MariaDB tables: `config`, `mail`, `board`, `channels`, `channel_members` (created automatically on startup)
 
 **Logs:**
 - `run/logs/` - Server logs (connections, commands, errors)

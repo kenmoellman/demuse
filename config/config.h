@@ -534,7 +534,7 @@ static char *typenames[] =
   "Thing",       /* TYPE_THING - 0x1 */
   "Exit",        /* TYPE_EXIT - 0x2 */
   "Universe",    /* TYPE_UNIVERSE - 0x3 */
-  "Channel",     /* TYPE_CHANNEL - 0x4 */
+  "Deprecated",  /* TYPE_DEPRECATED (was TYPE_CHANNEL) - 0x4 */
   " 0x5",        /* Reserved */
   " 0x6",        /* Reserved */
   " 0x7",        /* Reserved */

@@ -14,9 +14,9 @@ struct log {
   char *com_channel;
 };
 
-extern struct log important_log, sensitive_log, error_log, 
-  io_log, gripe_log, force_log, prayer_log, command_log, 
-  combat_log, rlpage_log, suspect_log;
+extern struct log important_log, sensitive_log, error_log,
+  io_log, gripe_log, force_log, prayer_log, command_log,
+  combat_log, suspect_log;
 
 #define log_important(str) muse_log(&important_log, (str))
 #define log_sensitive(str) muse_log(&sensitive_log, (str))
@@ -28,9 +28,9 @@ extern struct log important_log, sensitive_log, error_log,
 #define log_combat(str) muse_log(&combat_log, (str))
 #define log_security(str) muse_log(&important_log, (str))
 #define log_force(str) muse_log(&force_log, (str))
-#define log_rlpage(str) muse_log(&rlpage_log, (str))
 #define log_suspect(str) muse_log(&suspect_log, (str))
 
 extern void muse_log (struct log *, const char *);
+extern void log_init_channels(void);
 
 #endif /* __LOG_H */

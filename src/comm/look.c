@@ -10,6 +10,7 @@
 #include "interface.h"
 #include "match.h"
 #include "externs.h"
+#include "mariadb_channel.h"
 
 /* ===================================================================
  * Constants
@@ -549,7 +550,7 @@ char *flag_description(dbref thing)
         strncat(buf, "Thing", sizeof(buf) - strlen(buf) - 1);
         break;
     case TYPE_CHANNEL:
-        strncat(buf, "Channel", sizeof(buf) - strlen(buf) - 1);
+        strncat(buf, "Deprecated", sizeof(buf) - strlen(buf) - 1);
         break;
     case TYPE_UNIVERSE:
         strncat(buf, "Universe", sizeof(buf) - strlen(buf) - 1);
@@ -929,6 +930,74 @@ void do_examine(dbref player, char *name, char *arg2)
                           unparse_object(player, db[thing].location)));
         }
         
+        /* Show channel memberships for players (default channel first) */
+        if (Typeof(thing) == TYPE_PLAYER) {
+            channel_member_t *ml = channel_cache_get_member_list(thing);
+            if (ml) {
+                char chanbuf[BUFFER_LEN];
+                char *bp = chanbuf;
+                size_t remaining = sizeof(chanbuf);
+                int first = 1;
+
+                /* Pass 1: default channel first */
+                for (channel_member_t *m = ml; m; m = m->next) {
+                    if (!m->is_default || m->is_banned) continue;
+                    channel_cache_t *ch =
+                        channel_cache_lookup_by_id(m->channel_id);
+                    if (!ch) continue;
+                    const char *prefix = channel_level_prefix(ch->min_level);
+                    int len = snprintf(bp, remaining, "%s%s",
+                                       prefix, ch->name);
+                    if (len < 0 || (size_t)len >= remaining) break;
+                    bp += len;
+                    remaining -= (size_t)len;
+                    first = 0;
+                    break;
+                }
+
+                /* Pass 2: collect remaining channels, sort by name */
+                {
+                    channel_cache_t *sorted[256];
+                    int count = 0;
+
+                    for (channel_member_t *m = ml; m; m = m->next) {
+                        if (m->is_default || m->is_banned) continue;
+                        channel_cache_t *ch =
+                            channel_cache_lookup_by_id(m->channel_id);
+                        if (!ch) continue;
+                        if (count < 256) sorted[count++] = ch;
+                    }
+
+                    /* Sort alphabetically by plain name */
+                    for (int a = 0; a < count - 1; a++) {
+                        for (int b = a + 1; b < count; b++) {
+                            if (strcasecmp(sorted[a]->name,
+                                           sorted[b]->name) > 0) {
+                                channel_cache_t *tmp = sorted[a];
+                                sorted[a] = sorted[b];
+                                sorted[b] = tmp;
+                            }
+                        }
+                    }
+
+                    for (int s = 0; s < count; s++) {
+                        const char *prefix =
+                            channel_level_prefix(sorted[s]->min_level);
+                        int len = snprintf(bp, remaining, "%s%s%s",
+                                           first ? "" : " ",
+                                           prefix, sorted[s]->name);
+                        if (len < 0 || (size_t)len >= remaining) break;
+                        bp += len;
+                        remaining -= (size_t)len;
+                        first = 0;
+                    }
+                }
+                if (!first) {
+                    notify(player, tprintf("Channels: %s", chanbuf));
+                }
+            }
+        }
+
         /* Show entrances for things */
         if (Typeof(thing) == TYPE_THING) {
             for (enter = 0; enter < db_top; enter++) {

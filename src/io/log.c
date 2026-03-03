@@ -48,16 +48,16 @@
  */
 
 struct log
-  important_log = {NULL, -1, "logs/important", "log_imp"}, 
-  sensitive_log = {NULL, -1, "logs/sensitive", "*log_sens"}, 
-  error_log     = {NULL, -1, "logs/error", "log_err"}, 
-  io_log        = {NULL, -1, "logs/io", "*log_io"}, 
-  gripe_log     = {NULL, -1, "logs/gripe", "log_gripe"}, 
-  force_log     = {NULL, -1, "logs/force", "*log_force"}, 
-  prayer_log    = {NULL, -1, "logs/prayer", "log_prayer"}, 
-  command_log   = {NULL, -1, "logs/commands", NULL}, 
-  combat_log    = {NULL, -1, "logs/combat", "log_combat"}, 
-  suspect_log   = {NULL, -1, "logs/suspect", "*log_suspect"}
+  important_log = {NULL, -1, "logs/important", NULL},
+  sensitive_log = {NULL, -1, "logs/sensitive", NULL},
+  error_log     = {NULL, -1, "logs/error", NULL},
+  io_log        = {NULL, -1, "logs/io", NULL},
+  gripe_log     = {NULL, -1, "logs/gripe", NULL},
+  force_log     = {NULL, -1, "logs/force", NULL},
+  prayer_log    = {NULL, -1, "logs/prayer", NULL},
+  command_log   = {NULL, -1, "logs/commands", NULL},
+  combat_log    = {NULL, -1, "logs/combat", NULL},
+  suspect_log   = {NULL, -1, "logs/suspect", NULL}
  ;
 
 /* Array of all log structures for bulk operations */
@@ -75,6 +75,26 @@ struct log *logs[] =
   &suspect_log,
   NULL
 };
+
+/* ============================================================================
+ * LOG CHANNEL INITIALIZATION
+ * ============================================================================
+ * Called after mariadb_config_load() to bind each log's com_channel pointer
+ * to the corresponding log_chan_* config variable. The command_log has no
+ * channel and is intentionally left as NULL.
+ */
+void log_init_channels(void)
+{
+  important_log.com_channel = log_chan_important;
+  sensitive_log.com_channel = log_chan_sensitive;
+  error_log.com_channel     = log_chan_error;
+  io_log.com_channel        = log_chan_io;
+  gripe_log.com_channel     = log_chan_gripe;
+  force_log.com_channel     = log_chan_force;
+  prayer_log.com_channel    = log_chan_prayer;
+  combat_log.com_channel    = log_chan_combat;
+  suspect_log.com_channel   = log_chan_suspect;
+}
 
 /* ============================================================================
  * LOG FILE OPERATIONS
