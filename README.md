@@ -176,7 +176,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 **Commands:**
 
 - **`+channel <subcommand>`** - All channel administration and control:
-  `create`, `destroy`, `join`, `leave`, `default`, `alias`, `op`, `lock`, `password`, `boot`, `ban`, `unban`, `list`, `search`, `log`, `color`, `who`, `mute`, `unmute`
+  `create`, `destroy`, `join`, `leave`, `default`, `alias`, `op`, `owner`, `lock`, `password`, `boot`, `ban`, `unban`, `list`, `search`, `log`, `color`, `who`, `mute`, `unmute`
 - **`+com <channel>=<message>`** - Speaking on channels (say, pose, think, directed messages)
 - **`=<message>`** - Shortcut to speak on default channel
 
@@ -206,7 +206,18 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - `log_combat` - Combat events
 - `log_suspect` - Suspect activity (min_level=3, director-only)
 
-**System channels** have `is_system=1` in the database and cannot be destroyed. Default system channels are seeded by `config/defaults.sql`. The 13 built-in system channels are: the 9 log channels above plus `dbinfo`, `dc`, `pub_io`, and `connect`.
+**Channel ownership:**
+- `+channel owner=<channel>:<player>` transfers ownership. The channel owner, directors, and admins with `POW_CHANNEL` can transfer ownership.
+- Non-admin owners cannot transfer to a player who has blacklisted them (`A_BLACKLIST` check).
+- System channels (`is_system=1`) cannot have their owner changed — they are always owned by root.
+- When the owner leaves a channel via `+channel leave`, ownership auto-transfers to the longest-standing member (lowest `member_id`). The new owner is notified.
+- When the last member leaves a non-system channel, the channel is automatically destroyed.
+- All ownership changes are logged to `log_imp`.
+
+**Channel visibility:**
+- `+channel search all` shows all visible channels. Directors see all channels including hidden ones (marked `HID`).
+
+**System channels** have `is_system=1` in the database and cannot be destroyed or have their owner changed. Default system channels are seeded by `config/defaults.sql`. The 13 built-in system channels are: the 9 log channels above plus `dbinfo`, `dc`, `pub_io`, and `connect`.
 
 ## Configuration
 

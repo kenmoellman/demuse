@@ -928,6 +928,90 @@ int mariadb_channel_leave(long channel_id, dbref player)
     return 1;
 }
 
+/*
+ * mariadb_channel_member_count - Count non-banned members on a channel
+ *
+ * RETURNS: member count, or -1 on error
+ */
+int mariadb_channel_member_count(long channel_id)
+{
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char query[256];
+    int count;
+
+    if (!conn) {
+        return -1;
+    }
+
+    snprintf(query, sizeof(query),
+             "SELECT COUNT(*) FROM channel_members "
+             "WHERE channel_id = %ld AND is_banned = 0",
+             channel_id);
+
+    if (mysql_query(conn, query)) {
+        log_error(tprintf("MariaDB channel: member_count failed: %s",
+                          mysql_error(conn)));
+        return -1;
+    }
+
+    res = mysql_store_result(conn);
+    if (!res) {
+        return -1;
+    }
+
+    row = mysql_fetch_row(res);
+    count = row ? atoi(row[0]) : 0;
+    mysql_free_result(res);
+
+    return count;
+}
+
+/*
+ * mariadb_channel_oldest_member - Find the longest-standing non-banned member
+ *
+ * Returns the player dbref with the lowest member_id on the channel,
+ * used for auto-assigning ownership when the owner leaves.
+ *
+ * RETURNS: player dbref, or NOTHING if no members remain
+ */
+dbref mariadb_channel_oldest_member(long channel_id)
+{
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+    MYSQL_RES *res;
+    MYSQL_ROW row;
+    char query[256];
+    dbref result;
+
+    if (!conn) {
+        return NOTHING;
+    }
+
+    snprintf(query, sizeof(query),
+             "SELECT player FROM channel_members "
+             "WHERE channel_id = %ld AND is_banned = 0 "
+             "ORDER BY member_id ASC LIMIT 1",
+             channel_id);
+
+    if (mysql_query(conn, query)) {
+        log_error(tprintf("MariaDB channel: oldest_member failed: %s",
+                          mysql_error(conn)));
+        return NOTHING;
+    }
+
+    res = mysql_store_result(conn);
+    if (!res) {
+        return NOTHING;
+    }
+
+    row = mysql_fetch_row(res);
+    result = row ? atol(row[0]) : NOTHING;
+    mysql_free_result(res);
+
+    return result;
+}
+
 int mariadb_channel_set_mute(long channel_id, dbref player, int muted)
 {
     MYSQL *conn = (MYSQL *)mariadb_get_connection();
