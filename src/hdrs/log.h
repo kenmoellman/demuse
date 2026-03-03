@@ -31,6 +31,5 @@ extern struct log important_log, sensitive_log, error_log,
 #define log_suspect(str) muse_log(&suspect_log, (str))
 
 extern void muse_log (struct log *, const char *);
-extern void log_init_channels(void);
 
 #endif /* __LOG_H */

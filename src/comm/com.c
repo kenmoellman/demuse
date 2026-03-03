@@ -163,8 +163,8 @@ void com_send_int(char *channel, char *message, dbref player, int hidden)
     return;
   }
 
-  /* Look up channel in cache */
-  chan = channel_cache_lookup(channel);
+  /* Look up channel in cache (strip any access-level prefix) */
+  chan = channel_cache_lookup(channel_strip_prefix(channel));
   if (!chan) {
     return;
   }

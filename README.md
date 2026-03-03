@@ -195,18 +195,18 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - `chan_connect` - Connection announcement channel (default: `connect`)
 - `chan_warn_prefix` - Prefix for warning channels (default: `warn_`), e.g. `warn_security`, `warn_roomdesc`
 
-**Configurable log channels** (via `@config`):
-- `log_chan_important` - Important events (default: `log_imp`)
-- `log_chan_sensitive` - Sensitive events (default: `*log_sens`)
-- `log_chan_error` - Errors (default: `log_err`)
-- `log_chan_io` - I/O events (default: `*log_io`)
-- `log_chan_gripe` - Player gripes (default: `log_gripe`)
-- `log_chan_force` - @force usage (default: `*log_force`)
-- `log_chan_prayer` - Player prayers (default: `log_prayer`)
-- `log_chan_combat` - Combat events (default: `log_combat`)
-- `log_chan_suspect` - Suspect activity (default: `*log_suspect`)
+**Log channels** are hardcoded system channels (not configurable via `@config`). Each log writes to a file in `run/logs/` and broadcasts to its channel:
+- `log_imp` - Important events (shutdowns, name changes, admin commands)
+- `log_sens` - Sensitive events (min_level=3, director-only)
+- `log_err` - Errors
+- `log_io` - I/O events (min_level=3, director-only)
+- `log_gripe` - Player gripes
+- `log_force` - @force usage (min_level=3, director-only)
+- `log_prayer` - Player prayers
+- `log_combat` - Combat events
+- `log_suspect` - Suspect activity (min_level=3, director-only)
 
-**System channels** have `is_system=1` in the database and cannot be destroyed. Default system channels are seeded by `config/defaults.sql`.
+**System channels** have `is_system=1` in the database and cannot be destroyed. Default system channels are seeded by `config/defaults.sql`. The 13 built-in system channels are: the 9 log channels above plus `dbinfo`, `dc`, `pub_io`, and `connect`.
 
 ## Configuration
 

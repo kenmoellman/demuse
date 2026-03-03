@@ -98,8 +98,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "WARNING: Failed to load channel cache from MariaDB.\n");
     }
 
-    /* Bind log channels to config variables (must be after config load) */
-    log_init_channels();
 
     /* Initialize global state - config variables now have values from DB */
     init_io_globals();

@@ -44,16 +44,7 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('register_msg_file', 'msgs/register.txt', 'STR'),
 ('leave_msg_file', 'msgs/leave.txt', 'STR'),
 ('guest_lockout_file', '../config/guest-lockout', 'STR'),
-('welcome_lockout_file', '../config/welcome-lockout', 'STR'),
-('log_chan_important', 'log_imp', 'STR'),
-('log_chan_sensitive', 'log_sens', 'STR'),
-('log_chan_error', 'log_err', 'STR'),
-('log_chan_io', 'log_io', 'STR'),
-('log_chan_gripe', 'log_gripe', 'STR'),
-('log_chan_force', 'log_force', 'STR'),
-('log_chan_prayer', 'log_prayer', 'STR'),
-('log_chan_combat', 'log_combat', 'STR'),
-('log_chan_suspect', 'log_suspect', 'STR')
+('welcome_lockout_file', '../config/welcome-lockout', 'STR')
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
 
 -- ============================================================================
