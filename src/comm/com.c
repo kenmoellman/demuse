@@ -41,6 +41,7 @@
 void channel_create(dbref, char *);
 void channel_destroy(dbref, char *);
 void channel_op(dbref, char *);
+void channel_owner(dbref, char *);
 void channel_lock(dbref, char *);
 void channel_password(dbref, char *);
 void channel_join(dbref, char *);
@@ -630,6 +631,8 @@ void do_channel(dbref player, char *arg1, char *arg2)
     channel_create(player, arg2);
   } else if (!strncmp(arg1, "destroy", 7)) {
     channel_destroy(player, arg2);
+  } else if (!strncmp(arg1, "owner", 5)) {
+    channel_owner(player, arg2);
   } else if (!strncmp(arg1, "op", 2)) {
     channel_op(player, arg2);
   } else if (!strncmp(arg1, "lock", 4)) {
@@ -1048,6 +1051,89 @@ void channel_op(dbref player, char *arg2)
 }
 
 /**
+ * Change channel owner
+ * Syntax: +channel owner=<channel>:<player>
+ *
+ * The current owner can transfer to any player who hasn't blacklisted them.
+ * Directors and admins with POW_CHANNEL can transfer any non-system channel.
+ * System channels cannot have their owner changed.
+ */
+void channel_owner(dbref player, char *arg2)
+{
+  char *target_name;
+  dbref target;
+  channel_cache_t *chan;
+
+  if (!arg2 || !*arg2) {
+    notify(player, "+channel: Usage: +channel owner=<channel>:<player>");
+    return;
+  }
+
+  target_name = strchr(arg2, ':');
+  if (!target_name || !*(target_name + 1)) {
+    notify(player, "+channel: Usage: +channel owner=<channel>:<player>");
+    return;
+  }
+
+  *target_name++ = '\0';
+
+  chan = channel_cache_lookup(arg2);
+  if (!chan) {
+    notify(player, "+channel: Channel not found.");
+    return;
+  }
+
+  /* System channels must always be owned by root */
+  if (chan->is_system) {
+    notify(player, "+channel: System channels cannot have their owner changed.");
+    return;
+  }
+
+  /* Only owner, director, or admin with POW_CHANNEL can transfer ownership */
+  if (chan->owner != player &&
+      db[player].pows[0] < CLASS_DIR &&
+      !power(player, POW_CHANNEL)) {
+    notify(player, "+channel: You must be the channel owner to transfer ownership.");
+    return;
+  }
+
+  target = lookup_player(target_name);
+  if (target == NOTHING) {
+    notify(player, "+channel: Player not found.");
+    return;
+  }
+
+  /* Non-admin owners must pass the recipient's blacklist check */
+  if (db[player].pows[0] < CLASS_DIR && !power(player, POW_CHANNEL)) {
+    if (!could_doit(real_owner(player), real_owner(target), A_BLACKLIST)) {
+      notify(player, "+channel: That player has blacklisted you.");
+      return;
+    }
+  }
+
+  {
+    dbref old_owner = chan->owner;
+
+    if (!mariadb_channel_update_owner(chan->channel_id, target)) {
+      notify(player, "+channel: Failed to update channel owner.");
+      return;
+    }
+
+    log_important(tprintf("%s executed: +channel owner %s:%s (was %s)",
+                          unparse_object(player, player),
+                          chan->name,
+                          unparse_object(player, target),
+                          GoodObject(old_owner) ?
+                            unparse_object(player, old_owner) : "???"));
+  }
+
+  notify(player, tprintf("+channel: Ownership of %s transferred to %s.",
+                          chan->name, unparse_object(player, target)));
+  notify(target, tprintf("+channel: %s has transferred ownership of channel %s to you.",
+                          unparse_object(target, player), chan->name));
+}
+
+/**
  * Set channel lock
  * Syntax: +channel lock <channel>:<locktype>=<lock>
  */
@@ -1354,6 +1440,28 @@ void channel_leave(dbref player, char *arg2)
 
   /* Remove from MariaDB + cache */
   mariadb_channel_leave(chan->channel_id, player);
+
+  /* Handle non-system channel cleanup after leave */
+  if (!chan->is_system) {
+    int remaining = mariadb_channel_member_count(chan->channel_id);
+    if (remaining == 0) {
+      /* Last member left — auto-destroy */
+      log_important(tprintf("Channel %s auto-destroyed (last member %s left)",
+                            chan->name, unparse_object_a(player, player)));
+      mariadb_channel_destroy(chan->channel_id);
+    } else if (chan->owner == player) {
+      /* Owner left but others remain — transfer to oldest member */
+      dbref new_owner = mariadb_channel_oldest_member(chan->channel_id);
+      if (GoodObject(new_owner)) {
+        mariadb_channel_update_owner(chan->channel_id, new_owner);
+        log_important(tprintf("Channel %s ownership auto-transferred from %s to %s",
+                              chan->name, unparse_object_a(player, player),
+                              unparse_object_a(player, new_owner)));
+        notify(new_owner, tprintf("+channel: You are now the owner of channel %s.",
+                                  chan->name));
+      }
+    }
+  }
 }
 
 /**
@@ -1855,8 +1963,16 @@ void channel_search(dbref player, char *arg2)
       /* Player is operator on this channel */
       notify(player, tprintf("# %s %s %s", onoff, chan_disp, owner));
     } else if (level == 3) {
-      /* Show all visible channels */
-      if ((chan->flags & SEE_OK) &&
+      /* Show all channels — directors see everything, others respect visibility */
+      if (db[player].pows[0] >= CLASS_DIR) {
+        /* Directors/Wizards see all channels, hidden ones marked HID */
+        if (!(chan->flags & SEE_OK) ||
+            !channel_eval_lock(player, chan->owner, chan->hide_lock)) {
+          strncpy(onoff, "HID", sizeof(onoff) - 1);
+          onoff[sizeof(onoff) - 1] = '\0';
+        }
+        notify(player, tprintf("  %s %s %s", onoff, chan_disp, owner));
+      } else if ((chan->flags & SEE_OK) &&
           channel_eval_lock(player, chan->owner, chan->hide_lock)) {
         notify(player, tprintf("  %s %s %s", onoff, chan_disp, owner));
       } else if (channel_controls(player, chan)) {

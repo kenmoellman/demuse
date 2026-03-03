@@ -235,6 +235,22 @@ int mariadb_channel_join(long channel_id, dbref player,
 int mariadb_channel_leave(long channel_id, dbref player);
 
 /*
+ * mariadb_channel_member_count - Count non-banned members on a channel
+ *
+ * @param channel_id Channel to count
+ * @return member count, or -1 on error
+ */
+int mariadb_channel_member_count(long channel_id);
+
+/*
+ * mariadb_channel_oldest_member - Find longest-standing non-banned member
+ *
+ * @param channel_id Channel to query
+ * @return player dbref of oldest member, or NOTHING if none
+ */
+dbref mariadb_channel_oldest_member(long channel_id);
+
+/*
  * mariadb_channel_set_mute - Set mute status
  *
  * @param channel_id Channel
@@ -451,6 +467,10 @@ static inline int mariadb_channel_join(
 static inline int mariadb_channel_leave(
     long id __attribute__((unused)),
     dbref p __attribute__((unused))) { return 0; }
+static inline int mariadb_channel_member_count(
+    long id __attribute__((unused))) { return -1; }
+static inline dbref mariadb_channel_oldest_member(
+    long id __attribute__((unused))) { return NOTHING; }
 static inline int mariadb_channel_set_mute(
     long id __attribute__((unused)),
     dbref p __attribute__((unused)),
