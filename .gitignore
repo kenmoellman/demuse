@@ -22,6 +22,14 @@ src/util/mkindx
 src/util/mycompress
 src/util/wd
 run/db/mariadb.conf
+run/db/mdb
+run/db/mdb.backup.*
+run/db/loginstatsdb
+config/mariadb.conf
+run/cmd_crash
+run/4201*
+src/util/convert_db
+src/logs/
 CLAUDE.md
 .claude/
 memory/
