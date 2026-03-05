@@ -105,40 +105,12 @@ multi-homing either.) -wm 05/08/2000 */
 /* Universe system - always enabled */
 /* USE_UNIV - removed, feature now always on */
 
-/* message configuration */
-
-/* Number of welcome message files (welcome000.txt to welcomeNNN.txt) */
-#define NUM_WELCOME_MESSAGES 10
-
-/* define these to your liking.  Be sure NOT to put your MUSE name in them. *
- * The MUSE name is now the first thing in each string.  Work it out.       *
- * WARNING DO  NOT USE ANSI CODES IN THESE STRINGS!                         */
-#define FLUSHED_MESSAGE  "<Output Flushed>\n"
-#define ONLINE_MESSAGE   "online.\n"
-#define REBOOT_MESSAGE   "reloading, please hold.\n"
-#define SHUTDOWN_MESSAGE "says 'This is your captain speaking. Light em up, cuz we're going down'\n"
-#define LOCKOUT_MESSAGE  "is currently under restricted access conditions.\nPlease try again later.\n"
-#define NOLOGINS_MESSAGE "is not allowing any connections at this time. Please try again later.\n"
-/* message you want displayed to users the first time they log in. 
-   make it short, preferably under 80 chars */
-#define FIRST_LOGIN "First login: It always hurts the first time."
-
-/* Set this to the appropriate time zone.  Valid US Timezones under linux are:
- EST EST5EDT
- CST CST6CDT
- MST MST7MDT
- PST PST8PDT
-*/
-
-#define OURTZ "EST5EDT"
+/* Message strings, welcome messages, idle settings, email/SMTP settings,
+ * and login stats config are now runtime variables loaded from MariaDB.
+ * See config/defaults.sql for default values.
+ * Changeable at runtime via @config without recompile. */
 
 
-
-
-/* defining the information for idle tineouts and whatnot. */
-#define IDLE_TIMEOUT 1200
-#define MIN_IDLE 1200
-#define MAX_IDLE 3600
 
 /* define this if you want certain users to be able to exec a shell.   *
  *  this is dangerous and stupid.  But if you want to, don't blame me. */
@@ -280,107 +252,15 @@ multi-homing either.) -wm 05/08/2000 */
 
 #define MAX_BUFF_LEN 4096
 
-/* Login Stats variables */
-#define LOGINSTATS_FILE "db/loginstatsdb"
+/* Login Stats buffer size (compile-time for array sizing) */
 #define LOGINSTATS_BUF 256
-#define LOGINSTATS_MAX_BACKUPS 3
 
 /* for info.c, allow use of /proc data */
 #define USE_PROC
 
 
-/* email config - Customize these settings for your SMTP server */
-
-#ifndef __EMAIL_CONFIG_H__
-#define __EMAIL_CONFIG_H__
-
-/* ===================================================================
- * SMTP Server Configuration
- * =================================================================== */
-
-/* Option 1: Gmail (requires app-specific password) */
-/*
-#define SMTP_SERVER "smtp.gmail.com"
-#define SMTP_PORT 587
-#define SMTP_USE_SSL 1
-#define SMTP_USERNAME "yourgame@gmail.com"
-#define SMTP_PASSWORD "your-app-password"  // Not your regular password!
-*/
-
-/* Option 2: SendGrid */
-/*
-#define SMTP_SERVER "smtp.sendgrid.net"
-#define SMTP_PORT 587
-#define SMTP_USE_SSL 1
-#define SMTP_USERNAME "apikey"  // Literally "apikey"
-#define SMTP_PASSWORD "your-sendgrid-api-key"
-*/
-
-/* Option 3: Local Postfix/Sendmail relay (no auth) */
-/*
-#define SMTP_SERVER "localhost"
-#define SMTP_PORT 25
-#define SMTP_USE_SSL 0
-// No username/password needed for local relay
-*/
-
-/* Option 4: AWS SES */
-/*
-#define SMTP_SERVER "email-smtp.us-east-1.amazonaws.com"
-#define SMTP_PORT 587
-#define SMTP_USE_SSL 1
-#define SMTP_USERNAME "your-ses-smtp-username"
-#define SMTP_PASSWORD "your-ses-smtp-password"
-*/
-
-/* Option 5: Mailgun */
-/*
-#define SMTP_SERVER "smtp.mailgun.org"
-#define SMTP_PORT 587
-#define SMTP_USE_SSL 1
-#define SMTP_USERNAME "postmaster@your-domain.mailgun.org"
-#define SMTP_PASSWORD "your-mailgun-password"
-*/
-
-/* Default Configuration - CHANGE THESE! */
-#ifndef SMTP_SERVER
-#define SMTP_SERVER "smtp.gmail.com"
-#endif
-
-#ifndef SMTP_PORT
-#define SMTP_PORT 587
-#endif
-
-#ifndef SMTP_USE_SSL
-#define SMTP_USE_SSL 1
-#endif
-
-#ifndef SMTP_USERNAME
-#define SMTP_USERNAME "your-game@gmail.com"
-#endif
-
-#ifndef SMTP_PASSWORD
-#define SMTP_PASSWORD "your-app-password"
-#endif
-
-#ifndef SMTP_FROM
-#define SMTP_FROM "noreply@yourmud.com"
-#endif
-
-/* ===================================================================
- * Email Limits and Restrictions
- * =================================================================== */
-
-/* Maximum number of emails per player per day */
-#define MAX_EMAILS_PER_DAY 10
-
-/* Minimum time between emails (seconds) */
-#define EMAIL_COOLDOWN 60
-
-/* Maximum message length */
-#define MAX_EMAIL_LENGTH 4096
-
-#endif /* __EMAIL_CONFIG_H__ */
+/* Email/SMTP settings are now runtime config variables loaded from MariaDB.
+ * See config/defaults.sql for defaults. Change via @config at runtime. */
 
 /* change this if you add or delete a directory in the directory tree. */
 #define MUSE_DIRECTORIES "src src/hdrs src/comm src/io src/db src/util run run/files run/files/p run/files/p/1 run/db run/msgs run/logs doc bin config"
