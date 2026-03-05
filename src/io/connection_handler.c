@@ -5,6 +5,7 @@
 #include "config.h"
 #include "externs.h"
 #include "io_internal.h"
+#include "mariadb_lockout.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -12,6 +13,12 @@
 
 /* #define EMERGENCY_BYPASS_PASSWORD "tempemergency123" */
 
+#ifdef RANDOM_WELCOME
+/* When RANDOM_WELCOME is enabled, server_main.c sets this to a random
+ * welcome file path each loop iteration. welcome_user() checks this
+ * and uses connect_message() with the file instead of send_message_text(). */
+extern char *random_welcome_file;
+#endif
 
 /* Connection failure messages */
 static const char *connect_fail_char = "That player does not exist.\n";
@@ -32,7 +39,61 @@ void welcome_user(struct descriptor_data *d)
 
     queue_string(d, "This world is Pueblo 1.0 Enhanced\n");
 
-    connect_message(d, welcome_msg_file, 0);
+#ifdef RANDOM_WELCOME
+    /* RANDOM_WELCOME uses file-based welcome messages (msgs/welcomeNNN.txt) */
+    if (random_welcome_file) {
+        connect_message(d, random_welcome_file, 0);
+        return;
+    }
+#endif
+
+    send_message_text(d, welcome_msg, 0);
+
+    /* Append maintenance notice when maintenance_level is active */
+    if (maintenance_level > 0 && maintenance_msg && *maintenance_msg) {
+        queue_string(d, "\n");
+        send_message_text(d, maintenance_msg, 0);
+    }
+}
+
+/* Send raw message text to a descriptor
+ *
+ * Sends a string directly via queue_write() without any file I/O.
+ * Used for messages stored in MariaDB config (motd_msg, welcome_msg, etc.).
+ * Interprets literal \n sequences in the text as actual newlines.
+ *
+ * @param d     Descriptor to send to
+ * @param text  Message text (may contain literal \n for newlines)
+ * @param direct  If true, flush output immediately via process_output()
+ */
+void send_message_text(struct descriptor_data *d, char *text, int direct)
+{
+    const char *p;
+
+    if (!d || !text || !*text) {
+        return;
+    }
+
+    /* Walk through text, converting \n sequences to actual newlines */
+    for (p = text; *p; p++) {
+        if (*p == '\\' && *(p + 1) == 'n') {
+            queue_write(d, "\n", 1);
+            p++;  /* skip the 'n' */
+        } else {
+            queue_write(d, p, 1);
+        }
+    }
+
+    /* Ensure trailing newline */
+    if (text[strlen(text) - 1] != '\n' &&
+        !(strlen(text) >= 2 && text[strlen(text) - 2] == '\\' && text[strlen(text) - 1] == 'n')) {
+        queue_write(d, "\n", 1);
+    }
+
+    /* Immediately flush if direct mode */
+    if (direct) {
+        process_output(d);
+    }
 }
 
 /* Send a message file to a descriptor */
@@ -179,12 +240,19 @@ void check_connect(struct descriptor_data *d, char *msg)
     /* Handle CONNECT command */
     if (!strncmp(command, "co", 2)) {
         /* Check for guest connection */
-        if (string_prefix(user, guest_prefix) || 
+        if (string_prefix(user, guest_prefix) ||
             string_prefix(user, "guest")) {
             strncpy(password, guest_prefix, sizeof(password) - 1);
             password[sizeof(password) - 1] = '\0';
-            
-            if (check_lockout(d, guest_lockout_file, guest_msg_file)) {
+
+            if (!guest_enabled) {
+                send_message_text(d, guest_lockout_msg, 0);
+                player = NOTHING;
+            } else if (lockout_check_guestip(d->address.sin_addr)) {
+                send_message_text(d, guest_lockout_msg, 0);
+                player = NOTHING;
+            } else if (maintenance_level > CLASS_GUEST) {
+                send_message_text(d, maintenance_msg, 0);
                 player = NOTHING;
             } else {
                 p = make_guest(d);
@@ -213,14 +281,28 @@ void check_connect(struct descriptor_data *d, char *msg)
 #endif
         }
 
-        /* Check for class-based connection restrictions */
+        /* Check for player-level lockout */
         if (player > NOTHING && Typeof(player) == TYPE_PLAYER) {
-            if (*db[player].pows < restrict_connect_class) {
-                log_io(tprintf("%s refused connection due to class restriction.",
+            if (lockout_check_player(player)) {
+                log_io(tprintf("%s refused connection: account locked.",
                               unparse_object(root, player)));
-                write(d->descriptor, 
-                      tprintf("%s %s", muse_name, LOCKOUT_MESSAGE),
-                      (strlen(LOCKOUT_MESSAGE) + strlen(muse_name) + 1));
+                queue_string(d,
+                    "Your account has been locked. Contact an administrator.\n");
+                process_output(d);
+                d->state = CONNECTED;
+                d->connected_at = time(0);
+                d->player = player;
+                shutdownsock(d);
+                return;
+            }
+            /* Check maintenance_level class restriction */
+            if (maintenance_level > 0 &&
+                *db[player].pows < maintenance_level) {
+                log_io(tprintf("%s refused connection due to maintenance level.",
+                              unparse_object(root, player)));
+                write(d->descriptor,
+                      tprintf("%s %s", muse_name, lockout_message),
+                      (strlen(lockout_message) + strlen(muse_name) + 1));
                 process_output(d);
                 d->state = CONNECTED;
                 d->connected_at = time(0);
@@ -268,7 +350,7 @@ void check_connect(struct descriptor_data *d, char *msg)
 
             log_io(tprintf("CONNECTED: %s on concid %ld",
                           unparse_object_a(player, player), d->concid));
-            com_send_as_hidden(chan_pubio,
+            com_send_as_hidden("pub_io",
                 tprintf("CONNECTED: %s - %s",
                        unparse_object_a(player, player),
                        ct ? ct : "unknown"),
@@ -285,7 +367,7 @@ void check_connect(struct descriptor_data *d, char *msg)
             d->player = player;
 
             /* Send MOTD */
-            connect_message(d, motd_msg_file, 0);
+            send_message_text(d, motd_msg, 0);
             
             /* Announce connection to the game world */
             announce_connect(player);
@@ -328,7 +410,7 @@ void check_connect(struct descriptor_data *d, char *msg)
     /* Handle CREATE command */
     if (!strncmp(command, "cr", 2)) {
         if (!allow_create) {
-            connect_message(d, register_msg_file, 0);
+            send_message_text(d, register_msg, 0);
         } else {
             player = create_player(user, password, CLASS_VISITOR, player_start);
             
@@ -347,7 +429,7 @@ void check_connect(struct descriptor_data *d, char *msg)
                 d->player = player;
                 
                 /* Send creation message */
-                connect_message(d, create_msg_file, 0);
+                send_message_text(d, create_msg, 0);
                 
                 /* Announce connection */
                 announce_connect(player);
@@ -367,7 +449,7 @@ void check_connect(struct descriptor_data *d, char *msg)
 
     /* Unknown command - show welcome screen if not Pueblo */
     if (d->pueblo == 0) {
-        check_lockout(d, welcome_lockout_file, welcome_msg_file);
+        welcome_user(d);
     }
 
     /* Ensure we're in correct state after password prompt */

@@ -24,11 +24,6 @@
  * STRING CONFIG VARIABLES
  * ============================================================================ */
 extern char *muse_name;
-extern char *chan_dbinfo;
-extern char *chan_dc;
-extern char *chan_pubio;
-extern char *chan_connect;
-extern char *chan_warn_prefix;
 extern char *start_quota;
 extern char *guest_prefix;
 extern char *guest_alias_prefix;
@@ -41,14 +36,26 @@ extern char *stdout_logfile;
 extern char *wd_logfile;
 extern char *muse_pid_file;
 extern char *wd_pid_file;
-extern char *create_msg_file;
-extern char *motd_msg_file;
-extern char *welcome_msg_file;
-extern char *guest_msg_file;
-extern char *register_msg_file;
-extern char *leave_msg_file;
-extern char *guest_lockout_file;
-extern char *welcome_lockout_file;
+extern char *create_msg;
+extern char *motd_msg;
+extern char *welcome_msg;
+extern char *guest_msg;
+extern char *register_msg;
+extern char *leave_msg;
+extern char *guest_lockout_msg;
+extern char *welcome_lockout_msg;
+extern char *maintenance_msg;
+extern char *flushed_message;
+extern char *online_message;
+extern char *reboot_message;
+extern char *shutdown_message;
+extern char *lockout_message;
+extern char *first_login;
+extern char *loginstats_file;
+extern char *smtp_server;
+extern char *smtp_username;
+extern char *smtp_password;
+extern char *smtp_from;
 
 /* ============================================================================
  * NUMERIC (int) CONFIG VARIABLES
@@ -71,7 +78,8 @@ extern int command_burst_size;
 extern int commands_per_time;
 extern int warning_chunk;
 extern int warning_bonus;
-extern int enable_lockout;
+extern int guest_enabled;
+extern int maintenance_level;
 extern int thing_cost;
 extern int exit_cost;
 extern int room_cost;
@@ -89,6 +97,15 @@ extern int max_queue;
 extern int channel_name_limit;
 extern int player_name_limit;
 extern int player_reference_limit;
+extern int min_idle;
+extern int max_idle;
+extern int num_welcome_messages;
+extern int loginstats_max_backups;
+extern int max_emails_per_day;
+extern int email_cooldown;
+extern int max_email_length;
+extern int smtp_port;
+extern int smtp_use_ssl;
 
 /* ============================================================================
  * DBREF (long) CONFIG VARIABLES

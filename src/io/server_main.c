@@ -10,6 +10,7 @@
 #include "mariadb_mail.h"
 #include "mariadb_board.h"
 #include "mariadb_channel.h"
+#include "mariadb_lockout.h"
 
 #include <stddef.h>
 #include <sys/time.h>
@@ -30,6 +31,13 @@ const char *NullFile = "logs/null";
 
 /* Flag for need more processing */
 int need_more_proc = 0;
+
+#ifdef RANDOM_WELCOME
+/* Override file path for randomized welcome messages.
+ * When non-NULL, welcome_user() uses connect_message() with this file
+ * instead of send_message_text() with the welcome_msg config var. */
+char *random_welcome_file = NULL;
+#endif
 
 /* File I/O mode for line buffering */
 #define mklinebuf(fp) setvbuf(fp, NULL, _IOLBF, 0)
@@ -91,11 +99,21 @@ int main(int argc, char *argv[])
         mariadb_cleanup();
         exit(1);
     }
+    if (!mariadb_lockout_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize lockout table.\n");
+        mariadb_cleanup();
+        exit(1);
+    }
 
     /* Initialize channel cache and load from MariaDB */
     channel_cache_init();
     if (channel_cache_load() < 0) {
         fprintf(stderr, "WARNING: Failed to load channel cache from MariaDB.\n");
+    }
+
+    /* Load lockout cache from MariaDB */
+    if (lockout_cache_load() < 0) {
+        fprintf(stderr, "WARNING: Failed to load lockout cache from MariaDB.\n");
     }
 
 
@@ -138,6 +156,7 @@ int main(int argc, char *argv[])
     do_haltall(1);
     dump_database();
     channel_cache_clear();
+    lockout_cache_clear();
     mariadb_cleanup();
     free_database();
     free_mail();
@@ -442,12 +461,14 @@ static void shovechars(int port)
         last_slice = update_quotas(last_slice, current_time);
 
 #ifdef RANDOM_WELCOME
-        /* Randomize welcome message file each loop iteration */
+        /* Randomize welcome message file each loop iteration.
+         * Sets random_welcome_file so welcome_user() uses connect_message()
+         * with a random file instead of send_message_text() with welcome_msg. */
         {
             static char welcome_buf[64];
             snprintf(welcome_buf, sizeof(welcome_buf), "msgs/welcome%03d.txt",
-                    (int)(random() % NUM_WELCOME_MESSAGES));
-            welcome_msg_file = welcome_buf;
+                    (int)(random() % num_welcome_messages));
+            random_welcome_file = welcome_buf;
         }
 #endif
 

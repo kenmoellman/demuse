@@ -10,12 +10,10 @@ extern void make_nonblocking (int);
 extern struct descriptor_data *new_connection (int);
 extern void clearstrings (struct descriptor_data *);
 extern void freeqs (struct descriptor_data *);
-extern int check_lockout (struct descriptor_data *, char *, char *); 
 
 
 extern int exit_status;
 extern int ndescriptors;
-extern int nologins;
 extern int maxd;
 extern int sock;
 

@@ -246,8 +246,7 @@ static int untrack_allocation(void *ptr, const char *file, int line
     memdebug_log("    This pointer is NOT in active allocations table\n");
 #endif
     log_error(tprintf("!!! DOUBLE-FREE DETECTED !!! Pointer: %p   Free attempt at: %s:%d", ptr, file, line));
-//    return 0;
-    return 1;
+    return 0;  /* Return failure so safe_free() skips glibc free() on already-freed pointer */
 }
 
 void* safe_malloc(size_t size, const char *file, int line) {
@@ -335,9 +334,9 @@ void safe_free(void *ptr, const char *file, int line) {
 #endif
     )) {
 #ifdef MEMORY_DEBUG_LOG
-        memdebug_log("!!! ABORTING DUE TO DOUBLE-FREE !!!\n");
+        memdebug_log("!!! SKIPPING FREE DUE TO DOUBLE-FREE !!!\n");
 #endif
-        abort();
+        return;  /* Skip glibc free() — pointer already freed, would corrupt heap */
     }
     
 #ifdef MEMORY_DEBUG_LOG

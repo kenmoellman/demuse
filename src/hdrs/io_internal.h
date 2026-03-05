@@ -148,6 +148,14 @@ void set_userstring(char **userstring, const char *command);
  * =================================================================== */
 
 /**
+ * Send raw message text to a descriptor (no file I/O)
+ * @param d Descriptor to send to
+ * @param text Message text (may contain literal \n for newlines)
+ * @param direct If true, flush output immediately
+ */
+void send_message_text(struct descriptor_data *d, char *text, int direct);
+
+/**
  * Parse a connection command into components
  * @param msg Input message
  * @param command Output: command (connect/create)

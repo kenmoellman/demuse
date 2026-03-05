@@ -156,7 +156,7 @@ void process_commands(void)
                 
                 /* Process the command */
                 if (!do_command(d, buf)) {
-                    connect_message(d, leave_msg_file, 1);
+                    send_message_text(d, leave_msg, 1);
                     shutdownsock(d);
                 }
             }
@@ -281,7 +281,7 @@ int do_command(struct descriptor_data *d, char *command)
                 } else {
                     k++;
                     if (!do_command(l, k)) {
-                        connect_message(l, leave_msg_file, 1);
+                        send_message_text(l, leave_msg, 1);
                         shutdownsock(l);
                     }
                 }

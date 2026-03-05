@@ -106,7 +106,7 @@ void announce_connect(dbref player)
 
         tt = atol(atr_get(player, A_LASTDISC));
         if (tt == 0L) {
-            s = FIRST_LOGIN;
+            s = first_login;
         } else {
             s = ctime(&tt);
             if (s && strlen(s) > 0) {

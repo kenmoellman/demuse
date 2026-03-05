@@ -137,5 +137,22 @@ CREATE TABLE IF NOT EXISTS channel_members (
   COLLATE=utf8mb4_unicode_ci
   COMMENT='deMUSE channel membership, bans, and operators';
 
+-- ============================================================================
+-- LOCKOUTS TABLE - IP, player, and guest-IP bans
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS lockouts (
+  id           BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  lockout_type ENUM('player','ip','guestip') NOT NULL,
+  target       VARCHAR(256) NOT NULL,
+  reason       TEXT         DEFAULT NULL,
+  created_by   BIGINT       NOT NULL,
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX idx_type_target (lockout_type, target)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE lockout entries for IP, player, and guest-IP bans';
+
 -- After starting deMUSE, run @config/seed in-game to populate
 -- all config values from the running server into this table.

@@ -274,7 +274,7 @@ void do_motd(dbref player)
     }
     
     /* Display the MOTD file */
-    connect_message(d, motd_msg_file, 0);
+    send_message_text(d, motd_msg, 0);
 }
 
 /* ===================================================================

@@ -11,12 +11,12 @@
 #include <ctype.h>
 
 #include "sock.h"
+#include "mariadb_lockout.h"
 
 /* Null device for reserving file descriptors */
 static const char *NullFile = "logs/null";
 
 /* Function prototypes */
-int check_lockout(struct descriptor_data *, char *, char *);
 void get_ident(char *, int, int, struct sockaddr_in);
 
 void close_sockets(void)
@@ -41,11 +41,11 @@ void close_sockets(void)
     if (!(d->cstatus & C_REMOTE))
     {
       if (exit_status == 1)
-        write(d->descriptor, tprintf("%s %s", muse_name, REBOOT_MESSAGE), 
-              (strlen(REBOOT_MESSAGE) + strlen(muse_name) + 1));
+        write(d->descriptor, tprintf("%s %s", muse_name, reboot_message), 
+              (strlen(reboot_message) + strlen(muse_name) + 1));
       else
-        write(d->descriptor, tprintf("%s %s", muse_name, SHUTDOWN_MESSAGE), 
-              (strlen(SHUTDOWN_MESSAGE) + strlen(muse_name) + 1));
+        write(d->descriptor, tprintf("%s %s", muse_name, shutdown_message), 
+              (strlen(shutdown_message) + strlen(muse_name) + 1));
       process_output(d);
       if (x && d->player >= 0 && d->state == CONNECTED && !Guest(d->player))
       {
@@ -299,23 +299,14 @@ struct descriptor_data *initializesock(int s, struct sockaddr_in *a,
                  d->concid, d->user, addr, ct ? ct : "unknown"));
    
   if (state == WAITCONNECT)
-  { 
-    if (check_lockout(d, welcome_lockout_file, welcome_msg_file))
+  {
+    if (lockout_check_ip(d->address.sin_addr))
     {
+      send_message_text(d, welcome_lockout_msg, 0);
       process_output(d);
       shutdownsock(d);
       return NULL;
     }
-  }
- 
-  if (nologins)
-  {
-    log_io(tprintf("Refused connection on concid %ld due to @nologins.", d->concid));
-    write(d->descriptor, tprintf("%s %s", muse_name, NOLOGINS_MESSAGE), 
-          (strlen(NOLOGINS_MESSAGE) + strlen(muse_name) + 1));
-    process_output(d);
-    shutdownsock(d);
-    return NULL;
   }
   
   if (d->descriptor >= maxd)
@@ -348,7 +339,7 @@ void shutdownsock(struct descriptor_data *d)
     log_io(tprintf("|R+DISCONNECT| concid %ld player %s at %s",
                    d->concid, unparse_object_a(d->player, d->player), 
                    ct ? ct : "unknown"));
-    com_send_as_hidden(chan_pubio,
+    com_send_as_hidden("pub_io",
                        tprintf("|R+DISCONNECT| %s - %s",
                                unparse_object_a(d->player, d->player),
                                ct ? ct : "unknown"),
@@ -509,62 +500,6 @@ void freeqs(struct descriptor_data *d)
     SMART_FREE(d->raw_input);
   d->raw_input = 0;
   d->raw_input_at = 0;
-}
-
-int check_lockout(struct descriptor_data *d, char *file, char *default_msg)
-{ 
-  FILE *f;
-  char *lock_host, *lock_enable, *msg_file, *ptr;
-  char buf[1024];
-  struct hostent *hent;
-  
-  if (!d) return 1;
-  
-  close(reserved);
-  
-  f = fopen(file, "r");
-  if (!f)
-  { 
-    queue_string(d, "Error opening lockout file.\n");
-    reserved = open(NullFile, O_RDWR, 0);
-    return 1;
-  }
-  
-  while (fgets(buf, 1024, f))
-  { 
-    if (*buf == '#' || *buf == '\0' || *buf == '\n')
-      continue;
-      
-    if (buf[strlen(buf) - 1] == '\n')
-      buf[strlen(buf) - 1] = '\0';
-      
-    ptr = buf;
-    if (!(lock_host = parse_up(&ptr, ' ')))
-      continue;
-    if (!(lock_enable = parse_up(&ptr, ' ')))
-      continue;
-    if (!(msg_file = parse_up(&ptr, ' ')))
-      continue;
-    if (parse_up(&ptr, ' '))
-      continue;
-      
-    hent = gethostbyname(lock_host);
-    if (!hent)
-      continue;
-      
-    if (*(long *)hent->h_addr_list[0] == d->address.sin_addr.s_addr)
-    { 
-      fclose(f);
-      connect_message(d, msg_file, 0);
-      reserved = open(NullFile, O_RDWR, 0);
-      return (*lock_enable == 'l' || *lock_enable == 'L');
-    }
-  }
-  
-  fclose(f);
-  connect_message(d, default_msg, 0);
-  reserved = open(NullFile, O_RDWR, 0);
-  return 0;
 }
 
 #ifdef RESOCK

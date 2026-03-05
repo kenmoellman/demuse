@@ -93,7 +93,7 @@ static int flush_queue_int(struct text_queue *q, int n, int pueblo)
         return 0;
     }
 
-    n += strlen(FLUSHED_MESSAGE);
+    n += strlen(flushed_message);
 
     while (n > 0 && (p = q->head)) {
         n -= p->nchars;
@@ -103,7 +103,7 @@ static int flush_queue_int(struct text_queue *q, int n, int pueblo)
     }
 
     /* Add flush message */
-    p = make_text_block(FLUSHED_MESSAGE, strlen(FLUSHED_MESSAGE));
+    p = make_text_block(flushed_message, strlen(flushed_message));
     if (p) {
         p->nxt = q->head;
         q->head = p;

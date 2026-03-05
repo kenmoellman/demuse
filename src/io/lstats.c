@@ -115,7 +115,7 @@ static int safe_remove_old_backup(long epoch)
     
     /* Build filename safely */
     result = snprintf(filename, sizeof(filename), 
-                     "%s.%ld", LOGINSTATS_FILE, epoch - LOGINSTATS_MAX_BACKUPS);
+                     "%s.%ld", loginstats_file, epoch - loginstats_max_backups);
     
     if (result < 0 || result >= (int)sizeof(filename)) {
         log_error("Filename too long in safe_remove_old_backup");
@@ -144,14 +144,14 @@ static int safe_create_backup(long epoch)
     
     /* Build source filename */
     result = snprintf(old_name, sizeof(old_name), "%s.%ld", 
-                     LOGINSTATS_FILE, epoch);
+                     loginstats_file, epoch);
     if (result < 0 || result >= (int)sizeof(old_name)) {
         log_error("Source filename too long in safe_create_backup");
         return 0;
     }
     
     /* Build destination filename */
-    result = snprintf(new_name, sizeof(new_name), "%s", LOGINSTATS_FILE);
+    result = snprintf(new_name, sizeof(new_name), "%s", loginstats_file);
     if (result < 0 || result >= (int)sizeof(new_name)) {
         log_error("Dest filename too long in safe_create_backup");
         return 0;
@@ -275,7 +275,7 @@ void write_loginstats(long epoch)
     
     /* Build filename safely */
     result = snprintf(filename, sizeof(filename), "%s.%ld", 
-                     LOGINSTATS_FILE, epoch);
+                     loginstats_file, epoch);
     
     if (result < 0 || result >= (int)sizeof(filename)) {
         log_error("Filename too long in write_loginstats");
@@ -337,10 +337,10 @@ void read_loginstats(void)
     struct tm *tim;
     
     /* Open file for reading */
-    fp = fopen(LOGINSTATS_FILE, "r");
+    fp = fopen(loginstats_file, "r");
     if (!fp) {
         log_error(tprintf("Couldn't open \"%s\" for reading - initializing to zero",
-                         LOGINSTATS_FILE));
+                         loginstats_file));
         /* Initialize all to zero */
         nl.total = 0;
         nl.today = 0;

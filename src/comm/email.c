@@ -23,18 +23,12 @@
 #define ADDRESS_BUFFER_SIZE 256
 #define SUBJECT_BUFFER_SIZE 256
 
-/* Rate limiting */
-#ifndef MAX_EMAILS_PER_DAY
-#define MAX_EMAILS_PER_DAY 10
-#endif
-
-#ifndef EMAIL_COOLDOWN
-#define EMAIL_COOLDOWN 60  /* seconds between emails */
-#endif
-
-#ifndef MAX_EMAIL_LENGTH
-#define MAX_EMAIL_LENGTH 4096
-#endif
+/* Rate limiting and email limits are now runtime config variables:
+ * max_emails_per_day, email_cooldown, max_email_length
+ * loaded from MariaDB via mariadb_config_load() at startup.
+ * SMTP settings (smtp_server, smtp_port, smtp_use_ssl, smtp_username,
+ * smtp_password, smtp_from) are also runtime config variables.
+ */
 
 /* Email validation */
 #define MAX_EMAIL_ADDRESS_LENGTH 254  /* RFC 5321 */
@@ -209,8 +203,8 @@ static char *encode_email_body(const char *body)
     }
     
     len = strlen(body);
-    if (len > MAX_EMAIL_LENGTH) {
-        len = MAX_EMAIL_LENGTH;
+    if (len > max_email_length) {
+        len = max_email_length;
     }
     
     /* Allocate extra space for encoding */
@@ -306,12 +300,12 @@ static int check_rate_limit(dbref player, struct email_rate_limit *limits)
     }
     
     /* Check cooldown */
-    if (current_time - limits->last_email_time < EMAIL_COOLDOWN) {
+    if (current_time - limits->last_email_time < email_cooldown) {
         return 0;  /* Too soon */
     }
     
     /* Check daily limit */
-    if (limits->emails_sent_today >= MAX_EMAILS_PER_DAY) {
+    if (limits->emails_sent_today >= max_emails_per_day) {
         return 0;  /* Daily limit reached */
     }
     
@@ -480,23 +474,23 @@ static int send_email_curl(const char *to, const char *subject, const char *body
     }
     
     /* Set SMTP server URL */
-    snprintf(smtp_url, sizeof(smtp_url), "smtp://%s:%d", SMTP_SERVER, SMTP_PORT);
+    snprintf(smtp_url, sizeof(smtp_url), "smtp://%s:%d", smtp_server, smtp_port);
     curl_easy_setopt(curl, CURLOPT_URL, smtp_url);
-    
+
     /* Authentication */
-#ifdef SMTP_USERNAME
-    curl_easy_setopt(curl, CURLOPT_USERNAME, SMTP_USERNAME);
-#endif
-#ifdef SMTP_PASSWORD
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, SMTP_PASSWORD);
-#endif
-    
+    if (smtp_username && *smtp_username) {
+        curl_easy_setopt(curl, CURLOPT_USERNAME, smtp_username);
+    }
+    if (smtp_password && *smtp_password) {
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, smtp_password);
+    }
+
     /* Use TLS/SSL if configured */
-#if SMTP_USE_SSL
-    curl_easy_setopt(curl, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
-#endif
+    if (smtp_use_ssl) {
+        curl_easy_setopt(curl, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    }
     
     /* Set sender */
     curl_easy_setopt(curl, CURLOPT_MAIL_FROM, from);
@@ -571,20 +565,20 @@ void do_email(dbref player, const char *arg1, const char *msg)
         return;
     }
     
-    if (strlen(msg) > MAX_EMAIL_LENGTH) {
+    if (strlen(msg) > max_email_length) {
         notify(player, tprintf("Message too long. Maximum %d characters.", 
-                              MAX_EMAIL_LENGTH));
+                              max_email_length));
         return;
     }
     
     /* Check rate limits */
     if (!check_rate_limit(player, &limits)) {
-        if (time(NULL) - limits.last_email_time < EMAIL_COOLDOWN) {
+        if (time(NULL) - limits.last_email_time < email_cooldown) {
             notify(player, tprintf("Please wait %ld seconds before sending another email.",
-                                  EMAIL_COOLDOWN - (time(NULL) - limits.last_email_time)));
+                                  email_cooldown - (time(NULL) - limits.last_email_time)));
         } else {
             notify(player, tprintf("Daily email limit of %d reached. Try again tomorrow.",
-                                  MAX_EMAILS_PER_DAY));
+                                  max_emails_per_day));
         }
         return;
     }

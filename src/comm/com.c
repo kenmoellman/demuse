@@ -1854,6 +1854,56 @@ void channel_list(dbref player, char *arg2)
 }
 
 /**
+ * do_channel_search - List channels matching optional filters
+ *
+ * Used by @search type=channel and @search channels=<name>.
+ * Iterates the MariaDB-backed channel cache.
+ *
+ * @param player     Player requesting the search
+ * @param name_filter If non-NULL, only show channels whose name starts with this
+ * @param owner_filter If >= 0, only show channels owned by this dbref;
+ *                     ANY_OWNER (-2) or NOTHING (-1) means no owner filter
+ * @return Number of channels found
+ */
+int do_channel_search(dbref player, const char *name_filter, dbref owner_filter)
+{
+  hash_table_t *ht;
+  hash_iterator_t iter;
+  const char *hkey;
+  void *hval;
+  int count = 0;
+
+  ht = (hash_table_t *)channel_cache_get_hash();
+  if (!ht || ht->count == 0)
+    return 0;
+
+  hash_iterate_init(ht, &iter);
+  while (hash_iterate_next(&iter, &hkey, &hval))
+  {
+    channel_cache_t *chan = (channel_cache_t *)hval;
+    if (!chan)
+      continue;
+    if (owner_filter >= 0 && owner_filter != chan->owner)
+      continue;
+    if (name_filter != NULL && *name_filter != '\0')
+    {
+      if (!string_prefix(chan->name, name_filter))
+        continue;
+    }
+    if (count == 0)
+    {
+      notify(player, "");
+      notify(player, "CHANNELS:");
+    }
+    notify(player, tprintf("%s%s (owner: %s)",
+             channel_level_prefix(chan->min_level), chan->name,
+             GoodObject(chan->owner) ? db[chan->owner].name : "???"));
+    count++;
+  }
+  return count;
+}
+
+/**
  * channel_search - Search and list channels
  *
  * Syntax: +channel search [own|op|all|<channelname>]

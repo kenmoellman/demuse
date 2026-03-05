@@ -217,7 +217,7 @@ void set_idle(dbref player, dbref cause, time_t time, char *msg)
   }
 
   log_io(buf2);
-  com_send_as_hidden(chan_pubio, buf2, player);
+  com_send_as_hidden("pub_io", buf2, player);
   db[player].flags |= PLAYER_IDLE;
   did_it(player, player, NULL, 0, NULL, 0, A_AIDLE);
   return;
@@ -265,7 +265,7 @@ void set_unidle(dbref player, time_t lasttime)
     }
 
     log_io(buf2);
-    com_send_as_hidden(chan_pubio, buf2, player);
+    com_send_as_hidden("pub_io", buf2, player);
   }
 
   /* Fix #5: Set flag before executing A_AUNIDLE to prevent recursion */

@@ -144,6 +144,7 @@ MariaDB is now required for server operation. The following subsystems use Maria
 2. **Private Mail (+mail)** - Player-to-player mail stored in MariaDB `mail` table
 3. **Public Board (+board)** - Board posts stored in MariaDB `board` table
 4. **Channels** - Channel definitions and memberships stored in MariaDB `channels` and `channel_members` tables (TYPE_CHANNEL objects deprecated)
+5. **Lockouts** - IP bans, player bans, and guest-IP bans stored in MariaDB `lockouts` table with in-memory cache
 
 The object database continues to use the flat-file format for backward compatibility.
 
@@ -156,7 +157,8 @@ The object database continues to use the flat-file format for backward compatibi
 - `src/db/mariadb_mail.c` - SQL operations for private mail
 - `src/db/mariadb_board.c` - SQL operations for board posts
 - `src/db/mariadb_channel.c` - SQL operations and in-memory cache for channels
-- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` / `mariadb_channel.h` - Declarations and stubs
+- `src/db/mariadb_lockout.c` - SQL operations and in-memory cache for lockouts
+- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` / `mariadb_channel.h` / `mariadb_lockout.h` - Declarations and stubs
 - `src/util/convert_db.c` - Standalone database migration tool (`--mail`, `--board`, `--channels`, `--all`)
 - `config/setup_mariadb.sql` - Table definitions
 
@@ -188,14 +190,14 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - `channel_int_*` - Legacy compatibility wrappers (thin wrappers around cache, kept during transition)
 - `do_channel`, `do_com`, `do_chemit` - Parser hooks (unchanged)
 
-**Configurable system channels** (via `@config`):
-- `chan_dbinfo` - Database info channel (default: `dbinfo`)
-- `chan_dc` - Disconnect channel (default: `*dc`)
-- `chan_pubio` - Public I/O monitoring channel (default: `pub_io`)
-- `chan_connect` - Connection announcement channel (default: `connect`)
-- `chan_warn_prefix` - Prefix for warning channels (default: `warn_`), e.g. `warn_security`, `warn_roomdesc`
+**System channels** are hardcoded (not configurable via `@config`):
+- `dbinfo` - Database info (dumps, etc.)
+- `dc` - Disconnect notifications (min_level=3, director-only)
+- `pub_io` - Public I/O monitoring
+- `connect` - Connection announcements
+- `warn_*` - Warning channels (e.g. `warn_security`, `warn_roomdesc`)
 
-**Log channels** are hardcoded system channels (not configurable via `@config`). Each log writes to a file in `run/logs/` and broadcasts to its channel:
+**Log channels** are also hardcoded system channels. Each log writes to a file in `run/logs/` and broadcasts to its channel:
 - `log_imp` - Important events (shutdowns, name changes, admin commands)
 - `log_sens` - Sensitive events (min_level=3, director-only)
 - `log_err` - Errors
@@ -223,7 +225,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 
 **Primary config files:**
 - `config/config.h` - Compile-time configuration (network options, features, limits)
-- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board, channels, channel_members)
+- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board, channels, channel_members, lockouts)
 - `config/defaults.sql` - Default configuration values (seeded on install)
 - `run/db/mariadb.conf` - MariaDB credentials (not in version control)
 
@@ -240,7 +242,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - `run/db/mdb` - Main object database file (flat-file format)
 - `run/db/initial.mdb` - Starting database for new installations
 - `run/db/mariadb.conf` - MariaDB connection credentials
-- MariaDB tables: `config`, `mail`, `board`, `channels`, `channel_members` (created automatically on startup)
+- MariaDB tables: `config`, `mail`, `board`, `channels`, `channel_members`, `lockouts` (created automatically on startup)
 
 **Logs:**
 - `run/logs/` - Server logs (connections, commands, errors)
