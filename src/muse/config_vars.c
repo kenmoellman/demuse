@@ -22,11 +22,6 @@
  * STRING CONFIG VARIABLES
  * ============================================================================ */
 char *muse_name = NULL;
-char *chan_dbinfo = NULL;
-char *chan_dc = NULL;
-char *chan_pubio = NULL;
-char *chan_connect = NULL;
-char *chan_warn_prefix = NULL;
 char *start_quota = NULL;
 char *guest_prefix = NULL;
 char *guest_alias_prefix = NULL;
@@ -39,14 +34,26 @@ char *stdout_logfile = NULL;
 char *wd_logfile = NULL;
 char *muse_pid_file = NULL;
 char *wd_pid_file = NULL;
-char *create_msg_file = NULL;
-char *motd_msg_file = NULL;
-char *welcome_msg_file = NULL;
-char *guest_msg_file = NULL;
-char *register_msg_file = NULL;
-char *leave_msg_file = NULL;
-char *guest_lockout_file = NULL;
-char *welcome_lockout_file = NULL;
+char *create_msg = NULL;
+char *motd_msg = NULL;
+char *welcome_msg = NULL;
+char *guest_msg = NULL;
+char *register_msg = NULL;
+char *leave_msg = NULL;
+char *guest_lockout_msg = NULL;
+char *welcome_lockout_msg = NULL;
+char *maintenance_msg = NULL;
+char *flushed_message = NULL;
+char *online_message = NULL;
+char *reboot_message = NULL;
+char *shutdown_message = NULL;
+char *lockout_message = NULL;
+char *first_login = NULL;
+char *loginstats_file = NULL;
+char *smtp_server = NULL;
+char *smtp_username = NULL;
+char *smtp_password = NULL;
+char *smtp_from = NULL;
 
 /* ============================================================================
  * NUMERIC (int) CONFIG VARIABLES
@@ -69,7 +76,8 @@ int command_burst_size = 0;
 int commands_per_time = 0;
 int warning_chunk = 0;
 int warning_bonus = 0;
-int enable_lockout = 0;
+int guest_enabled = 0;
+int maintenance_level = 0;
 int thing_cost = 0;
 int exit_cost = 0;
 int room_cost = 0;
@@ -87,6 +95,15 @@ int max_queue = 0;
 int channel_name_limit = 0;
 int player_name_limit = 0;
 int player_reference_limit = 0;
+int min_idle = 0;
+int max_idle = 0;
+int num_welcome_messages = 0;
+int loginstats_max_backups = 0;
+int max_emails_per_day = 0;
+int email_cooldown = 0;
+int max_email_length = 0;
+int smtp_port = 0;
+int smtp_use_ssl = 0;
 
 /* ============================================================================
  * DBREF (long) CONFIG VARIABLES

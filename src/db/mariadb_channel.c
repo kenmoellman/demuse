@@ -198,9 +198,9 @@ static void cache_remove_channel(channel_cache_t *chan)
     hash_remove(channel_name_hash, chan->name);
     hash_remove(channel_id_hash, cache_make_id_key(chan->channel_id));
 
-    /* Restore destructors */
+    /* Restore destructors (id_hash has NO destructor - shares pointers with name_hash) */
     saved_name_hash->value_destructor = channel_value_destructor;
-    saved_id_hash->value_destructor = channel_value_destructor;
+    saved_id_hash->value_destructor = NULL;
 
     /* Now free the channel */
     cache_free_channel(chan);

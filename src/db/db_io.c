@@ -862,7 +862,7 @@ void load_more_db(void)
 
         run_startups();
         welcome_descriptors();
-        log_important(tprintf("|G+%s %s|", muse_name, ONLINE_MESSAGE));
+        log_important(tprintf("|G+%s %s|", muse_name, online_message));
         strncpy(motd, "Muse back online.", sizeof(motd) - 1);
         motd[sizeof(motd) - 1] = '\0';
         strncpy(motd_who, "#1", sizeof(motd_who) - 1);
@@ -2490,7 +2490,7 @@ static void welcome_descriptors(void)
         if (d->state == RELOADCONNECT && GoodObject(d->player)) {
             d->state = CONNECTED;
             db[d->player].flags |= CONNECT;
-            queue_string(d, tprintf("%s %s", muse_name, ONLINE_MESSAGE));
+            queue_string(d, tprintf("%s %s", muse_name, online_message));
         }
     }
 }

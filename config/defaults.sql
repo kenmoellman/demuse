@@ -20,11 +20,6 @@ USE demuse;
 
 INSERT INTO config (config_key, config_value, config_type) VALUES
 ('muse_name', 'YourMUSE', 'STR'),
-('chan_dbinfo', 'dbinfo', 'STR'),
-('chan_dc', 'dc', 'STR'),
-('chan_pubio', 'pub_io', 'STR'),
-('chan_connect', 'connect', 'STR'),
-('chan_warn_prefix', 'warn_', 'STR'),
 ('start_quota', '100', 'STR'),
 ('guest_prefix', 'Guest', 'STR'),
 ('guest_alias_prefix', 'G', 'STR'),
@@ -37,14 +32,26 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('wd_logfile', 'logs/wd.log', 'STR'),
 ('muse_pid_file', 'logs/muse_pid', 'STR'),
 ('wd_pid_file', 'logs/wd_pid', 'STR'),
-('create_msg_file', 'msgs/create.txt', 'STR'),
-('motd_msg_file', 'msgs/motd.txt', 'STR'),
-('welcome_msg_file', 'msgs/welcome.txt', 'STR'),
-('guest_msg_file', 'msgs/guest.txt', 'STR'),
-('register_msg_file', 'msgs/register.txt', 'STR'),
-('leave_msg_file', 'msgs/leave.txt', 'STR'),
-('guest_lockout_file', '../config/guest-lockout', 'STR'),
-('welcome_lockout_file', '../config/welcome-lockout', 'STR')
+('create_msg', '', 'STR'),
+('motd_msg', '-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\\nPlease edit motd_msg via @config.\\n-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-', 'STR'),
+('welcome_msg', '\\n                        Welcome to deMUSE\\n\\n     To connect to an existing character, type: connect <name> <password>\\n     To create a new character, type: create <name> <password>\\n\\n     Use \"help\" for more information after connecting.', 'STR'),
+('guest_msg', 'You have connected as a guest, please be courteous.\\nReport any abuse you receive, in detail, to an administrator.\\n\\nSee \"help register\" for details on getting a character.\\nType \"who\" to see who''s online.\\nAnd try using \"help commands\" to find your way around.\\nHave a nice day.  Page an unidle guide or director for assistance.', 'STR'),
+('register_msg', 'Try: connect Guest, or email an administrator', 'STR'),
+('leave_msg', 'Thanks for visiting!', 'STR'),
+('guest_lockout_msg', 'Guest connections are not available at this time.', 'STR'),
+('welcome_lockout_msg', 'Your connection has been refused.', 'STR'),
+('maintenance_msg', 'This server is currently in maintenance mode. Only staff may connect at this time.', 'STR'),
+('flushed_message', '<Output Flushed>\n', 'STR'),
+('online_message', 'online.\n', 'STR'),
+('reboot_message', 'reloading, please hold.\n', 'STR'),
+('shutdown_message', 'says ''This is your captain speaking. Light em up, cuz we''re going down''\n', 'STR'),
+('lockout_message', 'is currently under restricted access conditions.\nPlease try again later.\n', 'STR'),
+('first_login', 'First login: It always hurts the first time.', 'STR'),
+('loginstats_file', 'db/loginstatsdb', 'STR'),
+('smtp_server', 'smtp.gmail.com', 'STR'),
+('smtp_username', 'your-game@gmail.com', 'STR'),
+('smtp_password', 'your-app-password', 'STR'),
+('smtp_from', 'noreply@yourmud.com', 'STR')
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
 
 -- ============================================================================
@@ -70,7 +77,8 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('commands_per_time', '1', 'NUM'),
 ('warning_chunk', '50', 'NUM'),
 ('warning_bonus', '30', 'NUM'),
-('enable_lockout', '1', 'NUM'),
+('guest_enabled', '1', 'NUM'),
+('maintenance_level', '0', 'NUM'),
 ('thing_cost', '50', 'NUM'),
 ('exit_cost', '1', 'NUM'),
 ('room_cost', '100', 'NUM'),
@@ -87,7 +95,16 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('max_queue', '1000', 'NUM'),
 ('channel_name_limit', '32', 'NUM'),
 ('player_name_limit', '32', 'NUM'),
-('player_reference_limit', '5', 'NUM')
+('player_reference_limit', '5', 'NUM'),
+('min_idle', '1200', 'NUM'),
+('max_idle', '3600', 'NUM'),
+('num_welcome_messages', '10', 'NUM'),
+('loginstats_max_backups', '3', 'NUM'),
+('max_emails_per_day', '10', 'NUM'),
+('email_cooldown', '60', 'NUM'),
+('max_email_length', '4096', 'NUM'),
+('smtp_port', '587', 'NUM'),
+('smtp_use_ssl', '1', 'NUM')
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
 
 -- ============================================================================

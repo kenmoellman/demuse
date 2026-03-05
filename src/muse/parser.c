@@ -1067,13 +1067,12 @@ static void cmd_listarea(dbref player, char *arg1, char *arg2)
 /**
  * cmd_lockout - Wrapper for @lockout command
  *
- * Core: do_lockout(player, arg1)
+ * Core: do_lockout(player, arg1, arg2)
  * Note: Requires direct command (not triggered)
  */
 static void cmd_lockout(dbref player, char *arg1, char *arg2)
 {
-    (void)arg2; /* TODO: Add requires_direct flag */
-    do_lockout(player, arg1);
+    do_lockout(player, arg1, arg2);
 }
 
 /**
@@ -1125,15 +1124,14 @@ static void cmd_nemit(dbref player, char *arg1, char *arg2)
 }
 
 /**
- * cmd_nologins - Wrapper for @nologins command
+ * cmd_unlockout - Wrapper for @unlockout command
  *
- * Core: do_nologins(player, arg1)
+ * Core: do_unlockout(player, arg1, arg2)
  * Note: Requires direct command (not triggered)
  */
-static void cmd_nologins(dbref player, char *arg1, char *arg2)
+static void cmd_unlockout(dbref player, char *arg1, char *arg2)
 {
-    (void)arg2; /* TODO: Add requires_direct flag */
-    do_nologins(player, arg1);
+    do_unlockout(player, arg1, arg2);
 }
 
 /**
@@ -2479,7 +2477,7 @@ static void register_demuse_commands(parser_t *parser)
          * PLAYER MANAGEMENT COMMANDS - Player creation and control
          * ================================================================== */
         {"@lockout",    cmd_lockout,   6, 1, 0, 0, 0},  /* requires_direct, min=6 to avoid collision */
-        {"@nologins",   cmd_nologins,  2, 1, 0, 0, 0},  /* requires_direct */
+        {"@unlockout",  cmd_unlockout, 8, 1, 0, 0, 0},  /* requires_direct, min=8 to avoid @unlock collision */
         {"@newpassword", cmd_newpassword, 2, 1, 0, 0, 0}, /* requires_direct */
         {"@nuke",       cmd_nuke,      2, 1, 0, 0, 0},  /* requires_direct */
         {"@password",   cmd_password,  2, 1, 0, 0, 0},  /* requires_direct */

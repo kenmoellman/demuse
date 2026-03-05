@@ -17,10 +17,6 @@ int shutdown_flag;
 int exit_status;
 int sig_caught;
 
-/* Login restrictions */
-int nologins;
-int restrict_connect_class;
-
 /* Timing */
 time_t muse_up_time;
 time_t muse_reboot_time;
@@ -43,8 +39,6 @@ void init_io_globals(void)
   shutdown_flag = 0;
   exit_status = 136;
   sig_caught = 0;
-  nologins = 0;
-  restrict_connect_class = 0;
   cplr = NOTHING;
   ccom[0] = '\0';
   motd[0] = '\0';

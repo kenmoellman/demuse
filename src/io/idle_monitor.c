@@ -19,11 +19,11 @@ int des_idle(struct descriptor_data *d)
     realidle = atol(atr_get(d->player, A_IDLETIME));
     
     /* Clamp to reasonable range */
-    if (realidle > MAX_IDLE) {
-        realidle = MAX_IDLE;
+    if (realidle > max_idle) {
+        realidle = max_idle;
     }
-    if (realidle < MIN_IDLE) {
-        realidle = MIN_IDLE;
+    if (realidle < min_idle) {
+        realidle = min_idle;
     }
 
     return (realidle <= (now - d->last_time)) ? 1 : 0;
@@ -56,12 +56,12 @@ void check_for_idlers_int(dbref player, char *msg)
             /* Determine if they've exceeded their idle threshold */
             int should_idle = 0;
             
-            if (idle_time > MAX_IDLE) {
+            if (idle_time > max_idle) {
                 should_idle = 1;
-            } else if (idle_limit > 0 && idle_limit < MIN_IDLE && 
-                       idle_time > MIN_IDLE) {
+            } else if (idle_limit > 0 && idle_limit < min_idle && 
+                       idle_time > min_idle) {
                 should_idle = 1;
-            } else if (idle_limit >= MIN_IDLE && idle_time > idle_limit) {
+            } else if (idle_limit >= min_idle && idle_time > idle_limit) {
                 should_idle = 1;
             }
 
@@ -83,10 +83,10 @@ void check_for_idlers_int(dbref player, char *msg)
                     idle_limit = atol(atr_get(e->player, A_IDLETIME));
                     
                     /* Check if this connection should be idle */
-                    if (this_idle > MAX_IDLE ||
-                        (idle_limit > 0 && idle_limit < MIN_IDLE && 
-                         this_idle > MIN_IDLE) ||
-                        (idle_limit >= MIN_IDLE && this_idle > idle_limit)) {
+                    if (this_idle > max_idle ||
+                        (idle_limit > 0 && idle_limit < min_idle && 
+                         this_idle > min_idle) ||
+                        (idle_limit >= min_idle && this_idle > idle_limit)) {
                         num_idle++;
                         
                         /* Track shortest idle time */
@@ -158,7 +158,7 @@ void check_for_connect_unidlers(dbref player)
             if (conn > 1) {
                 log_io(tprintf("%s unidled due to reconnect.", 
                               db[player].cname));
-                com_send_as_hidden(chan_pubio,
+                com_send_as_hidden("pub_io",
                     tprintf("%s unidled due to reconnect.",
                            db[player].cname),
                     player);

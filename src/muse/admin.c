@@ -27,6 +27,7 @@
 #include "admin.h"
 #include "player.h"
 #include "sock.h"
+#include "mariadb_lockout.h"
 
 #define  ANY_OWNER	-2
 
@@ -324,44 +325,6 @@ void do_who_admin(dbref player)
     notify(player, tprintf("Total: %d connections", count));
 }
 
-/**
- * Set or clear maintenance mode
- * @param player Requesting admin
- * @param arg "on" or "off"
- */
-void do_maintenance(dbref player, char *arg)
-{
-    if (!Wizard(player)) {
-        notify(player, "Permission denied.");
-        return;
-    }
-    
-    if (!arg || !*arg) {
-        notify(player, tprintf("Maintenance mode is %s",
-                             nologins ? "ON" : "OFF"));
-        return;
-    }
-    
-    if (!strcasecmp(arg, "on")) {
-        nologins = 1;
-        notify(player, "Maintenance mode enabled - no new logins allowed.");
-        log_important(tprintf("Maintenance mode enabled by %s",
-                            unparse_object_a(player, player)));
-    } else if (!strcasecmp(arg, "off")) {
-        nologins = 0;
-        notify(player, "Maintenance mode disabled - logins allowed.");
-        log_important(tprintf("Maintenance mode disabled by %s",
-                            unparse_object_a(player, player)));
-    } else {
-        notify(player, "Usage: @maintenance on|off");
-    }
-}
-
-
-
-extern int restrict_connect_class;
-extern int user_limit;
-extern int nologins;
 
 /* local function declarations */
 static object_flag_type convert_flags (dbref player, int is_wizard, char *s, object_flag_type *, object_flag_type *);
@@ -490,6 +453,47 @@ void do_search(dbref player, char *arg1, char *arg3)
       if ((restrict_link = match_thing(player, arg3)) == NOTHING)
 	flag = 1;
     }
+    else if (string_prefix("lockout", arg2))
+    {
+      /* @search lockout[=filter] - show lockout entries matching filter */
+      const lockout_entry_t *entry;
+      int found = 0;
+
+      if (!power(player, POW_SECURITY))
+      {
+        notify(player, perm_denied());
+        return;
+      }
+      for (entry = lockout_get_list(); entry; entry = entry->next)
+      {
+        int match = 0;
+        if (!arg3 || !*arg3) {
+          match = 1;
+        } else {
+          if (entry->target && string_match(entry->target, arg3))
+            match = 1;
+          if (entry->reason && string_match(entry->reason, arg3))
+            match = 1;
+          if (entry->type == LOCKOUT_PLAYER && GoodObject(entry->target_dbref))
+          {
+            if (string_match(db[entry->target_dbref].name, arg3))
+              match = 1;
+          }
+        }
+        if (match) {
+          const char *type_str = (entry->type == LOCKOUT_PLAYER) ? "player" :
+                                 (entry->type == LOCKOUT_IP) ? "ip" : "guestip";
+          notify(player, tprintf("  [%s] %s%s%s",
+                                type_str, entry->target,
+                                entry->reason ? " - " : "",
+                                entry->reason ? entry->reason : ""));
+          found++;
+        }
+      }
+      notify(player, tprintf("%d lockout %s found.", found,
+                            found == 1 ? "entry" : "entries"));
+      return;
+    }
     else
       flag = 1;
     break;
@@ -605,33 +609,12 @@ void do_search(dbref player, char *arg1, char *arg3)
     return;
   }
 
-  /* channel search */
+  /* channel search - delegate to shared function in com.c */
   if (restrict_type == TYPE_CHANNEL || restrict_type == NOTYPE)
   {
-    flag = 1;
-    for (thing = 0; thing < db_top; thing++)
-    {
-      if (Typeof(thing) != TYPE_CHANNEL)
-	continue;
-      if (restrict_owner != ANY_OWNER &&
-	  restrict_owner != db[thing].owner)
-	continue;
-      if ((db[thing].flags & flag_mask) != flag_mask)
-	continue;
-      if (restrict_name != NULL)
-      {
-	if (!string_prefix(db[thing].name, restrict_name))
-	  continue;
-      }
-      if (flag)
-      {
-	flag = 0;
-	destitute = 0;
-	notify(player, "");	/* aack! don't use a newline! */
-	notify(player, "CHANNELS:");
-      }
-      notify(player, unparse_object(player, thing));
-    }
+    if (do_channel_search(player, restrict_name,
+            restrict_owner == ANY_OWNER ? NOTHING : restrict_owner) > 0)
+      destitute = 0;
   }
 
   /* universe search */
@@ -2107,7 +2090,7 @@ void do_su(dbref player, char *arg1, char *arg2, dbref cause)
       return;
     }
     log_io(tprintf("|Y!+SU|: %s becomes %s", unparse_object_a(root, player), unparse_object_a(root, thing)));
-    com_send_as_hidden(chan_pubio,tprintf("|Y!+SU|: %s becomes %s", unparse_object_a(root, player), unparse_object_a(root, thing)), player);
+    com_send_as_hidden("pub_io",tprintf("|Y!+SU|: %s becomes %s", unparse_object_a(root, player), unparse_object_a(root, thing)), player);
   }
   else
   {
@@ -2226,105 +2209,266 @@ void do_fixquota(dbref player, char *arg1)
   }
 }
 
-void do_nologins(dbref player, char *arg1)
+/* ============================================================================
+ * @lockout - Unified lockout management command
+ * ============================================================================
+ * Subcommands:
+ *   @lockout player=<name>[:reason]   - Lock out a specific player
+ *   @lockout ip=<cidr>[:reason]       - Ban an IP/CIDR from all connections
+ *   @lockout guestip=<cidr>[:reason]  - Ban an IP/CIDR from guest connections
+ *   @lockout list                     - Show all lockout entries
+ *   @lockout status (or no args)      - Show maintenance_level, guest_enabled,
+ *                                       and lockout counts
+ *
+ * Requires POW_SECURITY.
+ */
+void do_lockout(dbref player, char *arg1, char *arg2)
 {
+  char *target;
+  char *reason;
+  struct in_addr test_net;
+  uint32_t test_mask;
+
   if (!power(player, POW_SECURITY))
   {
-    log_important(tprintf("%s failed to: @nologins %s", unparse_object(player, player),
-			  arg1));
+    log_important(tprintf("%s failed to: @lockout %s",
+                          unparse_object(player, player), arg1));
     notify(player, perm_denied());
     return;
   }
 
-  if (!string_compare(arg1, "on"))
+  /* No args or "status" - show current status */
+  if (!*arg1 || !string_compare(arg1, "status"))
   {
-    if (nologins)
-    {
-      notify(player, "@nologins has already been enabled.");
-      return;
-    }
-    else
-    {
-      nologins = 1;
-      notify(player, "@nologins has been enabled. Only Directors may log in now.");
-    }
-  }
-  else if (!string_compare(arg1, "off"))
-  {
-    if (!nologins)
-    {
-      notify(player, "@nologins has already been disabled.");
-      return;
-    }
-    else
-    {
-      nologins = 0;
-      notify(player, "@nologins has been disabled. Logins will now be processed.");
-    }
-  }
-  else
-  {
-    switch (nologins)
-    {
-    case 0:
-      notify(player, "@nologins has been disabled.");
-      break;
-    case 1:
-      notify(player, "@nologins has been enabled.");
-      break;
-    default:
-      notify(player, "@nologins value messed up. @nologins now disabled.");
-      nologins = 0;
-      break;
-    }
-  }
-  log_important(tprintf("%s executed: @nologins %s",
-			unparse_object(player, player), arg1));
-}
+    int ip_count = 0, player_count = 0, guestip_count = 0;
+    const lockout_entry_t *entry;
 
-void do_lockout(dbref player, char *arg1)
-{
-  if (!power(player, POW_SECURITY))
-  {
-    log_important(tprintf("%s failed to: @lockout %s", unparse_object(player, player),
-			  arg1));
-    notify(player, perm_denied());
-    return;
-  }
-
-  if (*arg1)
-  {
-    if (strcmp(arg1, "none") == 0)
+    for (entry = lockout_get_list(); entry; entry = entry->next)
     {
-      notify(player, "Connection restrictions have been lifted.");
-      restrict_connect_class = 0;
-    }
-    else
-    {
-      int new = name_to_class(arg1);
-
-      if (new == 0)
-	notify(player, "Unknown class!");
-      else
-      {
-	restrict_connect_class = new;
-	notify(player, tprintf("Users below %s are now locked out.",
-			       class_to_name(new)));
+      switch (entry->type) {
+      case LOCKOUT_IP:      ip_count++;      break;
+      case LOCKOUT_PLAYER:  player_count++;  break;
+      case LOCKOUT_GUESTIP: guestip_count++; break;
       }
     }
+
+    notify(player, "--- Lockout Status ---");
+    notify(player, tprintf("  Maintenance level: %d (%s)",
+                          maintenance_level,
+                          maintenance_level == 0 ? "unrestricted"
+                          : class_to_name(maintenance_level)));
+    notify(player, tprintf("  Guest connections: %s",
+                          guest_enabled ? "enabled" : "disabled"));
+    notify(player, tprintf("  IP lockouts: %d", ip_count));
+    notify(player, tprintf("  Player lockouts: %d", player_count));
+    notify(player, tprintf("  Guest-IP lockouts: %d", guestip_count));
+    return;
+  }
+
+  /* "list" - show all entries */
+  if (!string_compare(arg1, "list"))
+  {
+    const lockout_entry_t *entry;
+    int count = 0;
+
+    notify(player, "--- Active Lockouts ---");
+    for (entry = lockout_get_list(); entry; entry = entry->next)
+    {
+      const char *type_str = (entry->type == LOCKOUT_PLAYER) ? "player" :
+                             (entry->type == LOCKOUT_IP) ? "ip" : "guestip";
+      char *by_name = "";
+
+      if (GoodObject(entry->created_by))
+        by_name = db[entry->created_by].name;
+
+      notify(player, tprintf("  [%s] %s%s%s (by %s, %s)",
+                            type_str, entry->target,
+                            entry->reason ? " - " : "",
+                            entry->reason ? entry->reason : "",
+                            by_name,
+                            time_format_1(entry->created_at)));
+      count++;
+    }
+    notify(player, tprintf("--- %d %s ---", count,
+                          count == 1 ? "entry" : "entries"));
+    return;
+  }
+
+  /* arg1 is the type (player/ip/guestip), arg2 is target[:reason] */
+  if (!arg2 || !*arg2)
+  {
+    notify(player, "Usage: @lockout player=<name>[:reason]");
+    notify(player, "       @lockout ip=<cidr>[:reason]");
+    notify(player, "       @lockout guestip=<cidr>[:reason]");
+    notify(player, "       @lockout list | status");
+    return;
+  }
+  target = arg2;
+
+  /* Split target:reason */
+  reason = strchr(target, ':');
+  if (reason)
+  {
+    *reason = '\0';
+    reason++;
+    while (*reason && *reason == ' ') reason++;
+    if (!*reason) reason = NULL;
+  }
+
+  if (!string_compare(arg1, "player"))
+  {
+    dbref victim = lookup_player(target);
+    char dbref_str[32];
+
+    if (victim == NOTHING)
+    {
+      notify(player, "No such player.");
+      return;
+    }
+    snprintf(dbref_str, sizeof(dbref_str), "%ld", victim);
+    if (mariadb_lockout_add(LOCKOUT_PLAYER, dbref_str, reason, player))
+    {
+      notify(player, tprintf("Player %s has been locked out.",
+                            db[victim].name));
+      log_important(tprintf("%s locked out player %s%s%s",
+                           unparse_object(player, player),
+                           unparse_object(player, victim),
+                           reason ? ": " : "",
+                           reason ? reason : ""));
+    }
+    else
+    {
+      notify(player, "Failed to add lockout (already exists?).");
+    }
+  }
+  else if (!string_compare(arg1, "ip"))
+  {
+    if (!parse_cidr(target, &test_net, &test_mask))
+    {
+      notify(player, "Invalid IP address or CIDR notation.");
+      return;
+    }
+    if (mariadb_lockout_add(LOCKOUT_IP, target, reason, player))
+    {
+      notify(player, tprintf("IP %s has been locked out.", target));
+      log_important(tprintf("%s locked out IP %s%s%s",
+                           unparse_object(player, player), target,
+                           reason ? ": " : "",
+                           reason ? reason : ""));
+    }
+    else
+    {
+      notify(player, "Failed to add lockout (already exists?).");
+    }
+  }
+  else if (!string_compare(arg1, "guestip"))
+  {
+    if (!parse_cidr(target, &test_net, &test_mask))
+    {
+      notify(player, "Invalid IP address or CIDR notation.");
+      return;
+    }
+    if (mariadb_lockout_add(LOCKOUT_GUESTIP, target, reason, player))
+    {
+      notify(player, tprintf("Guest-IP %s has been locked out.", target));
+      log_important(tprintf("%s locked out guest-IP %s%s%s",
+                           unparse_object(player, player), target,
+                           reason ? ": " : "",
+                           reason ? reason : ""));
+    }
+    else
+    {
+      notify(player, "Failed to add lockout (already exists?).");
+    }
   }
   else
   {
-    if (restrict_connect_class == 0)
-      notify(player, "No class-lockout is in effect.");
-    else
-      notify(player, tprintf("Currently locking out all users below %s.",
-			     class_to_name(restrict_connect_class)));
-    if (restrict_connect_class != 0)
-      notify(player, "To remove restrictions, type: @lockout none");
+    notify(player, "Unknown lockout type. Use: player, ip, or guestip");
   }
-  log_important(tprintf("%s executed: @lockout %s",
-			unparse_object(player, player), arg1));
+}
+
+/* ============================================================================
+ * @unlockout - Remove a lockout entry
+ * ============================================================================
+ * Subcommands:
+ *   @unlockout player=<name>     - Remove player lockout
+ *   @unlockout ip=<cidr>         - Remove IP lockout
+ *   @unlockout guestip=<cidr>    - Remove guest-IP lockout
+ *
+ * Requires POW_SECURITY.
+ */
+void do_unlockout(dbref player, char *arg1, char *arg2)
+{
+  if (!power(player, POW_SECURITY))
+  {
+    log_important(tprintf("%s failed to: @unlockout %s",
+                          unparse_object(player, player), arg1));
+    notify(player, perm_denied());
+    return;
+  }
+
+  if (!*arg1 || !arg2 || !*arg2)
+  {
+    notify(player, "Usage: @unlockout player=<name>");
+    notify(player, "       @unlockout ip=<cidr>");
+    notify(player, "       @unlockout guestip=<cidr>");
+    return;
+  }
+
+  if (!string_compare(arg1, "player"))
+  {
+    dbref victim = lookup_player(arg2);
+    char dbref_str[32];
+
+    if (victim == NOTHING)
+    {
+      notify(player, "No such player.");
+      return;
+    }
+    snprintf(dbref_str, sizeof(dbref_str), "%ld", victim);
+    if (mariadb_lockout_remove(LOCKOUT_PLAYER, dbref_str))
+    {
+      notify(player, tprintf("Player %s lockout removed.",
+                            db[victim].name));
+      log_important(tprintf("%s removed lockout on player %s",
+                           unparse_object(player, player),
+                           unparse_object(player, victim)));
+    }
+    else
+    {
+      notify(player, "No lockout found for that player.");
+    }
+  }
+  else if (!string_compare(arg1, "ip"))
+  {
+    if (mariadb_lockout_remove(LOCKOUT_IP, arg2))
+    {
+      notify(player, tprintf("IP %s lockout removed.", arg2));
+      log_important(tprintf("%s removed lockout on IP %s",
+                           unparse_object(player, player), arg2));
+    }
+    else
+    {
+      notify(player, "No lockout found for that IP.");
+    }
+  }
+  else if (!string_compare(arg1, "guestip"))
+  {
+    if (mariadb_lockout_remove(LOCKOUT_GUESTIP, arg2))
+    {
+      notify(player, tprintf("Guest-IP %s lockout removed.", arg2));
+      log_important(tprintf("%s removed lockout on guest-IP %s",
+                           unparse_object(player, player), arg2));
+    }
+    else
+    {
+      notify(player, "No lockout found for that guest-IP.");
+    }
+  }
+  else
+  {
+    notify(player, "Unknown lockout type. Use: player, ip, or guestip");
+  }
 }
 
 void do_plusmotd(dbref player, char *arg1, char *arg2)

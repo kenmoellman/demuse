@@ -2412,7 +2412,7 @@ static void dbunmark(void)
         strncat(newbuf, exitlist, sizeof(newbuf) - strlen(newbuf) - 1);
     }
 
-    com_send(chan_dbinfo, newbuf);
+    com_send("dbinfo", newbuf);
 }
 
 /* =============================================================================
@@ -2592,7 +2592,7 @@ static void calc_memstats(void)
         strncat(newbuf, tempbuf, sizeof(newbuf) - strlen(newbuf) - 1);
     }
 
-    com_send(chan_dbinfo, newbuf);
+    com_send("dbinfo", newbuf);
 }
 
 /* =============================================================================
