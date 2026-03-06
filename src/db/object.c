@@ -482,7 +482,7 @@ void do_dig(dbref player, char *name, char *argv[])
 
     /* Create optional exit back */
     if (argv[2] && *argv[2]) {
-        snprintf(nbuff, sizeof(nbuff), "%ld", db[player].location);
+        snprintf(nbuff, sizeof(nbuff), "%" DBREF_FMT, db[player].location);
         do_open(player, argv[2], nbuff, room);
     }
 }

@@ -34,6 +34,7 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('wd_pid_file', 'logs/wd_pid', 'STR'),
 ('create_msg', '', 'STR'),
 ('motd_msg', '-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\\nPlease edit motd_msg via @config.\\n-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-', 'STR'),
+('motd_msg_player', '1', 'REF'),
 ('welcome_msg', '\\n                        Welcome to deMUSE\\n\\n     To connect to an existing character, type: connect <name> <password>\\n     To create a new character, type: create <name> <password>\\n\\n     Use \"help\" for more information after connecting.', 'STR'),
 ('guest_msg', 'You have connected as a guest, please be courteous.\\nReport any abuse you receive, in detail, to an administrator.\\n\\nSee \"help register\" for details on getting a character.\\nType \"who\" to see who''s online.\\nAnd try using \"help commands\" to find your way around.\\nHave a nice day.  Page an unidle guide or director for assistance.', 'STR'),
 ('register_msg', 'Try: connect Guest, or email an administrator', 'STR'),

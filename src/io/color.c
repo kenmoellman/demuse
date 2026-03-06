@@ -248,85 +248,95 @@ char *strip_beep(char *str)
  */
 char *colorize(const char *str, int strip, int pueblo)
 {
-    char buf[65535];
-    char *s, *colorend, *colorstr;
-    size_t pos = 0;
+    char out[65535];
+    const char *s;
+    size_t opos = 0;
 
-    if (!str || pos >= sizeof(buf) - 1) {
+    if (!str) {
         return stralloc("");
     }
 
-    strncpy(buf, str, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
-
-    for (s = buf; *s && pos < sizeof(buf) - 1; s++) {
+    for (s = str; *s && opos < sizeof(out) - 1; s++) {
         if (*s != '|') {
+            out[opos++] = *s;
             continue;
         }
 
         /* Look for color markup: |codes+text| */
-        colorstr = strpbrk(s + 1, "+|");
-        if (!colorstr || *colorstr == '|') {
+        const char *plus = NULL;
+        const char *scan;
+        for (scan = s + 1; *scan && *scan != '|'; scan++) {
+            if (*scan == '+' && !plus)
+                plus = scan;
+        }
+
+        if (!plus || !*scan) {
+            /* Not a valid color code — output the | literally */
+            out[opos++] = *s;
             continue;
         }
+
+        /* s points to opening |, plus points to +, scan points to closing | */
+        const char *text_start = plus + 1;
+        const char *text_end = scan;
 
         /* Handle curly braces: |codes+{text with | bars}| */
-        if (*(colorstr + 1) == '{') {
-            char *end_curl = strchr(colorstr + 2, '}');
+        if (*text_start == '{') {
+            const char *end_curl = strchr(text_start + 1, '}');
             if (end_curl && *(end_curl + 1) == '|') {
-                colorend = end_curl + 1;
-            } else {
-                colorend = strchr(colorstr + 1, '|');
+                text_start++;          /* skip { */
+                text_end = end_curl;   /* points to } */
+                scan = end_curl + 1;   /* points to closing | */
             }
-        } else {
-            colorend = strchr(colorstr + 1, '|');
         }
-
-        if (!colorend || !*colorend) {
-            continue;
-        }
-
-        /* Split the markup into pieces */
-        char buf2[65535];
-        *s++ = '\0';
-        *colorstr++ = '\0';
-        *colorend++ = '\0';
-
-        /* Copy everything before the color code */
-        strncpy(buf2, buf, sizeof(buf2) - 1);
-        buf2[sizeof(buf2) - 1] = '\0';
 
         if (!strip) {
+            /* Emit ANSI/Pueblo escape for the color codes between | and + */
+            size_t code_len = (size_t)(plus - s - 1);
+            char codebuf[64];
+            if (code_len >= sizeof(codebuf))
+                code_len = sizeof(codebuf) - 1;
+            memcpy(codebuf, s + 1, code_len);
+            codebuf[code_len] = '\0';
+
             char *markup;
             if (!pueblo) {
-                markup = color_escape(s);
+                markup = color_escape(codebuf);
             } else {
-                markup = color_pueblo(s);
+                markup = color_pueblo(codebuf);
             }
-            strncat(buf2, markup, sizeof(buf2) - strlen(buf2) - 1);
-            SMART_FREE(markup);
+            if (markup) {
+                size_t mlen = strlen(markup);
+                if (opos + mlen < sizeof(out) - 1) {
+                    memcpy(out + opos, markup, mlen);
+                    opos += mlen;
+                }
+                SMART_FREE(markup);
+            }
 
-            strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
+            /* Emit the text */
+            for (const char *t = text_start; t < text_end && opos < sizeof(out) - 1; t++)
+                out[opos++] = *t;
 
-            if (!pueblo) {
-                strncat(buf2, normal_ansi, sizeof(buf2) - strlen(buf2) - 1);
-            } else {
-                strncat(buf2, normal_pueblo, sizeof(buf2) - strlen(buf2) - 1);
+            /* Emit reset */
+            const char *reset = pueblo ? normal_pueblo : normal_ansi;
+            size_t rlen = strlen(reset);
+            if (opos + rlen < sizeof(out) - 1) {
+                memcpy(out + opos, reset, rlen);
+                opos += rlen;
             }
         } else {
-            /* Just append the text without color codes */
-            strncat(buf2, colorstr, sizeof(buf2) - strlen(buf2) - 1);
+            /* Strip mode — just emit the text */
+            for (const char *t = text_start; t < text_end && opos < sizeof(out) - 1; t++)
+                out[opos++] = *t;
         }
 
-        strncat(buf2, colorend, sizeof(buf2) - strlen(buf2) - 1);
-        strncpy(buf, buf2, sizeof(buf) - 1);
-        buf[sizeof(buf) - 1] = '\0';
-        
-        /* Adjust pointer position */
-        s = buf + strlen(buf2) - strlen(colorend) - 1;
+        /* Advance s to the closing |; the for loop s++ will move past it */
+        s = scan;
     }
 
-    return stralloc(buf);
+    out[opos] = '\0';
+    return stralloc(out);
 }
 
 /**

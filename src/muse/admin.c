@@ -22,12 +22,12 @@
 #include "interface.h"
 #include "externs.h"
 #include "match.h"
-#include "motd.h"
 #include "credits.h"
 #include "admin.h"
 #include "player.h"
 #include "sock.h"
 #include "mariadb_lockout.h"
+#include "mariadb.h"
 
 #define  ANY_OWNER	-2
 
@@ -2325,7 +2325,7 @@ void do_lockout(dbref player, char *arg1, char *arg2)
       notify(player, "No such player.");
       return;
     }
-    snprintf(dbref_str, sizeof(dbref_str), "%ld", victim);
+    snprintf(dbref_str, sizeof(dbref_str), "%" DBREF_FMT, victim);
     if (mariadb_lockout_add(LOCKOUT_PLAYER, dbref_str, reason, player))
     {
       notify(player, tprintf("Player %s has been locked out.",
@@ -2425,7 +2425,7 @@ void do_unlockout(dbref player, char *arg1, char *arg2)
       notify(player, "No such player.");
       return;
     }
-    snprintf(dbref_str, sizeof(dbref_str), "%ld", victim);
+    snprintf(dbref_str, sizeof(dbref_str), "%" DBREF_FMT, victim);
     if (mariadb_lockout_remove(LOCKOUT_PLAYER, dbref_str))
     {
       notify(player, tprintf("Player %s lockout removed.",
@@ -2474,6 +2474,7 @@ void do_unlockout(dbref player, char *arg1, char *arg2)
 void do_plusmotd(dbref player, char *arg1, char *arg2)
 {
   char *message;
+  char numbuf[32];
 
   if (!power(player, POW_MOTD))
   {
@@ -2483,29 +2484,32 @@ void do_plusmotd(dbref player, char *arg1, char *arg2)
 
   message = reconstruct_message(arg1, arg2);
 
-  snprintf(motd_who, sizeof(motd_who), "#%" DBREF_FMT, player);
-
   if (*message)
   {
     if (*message == '~')
     {
-      snprintf(motd_who, sizeof(motd_who), "#-1");
-      strncpy(motd, message + 1, sizeof(motd) - 1);
-      motd[sizeof(motd) - 1] = '\0';
+      motd_msg_player = -1;
+      SET(motd_msg, message + 1);
       notify(player, "MOTD Set Anonymously.");
     }
     else
     {
-      strncpy(motd, message, sizeof(motd) - 1);
-      motd[sizeof(motd) - 1] = '\0';
+      motd_msg_player = player;
+      SET(motd_msg, message);
       notify(player, "MOTD Set.");
     }
   }
   else
   {
-    motd[0] = '\0';
+    motd_msg_player = -1;
+    SET(motd_msg, "");
     notify(player, "MOTD Cleared.");
   }
+
+  /* Persist to MariaDB */
+  mariadb_config_save("motd_msg", motd_msg ? motd_msg : "", "STR");
+  snprintf(numbuf, sizeof(numbuf), "%" DBREF_FMT, motd_msg_player);
+  mariadb_config_save("motd_msg_player", numbuf, "REF");
 }
 
 

@@ -315,8 +315,6 @@ extern int sig_caught;
 extern time_t muse_up_time;
 extern time_t muse_reboot_time;
 extern time_t now;
-extern char motd[2048];
-extern char motd_who[11];
 extern char ccom[1024];
 extern dbref cplr;
 void init_io_globals (void);

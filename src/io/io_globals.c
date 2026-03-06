@@ -22,10 +22,6 @@ time_t muse_up_time;
 time_t muse_reboot_time;
 time_t now;
 
-/* WHO display globals */
-char motd[2048];
-char motd_who[11];
-
 /* Command buffer for logging */
 char ccom[1024];
 dbref cplr;
@@ -41,6 +37,4 @@ void init_io_globals(void)
   sig_caught = 0;
   cplr = NOTHING;
   ccom[0] = '\0';
-  motd[0] = '\0';
-  motd_who[0] = '\0';
 }

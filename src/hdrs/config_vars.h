@@ -113,6 +113,7 @@ extern int smtp_use_ssl;
 extern long player_start;
 extern long guest_start;
 extern long default_room;
+extern long motd_msg_player;
 extern long root;
 #ifdef USE_COMBAT
 extern long graveyard;

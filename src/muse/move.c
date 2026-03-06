@@ -240,7 +240,7 @@ void moveit(dbref what, dbref where)
   /* Save last location */
   if (GoodObject(old))
   {
-    snprintf(lastloc_buf, sizeof(lastloc_buf), "%ld", old);
+    snprintf(lastloc_buf, sizeof(lastloc_buf), "%" DBREF_FMT, old);
     lastloc_buf[sizeof(lastloc_buf)-1] = '\0';
     atr_add(what, A_LASTLOC, lastloc_buf);
   }
