@@ -1256,7 +1256,7 @@ void do_teleport(dbref player, char *arg1, char *arg2)
 
       univ_src = db[get_zone_first(victim)].universe;
       univ_dest = db[get_zone_first(db[victim].link)].universe;
-      if (
+      if (GoodObject(univ_src) && GoodObject(univ_dest) &&
 	   (!db[univ_src].ua_int[UA_TELEPORT] || !db[univ_dest].ua_int[UA_TELEPORT])
 	   && !power(player, POW_TELEPORT))
       {
@@ -1284,7 +1284,7 @@ void do_teleport(dbref player, char *arg1, char *arg2)
     {
       univ_src = db[get_zone_first(victim)].universe;
       univ_dest = db[get_zone_first(db[victim].link)].universe;
-      if (
+      if (GoodObject(univ_src) && GoodObject(univ_dest) &&
            (!db[univ_src].ua_int[UA_TELEPORT] || !db[univ_dest].ua_int[UA_TELEPORT])
            && !power(player, POW_TELEPORT))
       {
@@ -1301,7 +1301,7 @@ void do_teleport(dbref player, char *arg1, char *arg2)
   default:
     univ_src = db[get_zone_first(victim)].universe;
     univ_dest = db[get_zone_first(destination)].universe;
-    if (
+    if (GoodObject(univ_src) && GoodObject(univ_dest) &&
     (!db[univ_src].ua_int[UA_TELEPORT] || !db[univ_dest].ua_int[UA_TELEPORT])
 	 && !power(player, POW_TELEPORT))
     {
@@ -1519,7 +1519,8 @@ void calc_stats(dbref owner, long *total, long obj[NUM_OBJ_TYPES], long pla[NUM_
       if (!(db[thing].flags & GOING))
       {
 	++obj[Typeof(thing)];
-	if (Typeof(thing) == TYPE_PLAYER)
+	if (Typeof(thing) == TYPE_PLAYER && db[thing].pows != NULL
+	    && *db[thing].pows >= 0 && *db[thing].pows < NUM_CLASSES)
 	  ++pla[*db[thing].pows];
 	++*total;
       }
