@@ -259,22 +259,12 @@ static void display_help_entry(dbref player, const char *topic,
  */
 void do_motd(dbref player)
 {
-    struct descriptor_data *d;
-    
-    /* Find player's descriptor */
-    for (d = descriptor_list; d; d = d->next) {
-        if (d->player == player) {
-            break;
-        }
-    }
-    
-    if (!d) {
-        notify(player, "Unable to display MOTD.");
+    if (!motd_msg || !*motd_msg) {
+        notify(player, "No MOTD set.");
         return;
     }
-    
-    /* Display the MOTD file */
-    send_message_text(d, motd_msg, 0);
+
+    notify(player, motd_msg);
 }
 
 /* ===================================================================

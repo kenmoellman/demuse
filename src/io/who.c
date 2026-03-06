@@ -786,9 +786,9 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
     notify(w, buf);
 
     /* Show MOTD if present */
-    if (strlen(motd) > 0)
+    if (motd_msg && *motd_msg)
     {
-      messenger = atol(motd_who + 1);
+      messenger = motd_msg_player;
 
       /* Check blacklist for MOTD visibility */
       if (GoodObject(messenger) && GoodObject(w))
@@ -807,7 +807,7 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
             char *newstring;
 
             notify(w, "|C+--||C!+<| |W+Message of The Day| |C!+>||C+-------------------------------------------|");
-            notify(w, motd);
+            notify(w, motd_msg);
 
             if (messenger < 0)
               from = tprintf("|W!+Anonymous|");
@@ -816,13 +816,20 @@ void dump_users(dbref w, char *arg1, char *arg2, struct descriptor_data *k)
             else
               from = tprintf("|W!+Unknown|");
 
-            newstring = tprintf("|C+---------------------------------------------%s||C!+<| %s |C!+>||C+--|",
-                              truncate_color(longline, (16 - strlen(strip_color_nobeep(from)))),
+            newstring = tprintf("|C+%s||C!+<| %s |C!+>||C+--|",
+                              truncate_color(longline, 61 - (int)strlen(strip_color_nobeep(from))),
                               from);
 
             notify(w, newstring);
           }
         }
+      }
+      else if (messenger < 0)
+      {
+        /* Anonymous MOTD - no blacklist check needed */
+        notify(w, "|C+--||C!+<| |W+Message of The Day| |C!+>||C+-------------------------------------------|");
+        notify(w, motd_msg);
+        notify(w, "|C+----------------------------------------------||C!+<| |W!+Anonymous| |C!+>||C+--|");
       }
     }
   }

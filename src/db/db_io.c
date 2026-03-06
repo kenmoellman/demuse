@@ -56,7 +56,6 @@
  */
 
 #include "credits.h"
-#include "motd.h"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -166,7 +165,7 @@ static ATTR *builtin_atr(int num);
 static void getboolexp(dbref i, FILE *f);
 static int get_list(FILE *f, dbref obj, int vers);
 static int convert_sub(char *p, int outer);
-static void get_num(char **s, int *i);
+static void get_num(char **s, long *i);
 static void grab_dbref(char *p);
 
 /* ============================================================================
@@ -863,10 +862,6 @@ void load_more_db(void)
         run_startups();
         welcome_descriptors();
         log_important(tprintf("|G+%s %s|", muse_name, online_message));
-        strncpy(motd, "Muse back online.", sizeof(motd) - 1);
-        motd[sizeof(motd) - 1] = '\0';
-        strncpy(motd_who, "#1", sizeof(motd_who) - 1);
-        motd_who[sizeof(motd_who) - 1] = '\0';
         return;
     }
     
@@ -2021,13 +2016,13 @@ static void db_free(void)
  * Advances the string pointer past the number.
  * SECURITY: Validates digits
  */
-static void get_num(char **s, int *i)
+static void get_num(char **s, long *i)
 {
     *i = 0;
-    
+
     if (!s || !*s)
         return;
-    
+
     while (**s && isdigit(**s)) {
         *i = (*i * 10) + **s - '0';
         (*s)++;
@@ -2043,8 +2038,9 @@ static void get_num(char **s, int *i)
  */
 static void grab_dbref(char *p)
 {
-    int num, n;
-    dbref thing;
+    dbref num, obj;
+    int n;
+    long atr_idx;
     ATRDEF *atr;
     ATTR *attr;
     char *start = p;
@@ -2059,23 +2055,22 @@ static void grab_dbref(char *p)
     case '.':
         /* Object.attribute reference */
         b++;
-        n = snprintf(p, max_len, "#%d.", num);
+        n = snprintf(p, max_len, "#%" DBREF_FMT ".", num);
         if (n < 0 || n >= max_len) {
             *p = '\0';
             return;
         }
         p += n;
-        thing = (dbref)num;
-        
-        if (!GoodObject(thing)) {
+        obj = num;
+        if (!GoodObject(obj)) {
             *p = '\0';
             return;
         }
-        
-        get_num(&b, &num);
-        
+
+        get_num(&b, &atr_idx);
+
         /* Find the attribute */
-        for (atr = db[thing].atrdefs, n = 0; n < num && atr; 
+        for (atr = db[obj].atrdefs, n = 0; n < atr_idx && atr;
              atr = atr->next, n++)
             ;
         
@@ -2117,7 +2112,7 @@ static void grab_dbref(char *p)
         
     default:
         /* Simple dbref */
-        snprintf(p, max_len, "#%d", num);
+        snprintf(p, max_len, "#%" DBREF_FMT, num);
         break;
     }
 }

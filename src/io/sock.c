@@ -309,6 +309,9 @@ struct descriptor_data *initializesock(int s, struct sockaddr_in *a,
     }
   }
   
+  if (state == WAITCONNECT)
+    welcome_user(d);
+
   if (d->descriptor >= maxd)
     maxd = d->descriptor + 1;
   return d;

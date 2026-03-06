@@ -111,6 +111,7 @@ int smtp_use_ssl = 0;
 long player_start = 0;
 long guest_start = 0;
 long default_room = 0;
+long motd_msg_player = 0;
 long root = 0;
 #ifdef USE_COMBAT
 long graveyard = 0;
