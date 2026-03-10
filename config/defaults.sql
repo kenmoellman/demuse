@@ -140,6 +140,13 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
 
 -- ============================================================================
+-- HELP TOPICS AND NEWS - See config/help_seed.sql
+-- ============================================================================
+-- Default help topics and a welcome news article are in a separate file
+-- due to size. Load it after this file:
+--   mysql -u demuse -p demuse < config/help_seed.sql
+
+-- ============================================================================
 -- DEFAULT SYSTEM CHANNELS
 -- ============================================================================
 -- These are seeded once. Existing channels are not overwritten (INSERT IGNORE).

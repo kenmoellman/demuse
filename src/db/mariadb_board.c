@@ -84,40 +84,53 @@ int mariadb_board_init(void)
 /*
  * mariadb_board_post - Insert a new board post
  */
-int mariadb_board_post(dbref author, dbref board_room, const char *message,
-                       int flags)
+int mariadb_board_post(dbref author, dbref board_room, const char *subject,
+                       const char *message, int flags)
 {
     MYSQL *conn = (MYSQL *)mariadb_get_connection();
-    char *escaped_msg;
-    char query[4096];
-    size_t msg_len;
+    char *escaped_msg, *escaped_sub;
+    char *query;
+    size_t msg_len, sub_len, query_len;
+    const char *safe_subject = (subject && *subject) ? subject : "";
 
     if (!conn || !message) {
         return 0;
     }
 
     msg_len = strlen(message);
+    sub_len = strlen(safe_subject);
+
     SAFE_MALLOC(escaped_msg, char, msg_len * 2 + 1);
-    if (!escaped_msg) {
-        return 0;
-    }
+    if (!escaped_msg) return 0;
+
+    SAFE_MALLOC(escaped_sub, char, sub_len * 2 + 1);
+    if (!escaped_sub) { SMART_FREE(escaped_msg); return 0; }
 
     mysql_real_escape_string(conn, escaped_msg, message,
                              (unsigned long)msg_len);
+    mysql_real_escape_string(conn, escaped_sub, safe_subject,
+                             (unsigned long)sub_len);
 
-    snprintf(query, sizeof(query),
-             "INSERT INTO board (author, board_room, posted_date, flags, message) "
-             "VALUES (%" DBREF_FMT ", %" DBREF_FMT ", %ld, %d, '%s')",
-             author, board_room, (long)now, flags, escaped_msg);
+    query_len = msg_len * 2 + sub_len * 2 + 256;
+    SAFE_MALLOC(query, char, query_len);
+    if (!query) { SMART_FREE(escaped_sub); SMART_FREE(escaped_msg); return 0; }
 
+    snprintf(query, query_len,
+             "INSERT INTO board (author, board_room, posted_date, flags, subject, message) "
+             "VALUES (%" DBREF_FMT ", %" DBREF_FMT ", %ld, %d, '%s', '%s')",
+             author, board_room, (long)now, flags, escaped_sub, escaped_msg);
+
+    SMART_FREE(escaped_sub);
     SMART_FREE(escaped_msg);
 
     if (mysql_query(conn, query)) {
         log_error(tprintf("MariaDB board: Post failed: %s",
                           mysql_error(conn)));
+        SMART_FREE(query);
         return 0;
     }
 
+    SMART_FREE(query);
     return 1;
 }
 
@@ -142,13 +155,15 @@ int mariadb_board_get_by_position(dbref board_room, long postnum,
 
     if (include_deleted) {
         snprintf(query, sizeof(query),
-                 "SELECT post_id, author, board_room, posted_date, flags, message "
+                 "SELECT post_id, author, board_room, posted_date, flags, "
+                 "message, subject "
                  "FROM board WHERE board_room = %" DBREF_FMT " "
                  "ORDER BY post_id LIMIT 1 OFFSET %ld",
                  board_room, postnum - 1);
     } else {
         snprintf(query, sizeof(query),
-                 "SELECT post_id, author, board_room, posted_date, flags, message "
+                 "SELECT post_id, author, board_room, posted_date, flags, "
+                 "message, subject "
                  "FROM board WHERE board_room = %" DBREF_FMT " "
                  "AND NOT (flags & 1) "
                  "ORDER BY post_id LIMIT 1 OFFSET %ld",
@@ -183,11 +198,21 @@ int mariadb_board_get_by_position(dbref board_room, long postnum,
         size_t len = strlen(row[5]) + 1;
         SAFE_MALLOC(out->message, char, len);
         if (out->message) {
-            strncpy(out->message, row[5], len);
-            out->message[len - 1] = '\0';
+            memcpy(out->message, row[5], len);
         }
     } else {
         out->message = NULL;
+    }
+
+    /* Allocate subject copy - caller must SMART_FREE */
+    if (row[6] && row[6][0]) {
+        size_t len = strlen(row[6]) + 1;
+        SAFE_MALLOC(out->subject, char, len);
+        if (out->subject) {
+            memcpy(out->subject, row[6], len);
+        }
+    } else {
+        out->subject = NULL;
     }
 
     mysql_free_result(result);
@@ -357,13 +382,15 @@ long mariadb_board_list(dbref board_room, int include_deleted,
 
     if (include_deleted) {
         snprintf(query, sizeof(query),
-                 "SELECT post_id, author, board_room, posted_date, flags, message "
+                 "SELECT post_id, author, board_room, posted_date, flags, "
+                 "message, subject "
                  "FROM board WHERE board_room = %" DBREF_FMT " "
                  "ORDER BY post_id",
                  board_room);
     } else {
         snprintf(query, sizeof(query),
-                 "SELECT post_id, author, board_room, posted_date, flags, message "
+                 "SELECT post_id, author, board_room, posted_date, flags, "
+                 "message, subject "
                  "FROM board WHERE board_room = %" DBREF_FMT " "
                  "AND NOT (flags & 1) "
                  "ORDER BY post_id",
@@ -389,6 +416,7 @@ long mariadb_board_list(dbref board_room, int include_deleted,
         mr.sent_date = strtol(row[3], NULL, 10);
         mr.flags = (int)strtol(row[4], NULL, 10);
         mr.message = row[5];  /* Temporary - valid until mysql_free_result */
+        mr.subject = (row[6] && row[6][0]) ? row[6] : NULL;  /* Temporary */
 
         callback(&mr, pos, userdata);
         pos++;

@@ -1,0 +1,2202 @@
+-- help_seed.sql - Default help topics and news for deMUSE
+--
+-- Auto-generated from current database state.
+-- Uses INSERT IGNORE so existing customized topics are preserved.
+-- Safe to run multiple times.
+
+USE demuse;
+
+-- ============================================================================
+-- DEFAULT HELP TOPICS
+-- ============================================================================
+
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES (';pose', '', 'SEMIPOSE COMMAND
+
+Syntax:  ;pose <action>
+         ;<action>
+
+Like pose, but without a space between your name and the action.
+Useful for possessives and punctuation.
+
+Shortcut: ; (semicolon)
+
+Examples:
+    ;''s sword glows brightly.
+    ;, standing in the corner, watches silently.
+
+Output:
+    Bobby Newmark''s sword glows brightly.
+    Bobby Newmark, standing in the corner, watches silently.
+
+See also: pose, say, @emit');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES (':', '', 'POSE COMMAND
+
+Syntax:  pose <action>
+         :<action>
+
+Describes an action. Your name is prepended to the action.
+
+Shortcut: : (colon)
+
+Examples:
+    pose waves hello.
+    :waves hello.
+
+Output:
+    Bobby Newmark waves hello.
+
+See also: ;pose, say, @emit');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('"', '', 'SAY COMMAND
+
+Syntax:  say <message>
+         "<message>
+
+Says something out loud in your current location. Everyone in the room
+will see your message.
+
+Shortcut: " (quote character)
+
+Examples:
+    say Hello everyone!
+    "Hello everyone!
+
+Output:
+    Bobby Newmark says, "Hello everyone!"
+
+See also: pose, whisper, page, think');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@commands', '', 'ADMINISTRATOR AND BUILDING COMMANDS
+
+Object Creation:
+    @create           - Create a new thing
+    @dig              - Create a new room
+    @open             - Create an exit
+    @clone            - Duplicate an object
+    @destroy          - Mark an object for recycling
+    @poof             - Immediately recycle/destroy an object
+    @undestroy        - Recover a destroyed object
+
+Object Editing:
+    @describe         - Set object description
+    @name             - Rename an object
+    @set              - Set attributes or flags
+    @defattr          - Define a new attribute type
+    @undefattr        - Remove attribute definition
+    @decompile        - Show commands to recreate an object
+    @edit             - Edit attribute with search/replace
+
+Linking and Ownership:
+    @link             - Link exit to destination or set home
+    @unlink           - Remove exit link
+    @unlock           - Remove all locks
+    @chown            - Change object ownership
+
+Communication/Emit:
+    @announce         - Global announcement to all players
+    @broadcast        - Broadcast message
+    @cemit            - Channel emit
+    @chemit           - Channel emit with header
+    @echo             - Echo message to location
+    @emit             - Emit message to room
+    @necho            - Named echo
+    @nemit            - Named emit
+    @npage            - Named page
+    @npemit           - Named pemit
+    @oemit            - Emit to all but one player
+    @pemit            - Emit to specific player(s)
+    @remit            - Room emit (all contents)
+    @wemit            - Wall emit (wizard broadcast)
+    @zemit            - Zone emit
+
+Database Management:
+    @check            - Check object integrity
+    @dbck             - Database consistency check
+    @dbtop            - Show database top
+    @dump             - Save database to disk
+    @find             - Find objects by name
+    @search           - Search database by criteria
+    @showhash         - Show hash table statistics
+    @stats            - Database statistics
+
+Player Management:
+    @lockout          - Lock player account (prevent login)
+    @nologins         - Prevent all new logins
+    @nuke             - Remove player completely (DESTRUCTIVE)
+    @password         - Change a player''s password
+    @pcreate          - Create new player character
+    @robot            - Create a robot/puppet
+
+Permission/Power Commands:
+    @boot             - Disconnect a player
+    @cboot            - Disconnect player from channel
+    @empower          - Grant powers to player/object
+    @nopow_class      - Set class without granting powers
+    @Poor             - Set poor status (reduced quota)
+    @powers           - List available powers
+    @setbit           - Set permission bits
+    @upfront          - Set upfront cost requirement
+
+Administrative:
+    @as               - Execute command as another object
+    @at               - Execute command at a location
+    @config           - View/modify server configuration
+    @exec             - Execute code/expression
+    @force            - Force object to execute command
+    @giveto           - Give money/quota to player
+    @halt             - Halt queued commands
+    @pbreak           - Break from @foreach loop
+    @ps               - Show command queue (process status)
+    @purge            - Purge deleted objects from database
+    @reload           - Reload server (hot restart)
+    @shutdown         - Shutdown server gracefully
+    @spawn            - Spawn code execution in queue
+    @su               - Switch user context
+    @sweep            - Clean up disconnected objects
+    @teleport         - Teleport object to location
+    @whereis          - Locate an object in database
+    @wipeout          - Wipe all attributes from object
+
+Zone/Universe:
+    @guniverse        - Global universe command
+    @gzone            - Global zone command
+    @uconfig          - Configure universe settings
+    @ucreate          - Create new universe
+    @uinfo            - Display universe information
+    @ulink            - Link object to universe
+    @unulink          - Unlink object from universe
+    @unzlink          - Unlink object from zone
+    @zlink            - Link object to zone
+
+Hierarchy:
+    @addparent        - Add parent to object
+    @delparent        - Remove parent from object
+
+Control Flow:
+    @cycle            - Rotate values in attribute list
+    @foreach          - Iterate over list with command
+    @switch           - Switch/case conditional execution
+    @trigger          - Trigger attribute execution
+    @tr_as            - Trigger attribute as another object
+    @wait             - Delay command execution
+
+Utility:
+    @hide             - Hide from WHO list
+    @unhide           - Unhide from WHO list
+    @listarea         - List area contents
+    @misc             - Miscellaneous utility command
+    @noop             - No operation (does nothing)
+    @nset             - Negative set operation
+    @outgoing         - View outgoing connections
+    @swap             - Swap locations of two objects
+    @text             - Display text file');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@create', '', 'CREATE COMMAND
+
+Syntax:  @create <name>[=<cost>]
+
+Creates a new thing object that you can pick up and manipulate.
+
+Permissions: Builder flag or build powers required
+
+Arguments:
+    <name>            - Name of the object to create
+    <cost>            - Optional penny cost (default: 10)
+
+Examples:
+    @create Ball
+    @create Magic Sword=50
+
+The object is created in your inventory.
+
+See also: @destroy, @clone, @dig, @open, help building');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@desc', '', 'DESCRIBE COMMAND
+
+Syntax:  @describe <object>=<description>
+         @desc <object>=<description>
+
+Sets the description that players see when they look at an object.
+
+Permissions: Must control the object
+
+Arguments:
+    <object>          - Object to describe (me, here, object name, #dbref)
+    <description>     - Text description (can use functions)
+
+Examples:
+    @desc me=A mysterious figure shrouded in shadows.
+    @describe here=A cozy library filled with ancient books.
+    @desc sign=The sign says: [get(me/MESSAGE)]
+
+Shortcut: @desc
+
+See also: @set, @name, help attributes, help programming');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@describe', '', 'DESCRIBE COMMAND
+
+Syntax:  @describe <object>=<description>
+         @desc <object>=<description>
+
+Sets the description that players see when they look at an object.
+
+Permissions: Must control the object
+
+Arguments:
+    <object>          - Object to describe (me, here, object name, #dbref)
+    <description>     - Text description (can use functions)
+
+Examples:
+    @desc me=A mysterious figure shrouded in shadows.
+    @describe here=A cozy library filled with ancient books.
+    @desc sign=The sign says: [get(me/MESSAGE)]
+
+Shortcut: @desc
+
+See also: @set, @name, help attributes, help programming');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@destroy', '', 'DESTROY COMMAND
+
+Syntax:  @destroy <object>
+
+Marks an object for destruction (moved to recycle bin). Objects marked
+with GOING flag can be recovered with @undestroy until @dbck purges them.
+
+Permissions: Must control the object
+
+Examples:
+    @destroy box
+    @destroy #123
+
+See also: @poof, @undestroy, @dbck, @create');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@dig', '', 'DIG COMMAND
+
+Syntax:  @dig <room name>[=<parent room>]
+
+Creates a new room. You are not automatically moved to the new room.
+
+Permissions: Builder flag or build powers required
+
+Arguments:
+    <room name>       - Name of the new room
+    <parent room>     - Optional parent room for inheritance
+
+Examples:
+    @dig Library
+    @dig Secret Cave=#100
+
+After creating a room, use @open to create exits to/from it.
+
+See also: @open, @link, @destroy, @create, help building');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@dump', '', 'DUMP COMMAND
+
+Syntax:  @dump
+
+Saves the database to disk immediately.
+
+Permissions: Wizard powers required
+
+The database is normally saved automatically at intervals.
+
+See also: @dbck, @shutdown');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@emit', '', 'EMIT COMMAND
+
+Syntax:  @emit <message>
+
+Emits a message to your current location without attribution.
+
+Permissions: Builder or emit powers
+
+Examples:
+    @emit The lights flicker ominously.
+    @emit A cold wind blows through the room.
+
+See also: @pemit, @remit, @zemit, pose');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@foreach', '', 'FOREACH COMMAND
+
+Syntax:  @foreach <list>=<command>
+
+Executes a command for each element in a space-separated list.
+Use ## as placeholder for current element.
+
+Examples:
+    @foreach [lwho()]=@pemit ##=Server restarting!
+    @foreach one two three=@emit Processing: ##
+
+See also: @switch, @pbreak, help control');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@link', '', 'LINK COMMAND
+
+Syntax:  @link <exit>=<destination>
+         @link <object>=<home>
+
+Links an exit to a destination room, or sets an object''s home.
+
+Permissions: Must control both exit and destination
+
+For exits:
+    @link north=#123      - Link exit ''north'' to room #123
+
+For things/players:
+    @link sword=home      - Link sword''s home to your location
+    @link me=#100         - Set your home to room #100
+
+See also: @open, @unlink, help building, help locks');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@name', '', 'NAME COMMAND
+
+Syntax:  @name <object>=<newname>
+
+Renames an object.
+
+Permissions: Must control the object
+
+Examples:
+    @name me=Bobby Newmark
+    @name sword=Excalibur
+    @name here=The Grand Hall
+
+See also: @describe, @set, examine');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@open', '', 'OPEN COMMAND
+
+Syntax:  @open <exit name>[=<destination>]
+
+Creates an exit in the current room.
+
+Permissions: Must control the room or have building rights
+
+Arguments:
+    <exit name>       - Name of the exit (can use aliases with ;)
+    <destination>     - Room dbref or name where exit leads
+
+Examples:
+    @open North;n=#123
+    @open Door;d=Library
+
+Use aliases (separated by ;) to create shortcuts.
+If no destination specified, use @link to set it later.
+
+See also: @link, @dig, @unlink, help building');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@pemit', '', 'PEMIT COMMAND
+
+Syntax:  @pemit <player>=<message>
+
+Emits a message directly to a player.
+
+Permissions: Builder or pemit powers
+
+Examples:
+    @pemit Bob=You feel a strange sensation.
+    @pemit #123=The room grows dark.
+
+See also: @emit, @remit, page');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@reboot', '', 'RELOAD COMMAND
+
+Syntax:  @reload
+
+Performs a hot restart of the server, reconnecting all players.
+
+Permissions: Wizard powers required
+
+Database is saved before reloading.
+
+Alias: @reboot (deprecated)
+
+See also: @shutdown, @dump');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@reload', '', 'RELOAD COMMAND
+
+Syntax:  @reload
+
+Performs a hot restart of the server, reconnecting all players.
+
+Permissions: Wizard powers required
+
+Database is saved before reloading.
+
+Alias: @reboot (deprecated)
+
+See also: @shutdown, @dump');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@set', '', 'SET COMMAND
+
+Syntax:  @set <object>=<attribute>:<value>
+         @set <object>=<flag>
+         @set <object>=!<flag>
+
+Sets an attribute value or toggles a flag on an object.
+
+Permissions: Must control the object
+
+Setting attributes:
+    @set <object>=<attr>:<value>    - Set attribute
+    @set <object>=!<attr>            - Clear attribute
+
+Setting flags:
+    @set <object>=<flag>             - Set flag
+    @set <object>=!<flag>            - Clear flag
+
+Examples:
+    @set me=GREETING:Hello!
+    @set here=DARK
+    @set box=!DARK
+    @set sword=DAMAGE:10
+
+See also: @describe, examine, help attributes, help flags');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@shutdown', '', 'SHUTDOWN COMMAND
+
+Syntax:  @shutdown
+
+Gracefully shuts down the server after saving the database.
+
+Permissions: Wizard powers required
+
+Use @reload for a hot restart instead.
+
+See also: @reload, @dump');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@switch', '', 'SWITCH COMMAND
+
+Syntax:  @switch <expression>=<case1>,<action1>,<case2>,<action2>,...
+
+Conditional execution based on pattern matching.
+
+Use * for default case.
+
+Examples:
+    @switch [get(me/STATUS)]=active,smile,inactive,frown
+    @switch %0=north,@tel %#=#100,south,@tel %#=#101,*,@pemit %#=Invalid
+
+See also: @foreach, help control, help programming');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@tel', '', 'TELEPORT COMMAND
+
+Syntax:  @teleport <object>=<destination>
+         @tel <object>=<destination>
+
+Teleports an object (or yourself) to a destination.
+
+Permissions: Must control object, or have teleport powers
+
+Arguments:
+    <object>          - Object to teleport (use ''me'' for yourself)
+    <destination>     - Room dbref or name, or ''home''
+
+Examples:
+    @tel me=#123
+    @teleport sword=here
+    @tel *Bob=Lobby
+
+Shortcut: @tel
+
+See also: goto, @whereis, home');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@teleport', '', 'TELEPORT COMMAND
+
+Syntax:  @teleport <object>=<destination>
+         @tel <object>=<destination>
+
+Teleports an object (or yourself) to a destination.
+
+Permissions: Must control object, or have teleport powers
+
+Arguments:
+    <object>          - Object to teleport (use ''me'' for yourself)
+    <destination>     - Room dbref or name, or ''home''
+
+Examples:
+    @tel me=#123
+    @teleport sword=here
+    @tel *Bob=Lobby
+
+Shortcut: @tel
+
+See also: goto, @whereis, home');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('@trigger', '', 'TRIGGER COMMAND
+
+Syntax:  @trigger <object>/<attribute>[=<arguments>]
+
+Manually triggers an attribute''s code to execute.
+
+Permissions: Must control the object
+
+Arguments are passed as %0-%9 to the attribute code.
+
+Examples:
+    @trigger me/GREET
+    @trigger sign/ROTATE
+    @trigger calculator/ADD=5 10
+
+See also: @tr_as, @wait, @foreach, help triggers');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('#', '', 'THINK COMMAND
+
+Syntax:  think <thought>
+         #<thought>
+
+Private thought to yourself. Only you see it.
+
+Shortcut: # (hash)
+
+Examples:
+    think What should I do next?
+    #This is interesting...
+
+See also: say, pose, @exec');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+away', '', '+AWAY - Set away message
+
+Syntax:
+    +away <message>    - Set your away message
+    +away ?            - Display your current away message
+    +away              - Clear your away message
+
+When you have an away message set, players who page you will see it.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+board', '', '+BOARD - Public bulletin board
+
+Syntax:
+    +board                              - List all posts
+    +board list                         - List all posts
+    +board read=<#>                     - Read post number
+    +board write=<subject>@@<message>   - Post with subject
+    +board write=<message>              - Post (no subject)
+    +board delete=<#>                   - Delete a post (admin only)
+
+The @@ delimiter separates the subject from the message body.
+If no @@ is used, the subject defaults to "(no subject)".
+
+Examples:
+    +board write=LFB@@Looking for builders to help with the new area!
+    +board write=Quick announcement about the event.
+    +board read=2
+
+Only real players (not guests) can use +board.
+Players banned from the board cannot post.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', '', '+CHANNEL - Global communication channel system
+
+Syntax:
+    +channel                         - List your channels (or speak on default)
+    +channel list[=filter]           - List available channels
+    +channel join=<name>[:<alias>]   - Join a channel
+    +channel leave=<name>            - Leave a channel
+    +channel default=<name>          - Set your default channel
+    +channel who[=name]              - Show who is on a channel
+    +channel create=<name>           - Create a new channel
+    +channel destroy=<name>          - Destroy a channel you own
+
+Additional help topics:
+    help +channel join      help +channel leave
+    help +channel list      help +channel who
+    help +channel create    help +channel destroy
+    help +channel alias     help +channel color
+    help +channel admin
+
+See also: +com, help +com');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'admin', '+CHANNEL ADMIN COMMANDS
+
+Channel owners and operators can use these commands:
+
+    +channel owner=<name>:<player>     - Transfer ownership
+    +channel op=<name>:<player>        - Grant operator status
+    +channel op=<name>:!<player>       - Remove operator status
+    +channel lock=<name>:<lockexpr>    - Set join lock
+    +channel password=<name>:<pass>    - Set channel password
+    +channel boot=<name>:<player>      - Boot player
+    +channel ban=<name>:<player>       - Ban player
+    +channel unban=<name>:<player>     - Unban player
+    +channel mute=<name>               - Mute (personal)
+    +channel unmute=<name>             - Unmute (personal)
+
+See also: +channel create, +channel destroy');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'alias', '+CHANNEL ALIAS
+
+Syntax:  +channel alias=<name>:<newalias>
+
+Set a personal alias for a channel. You can then use the alias with
++com instead of the full channel name.
+
+Example:
+    +channel alias=chat:c
+    +com c=Hello!
+
+See also: +channel join, +com');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'color', '+CHANNEL COLOR
+
+Syntax:  +channel color=<name>:<colorname>
+
+Set a personal colored display name for yourself on a channel.
+Color codes use the standard MUSE color format.
+
+See also: +channel alias');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'create', '+CHANNEL CREATE
+
+Syntax:  +channel create=<name>[:<alias>]
+
+Create a new channel. Costs channel_cost credits. You become the owner
+of the channel and can manage its settings.
+
+See also: +channel destroy, +channel admin');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'destroy', '+CHANNEL DESTROY
+
+Syntax:  +channel destroy=<name>
+
+Destroy a channel you own. System channels cannot be destroyed.
+Administrators can destroy any channel.
+
+See also: +channel create');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'join', '+CHANNEL JOIN
+
+Syntax:  +channel join=<name>[:<alias>]
+
+Join a channel. You can optionally set a personal alias at the same time.
+If the channel has a password, you may need to provide it.
+
+Examples:
+    +channel join=chat
+    +channel join=chat:c         (join with alias "c")
+
+See also: +channel leave, +channel alias');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'leave', '+CHANNEL LEAVE
+
+Syntax:  +channel leave=<name>
+
+Leave a channel you have joined. You will no longer receive messages
+from this channel.
+
+See also: +channel join');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'list', '+CHANNEL LIST
+
+Syntax:  +channel list[=filter]
+
+List available channels. Without a filter, shows all channels you can see.
+
+See also: +channel who, +channel search');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', 'who', '+CHANNEL WHO
+
+Syntax:  +channel who[=name]
+
+Show who is currently on a channel. Without a name, shows members of
+your default channel.
+
+See also: +channel list');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+com', '', '+COM - Talk on a channel
+
+Syntax:
+    +com <channel>=<message>     - Say something on a channel
+    +com <alias>=<message>       - Use channel alias
+    =<message>                   - Talk on default channel (shortcut)
+
+Pose tokens:
+    +com <channel>=:poses           - Pose (Player poses)
+    +com <channel>=;appended        - Semi-pose (Playerappended)
+    +com <channel>=''possessive     - Possessive (Player''s possessive)
+
+Examples:
+    +com chat=Hello everyone!
+    +com c=:waves.
+    +com c=;''s cat is cute.
+
+Set your default channel with: +channel default=<name>
+
+See also: +channel');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+commands', '', '+COMMANDS - Social and channel commands
+
+These commands use the + prefix and provide social features:
+
+Communication:
+    +channel       - Channel system (join, leave, list, create)
+    +com           - Talk on a channel
+    +mail          - Private player-to-player mail
+    +board         - Public bulletin board
+    +news          - News and announcements
+    +paste         - Multi-line text input (@paste)
+
+Information:
+    +motd          - Message of the Day
+    +version       - Server version
+    +uptime        - Server uptime
+    +loginstats    - Login statistics
+    +laston        - Last login time
+
+Personal Settings:
+    +away          - Set away message
+    +idle          - Set idle message
+    +haven         - Toggle haven mode (no pages)
+
+Type "help <command>" for details on each command.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+haven', '', '+HAVEN - Set haven mode
+
+Syntax:  +haven
+
+Toggles haven mode. When haven is set, you cannot be paged.
+
+See also: @set');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+idle', '', '+IDLE - Set idle message
+
+Syntax:
+    +idle <message>    - Set your idle message
+    +idle ?            - Display your current idle message
+    +idle              - Clear your idle message
+
+When you have an idle message set, players who page you while you
+are idle will see it.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+laston', '', '+LASTON - Last login information
+
+Syntax:  +laston [player]
+
+Shows when a player last logged in. Without an argument, shows your
+own last login time.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+loginstats', '', '+LOGINSTATS - Login statistics
+
+Syntax:  +loginstats
+
+Displays login statistics including:
+    - Total all-time logins
+    - Connection records (daily, weekly, simultaneous)
+    - Weekly breakdown by day
+    - Current login count');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+mail', '', '+MAIL - Private player-to-player messaging
+
+Syntax:
+    +mail                              - List your messages
+    +mail list                         - List your messages
+    +mail read=<#>                     - Read message number
+    +mail *<player>=<subject>@@<message> - Send mail with subject
+    +mail *<player>=<message>           - Send mail (no subject)
+    +mail check                        - Show unread count
+    +mail delete=<#>                   - Mark message for deletion
+    +mail undelete=<#>                 - Restore deleted message
+    +mail purge                        - Permanently delete all marked messages
+
+The @@ delimiter separates the subject from the message body.
+If no @@ is used, the subject defaults to "(no subject)".
+
+Examples:
+    +mail *Bobby=Hello@@Hey, how are you?
+    +mail *Bobby=Just a quick message
+    +mail read=3
+    +mail delete=5
+    +mail purge
+
+Only real players (not guests) can use +mail.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+motd', '', '+MOTD - Message of the Day
+
+Syntax:  +motd
+
+Displays the current Message of the Day. The MOTD is also shown
+in the WHO list.
+
+Administrators can set the MOTD with: @config motd_msg=<message>');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+news', '', '+NEWS - News and announcements
+
+Syntax:
+    +news                              - List unread articles
+    +news list                         - List unread articles
+    +news list=all                     - List all articles
+    +news read=<#>                     - Read an article
+    +news post=<topic>@@<body>         - Post an article (admin)
+    +news remove=<#>                   - Remove an article (admin)
+
+The @@ delimiter separates the topic from the article body.
+
+When you connect, you will be notified if there are unread news articles.
+Reading an article marks it as read for you.
+
+Only Wizards and players with the ANNOUNCE power can post or remove articles.
+
+Examples:
+    +news post=Server Update@@The server has been updated to version 2.26.
+    +news read=1
+    +news remove=3
+
+See also: help, +motd');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+paste', '', '+PASTE / @PASTE - Multi-line text input
+
+Syntax:
+    @paste                        - Paste to current room
+    @paste <target>               - Paste to object
+    @paste <target>/<attribute>   - Paste to attribute
+    @paste channel <channel>      - Paste to channel
+    @paste mail <player>          - Paste as mail
+
+End input by typing . (period) on a line by itself.
+Cancel with @pasteabort.
+
+@pastecode preserves formatting and leading spaces.
+
++paste and +pastecode are aliases for @paste and @pastecode.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+uptime', '', '+UPTIME - Server uptime information
+
+Syntax:  +uptime
+
+Displays the server boot time, last reload time, current time,
+and total uptime.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+version', '', '+VERSION - Server version information
+
+Syntax:  +version
+
+Displays the deMUSE server version number and database format version.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('attributes', '', 'ATTRIBUTE SYSTEM
+
+Attributes are named properties that store data and code on objects. They
+enable dynamic behavior and store object state.
+
+STANDARD SYSTEM ATTRIBUTES:
+
+Names and Descriptions:
+    NAME              - Object name (always present)
+    DESC              - Primary description
+    ODESC             - Description seen by others
+    IDESC             - Inside description
+
+Success Messages:
+    SUCC              - Success message to player
+    OSUCC             - Success message to others
+    ASUCC             - Action on success
+
+Failure Messages:
+    FAIL              - Failure message to player
+    OFAIL             - Failure message to others
+    AFAIL             - Action on failure
+
+Drop Messages:
+    DROP              - Drop message to player
+    ODROP             - Drop message to others
+    ADROP             - Action on drop
+
+Connection Events:
+    ACONNECT          - Action when player connects
+    ADISCONNECT       - Action when player disconnects
+
+Other Actions:
+    ADESC             - Action when examined/looked at
+    AUSE              - Action when used
+    AHEAR             - Action when hears speech
+    AMHEAR            - Action when hears matched speech
+    LISTEN            - Pattern to match for AMHEAR
+
+CUSTOM ATTRIBUTES:
+
+Defining:
+    @defattr <name>=<type>                - Define new attribute type
+    @undefattr <name>                     - Remove attribute definition
+
+Setting:
+    @set <object>=<attr>:<value>          - Set attribute value
+    @set <object>=!<attr>                 - Clear attribute value
+    @<attr> <object>=<value>              - Shorthand (if attribute defined)
+
+Viewing:
+    examine <object>                      - Show all attributes
+    @decompile <object>                   - Show as recreate commands
+    get(<object>/<attr>)                  - Retrieve value in code
+
+EXECUTABLE ATTRIBUTES:
+
+Attributes can contain code with functions and substitutions. Code executes
+when the attribute is triggered (manually or by events).
+
+Substitutions:
+    %#                - Triggering player (enactor)
+    %!                - Object owning the attribute
+    %0-%9             - Passed arguments
+    %N                - Enactor name
+    %L                - Enactor location
+    ##                - Current list element (in @foreach)
+
+Example:
+    @set greeter=ACONNECT:@emit %N has arrived in [name(loc(%#))]!
+
+See also: help programming, help functions, help triggers, help building');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('building', '', 'BUILDING IN deMUSE
+
+deMUSE allows authorized builders to create and modify objects in the world.
+Building requires appropriate permissions (Builder flag or build powers).
+
+BASIC BUILDING WORKFLOW:
+
+1. Creating Spaces:
+    @dig <room name>                      - Create a new room
+    @open <exit name>=<destination>       - Create an exit from current room
+    @link <exit>=<room>                   - Link exit to destination
+
+2. Creating Objects:
+    @create <thing name>                  - Create a portable thing
+    @clone <object>                       - Duplicate existing object
+
+3. Describing Objects:
+    @describe <object>=<description>      - Set main description
+    @name <object>=<new name>             - Rename object
+    @set <object>=<attribute>:<value>     - Set custom attributes
+
+4. Testing:
+    examine <object>                      - View all object details
+    @decompile <object>                   - Show creation commands
+
+ADVANCED BUILDING:
+
+Ownership and Control:
+    @chown <object>=<player>              - Transfer ownership
+    @link <thing>=<home>                  - Set home location
+
+Parent/Child Relationships:
+    @addparent <object>=<parent>          - Inherit from parent
+    @delparent <object>=<parent>          - Remove parent link
+
+Flags:
+    @set <object>=<flag>                  - Set object flag
+    @set <object>=!<flag>                 - Clear object flag
+
+Common flags: DARK, STICKY, LINK_OK, JUMP_OK, ABODE, HAVEN, PUPPET
+
+See also: help attributes, help locks, help zones, help @commands');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('commands', '', 'BASIC PLAYER COMMANDS
+
+Information Commands:
+    examine           - Examine an object in detail
+    help              - Display help information
+    inventory (i)     - List items you''re carrying
+    look (l)          - Look at your surroundings
+    score             - Display your score/stats
+    who               - List who is online
+    @info             - System information
+
+Communication Commands:
+    say "             - Say something (also: "message)
+    pose :            - Pose an action (also: :action)
+    ;pose             - Semipose (no space after name)
+    page              - Send a private message
+    think #           - Think to yourself (also: #thought)
+    to                - Talk to someone
+    whisper           - Whisper privately
+    gripe             - Send feedback to administrators
+    pray              - Message to wizards/gods
+    rlpage            - Real-life page (urgent)
+
+Movement Commands:
+    enter             - Enter an object/vehicle
+    goto              - Go to a location or player
+    join              - Join another player
+    leave             - Leave an object/vehicle
+    move              - Move in a direction
+    summon            - Summon another player
+
+Object Manipulation:
+    drop              - Drop an object
+    get               - Pick up an object
+    give              - Give an object to someone
+    read              - Read text on an object
+    remove            - Remove an item
+    take              - Take an object (alias for get)
+    use               - Use/activate an object
+
+Combat/Equipment (if enabled):
+    equip             - Equip an item
+    fight             - Enter combat
+    flee              - Flee from combat
+    money             - Check your money
+    slay              - Attack a target
+    throw             - Throw an object
+    unwield           - Unwield a weapon
+    wear              - Wear armor/clothing
+    wield             - Wield a weapon
+
+Type ''help @commands'' for building/admin commands.
+Type ''help +commands'' for social/channel commands.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('control', '', 'CONTROL FLOW COMMANDS
+
+Commands for conditional execution, iteration, and program flow control.
+
+@SWITCH <expression>=<pattern1>,<action1>,<pattern2>,<action2>,...
+
+    Evaluates expression and executes action for first matching pattern.
+    Use * as catch-all default case.
+
+    Examples:
+        @switch [get(me/STATUS)]=active,smile,inactive,frown,*,shrug
+        @switch %0=north,@tel %#=#123,south,@tel %#=#124
+
+@FOREACH <list>=<command>
+
+    Executes command for each element in space-separated list.
+    Use ## as placeholder for current element.
+
+    Examples:
+        @foreach [lwho()]=@pemit ##=Server restarting in 5 minutes!
+        @foreach [lcon(here)]=@tel ##=home
+
+@CYCLE <object>/<attr1> <attr2> <attr3> ...
+
+    Rotates values through a list of attributes. Value from attr1 moves
+    to attr2, attr2 to attr3, etc., and last wraps to first.
+
+    Example:
+        @set sign=MSG1:North
+        @set sign=MSG2:East
+        @set sign=MSG3:South
+        @set sign=MSG4:West
+        @cycle sign/MSG1 MSG2 MSG3 MSG4
+
+@WAIT <seconds>=<command>
+
+    Delays execution of command. Queues command to execute after delay.
+    Maximum delay depends on server configuration.
+
+    Examples:
+        @wait 5=@emit Time''s up!
+        @wait 10=@tel %#=home
+
+@AS <object>=<command>
+
+    Executes command as if <object> typed it. Uses object''s permissions
+    and identity.
+
+    Permissions: Must control <object>
+
+    Example:
+        @as *Bob=say Hello everyone!
+
+@AT <location>=<command>
+
+    Executes command as if run from <location>. Useful for remote actions.
+
+    Example:
+        @at #123=@emit [name(%#)] performs a remote action.
+
+@PBREAK
+
+    Breaks out of current @foreach loop. Useful for conditional termination.
+
+    Example:
+        @foreach [lcon(here)]=@switch [name(##)]=Target,@pbreak
+
+@EXEC <code>
+
+    Directly executes code/expression and displays result. Useful for
+    testing functions and debugging.
+
+    Example:
+        @exec add(5,3)
+        @exec get(me/COUNT)
+
+See also: help programming, help triggers, help functions');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('drop', '', 'DROP COMMAND
+
+Syntax:  drop <object>
+
+Drops an object from your inventory into your current location.
+
+Examples:
+    drop sword
+    drop all          - Drops everything (if enabled)
+
+See also: get, give, inventory');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('examine', '', 'EXAMINE COMMAND
+
+Syntax:  examine <object>
+
+Shows detailed information about an object including attributes, flags,
+owner, location, and other properties. More detailed than ''look''.
+
+Permissions: Must control object or have examine powers
+
+Examples:
+    examine me        - Examine yourself
+    examine here      - Examine current room
+    examine #123      - Examine object by dbref
+
+See also: look, @decompile, @stats');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('flags', '', 'OBJECT FLAGS
+
+Flags modify object behavior and permissions. Set with @set command.
+
+GENERAL FLAGS:
+    DARK              - Hides object from certain lists/WHO
+    STICKY            - Things return home when dropped
+                        Rooms drop everything when empty
+    LINK_OK           - Anyone can link to this room/object
+    JUMP_OK           - Anyone can teleport here
+    TRANSPARENT       - Can see contents from outside
+    OPAQUE            - Cannot see inside (opposite of transparent)
+
+ROOM FLAGS:
+    ABODE             - Players can set home here
+    HAVEN             - Prevents killing/combat
+    TEMPLE            - Objects dropped go to home, not LOST_AND_FOUND
+    FLOATING          - Room disconnected from grid (not destroyed)
+
+PLAYER FLAGS:
+    HAVEN             - Ignores pages (do not disturb)
+    UNFINDABLE        - Cannot be found with @whereis
+    CONNECTED         - Player is connected (read-only, set by system)
+
+THING FLAGS:
+    PUPPET            - Thing relays messages to owner
+    DESTROY_OK        - Anyone can destroy this object
+    CHOWN_OK          - Owner can give away object
+    ENTER_OK          - Can be entered like a vehicle
+
+PERMISSION FLAGS:
+    WIZARD            - Has wizard/god powers
+    ROYALTY           - Has elevated permissions
+    BUILDER           - Can build and create objects
+
+SECURITY FLAGS:
+    GOING             - Marked for destruction (recycle bin)
+    SAFE              - Cannot be destroyed or modified easily
+
+USAGE:
+    @set <object>=<flag>          - Set a flag
+    @set <object>=!<flag>         - Clear a flag
+    examine <object>              - View flags
+
+Examples:
+    @set here=HAVEN               - Make room a safe haven
+    @set box=DARK                 - Hide box from inventory lists
+    @set me=HAVEN                 - Block pages
+    @set puppet=PUPPET            - Make thing a puppet
+    @set here=!HAVEN              - Remove haven flag
+
+See also: help @set, help building, help locks');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-attribute', '', 'ATTRIBUTE FUNCTIONS
+
+Attribute Queries:
+    has(obj,attr)     - Returns 1 if object has attribute with value
+    has_a(obj,attr)   - Returns 1 if attribute is defined on object
+    get(obj/attr)     - Retrieve attribute value
+    lattr(obj)        - List all attributes on object
+    lattrdef(obj)     - List defined attribute names
+    attropts(attr)    - Get attribute options/flags
+
+Attribute Access with Substitution:
+    v(attr)           - Get value of attribute on current object
+    s(obj/attr)       - Substitute and evaluate attribute
+    s_with(obj/attr,...) - Substitute with arguments
+    s_as(executor,obj/attr,args) - Substitute as executor
+    s_as_with(...)    - Combined s_as with arguments
+
+Time Information:
+    mtime(obj/attr)   - Modification time of attribute (seconds)
+    mstime(obj/attr)  - Modification time (milliseconds)
+    modtime(obj)      - Object modification time
+
+Examples:
+    [get(me/DESCRIPTION)]          Returns: attribute value
+    [has(me,EMAIL)]                Returns: 1 if EMAIL has value
+    [has_a(me,CUSTOMATTR)]         Returns: 1 if defined
+    [lattr(me)]                    Returns: space-separated list
+    [v(COUNT)]                     Returns: me/COUNT value
+    [s(greeter/WELCOME)]           Returns: evaluated welcome message
+
+Advanced Example:
+    @set calculator=ADD:add(%0,%1)
+    [s_with(calculator/ADD,5,3)]   Returns: 8');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-comparison', '', 'COMPARISON FUNCTIONS
+
+Numeric Comparison:
+    comp(a,b)         - Compare numbers
+                        Returns: -1 (a<b), 0 (a==b), 1 (a>b)
+    fcomp(a,b)        - Floating point comparison
+
+String Comparison:
+    scomp(a,b)        - Compare strings (case-sensitive)
+                        Returns: -1, 0, or 1
+
+Pattern Matching:
+    match(str,pattern) - Wildcard pattern match
+                         * matches any sequence
+                         ? matches single character
+    rmatch(str,pattern) - Reverse match (pattern against string)
+    wmatch(str,pattern) - Word-boundary wildcard match
+
+Examples:
+    [comp(5,10)]                   Returns: -1 (5 < 10)
+    [comp(10,10)]                  Returns: 0 (equal)
+    [comp(15,10)]                  Returns: 1 (15 > 10)
+
+    [scomp(apple,banana)]          Returns: -1 (a < b)
+    [scomp(zebra,apple)]           Returns: 1 (z > a)
+
+    [match(Hello World,H*)]        Returns: 1 (matches)
+    [match(Hello World,*World)]    Returns: 1 (matches)
+    [match(Hello,Goodbye)]         Returns: 0 (no match)
+
+    [wmatch(The quick fox,*quick*)] Returns: 1
+    [wmatch(Hello,He?lo)]          Returns: 1 (? matches one char)');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-connection', '', 'PLAYER CONNECTION FUNCTIONS
+
+Connected Players:
+    lwho()            - List all connected players
+                        Returns space-separated dbref list
+    zwho(zone)        - List players connected in zone
+
+Connection Information:
+    idle(player)      - Seconds player has been idle
+    onfor(player)     - Seconds player has been connected
+    host(player)      - Connection hostname/IP
+    port(player)      - Connection port number
+
+Examples:
+    [lwho()]                       Returns: #123 #124 #125
+    [zwho(#500)]                   Returns: #123 #126
+
+    [idle(*Bob)]                   Returns: 45 (seconds)
+    [onfor(*Bob)]                  Returns: 3600 (1 hour)
+    [host(*Bob)]                   Returns: player.example.com
+    [port(*Bob)]                   Returns: 4201
+
+Common Usage:
+    Broadcast to all:
+        @foreach [lwho()]=@pemit ##=Server restarting!
+
+    Find idle players:
+        @foreach [lwho()]=
+            @switch [comp([idle(##)],300)]=1,
+            @pemit ##=You''ve been idle 5+ minutes
+
+    Connection time:
+        @pemit %#=You''ve been connected [div([onfor(%#)],60)] minutes.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-database', '', 'DATABASE QUERY FUNCTIONS
+
+Search Functions:
+    objlist(player)   - List objects owned by player
+    entrances(obj)    - List objects linking to obj
+
+Memory and Usage:
+    objmem(obj)       - Memory used by object (bytes)
+    playmem(player)   - Total memory used by player''s objects
+
+Economy and Quota:
+    credits(player)   - Player''s money/credits
+    quota(player)     - Player''s quota limit
+    quota_left(player) - Remaining quota
+
+Examples:
+    [objlist(me)]                  Returns: #123 #124 #125
+    [entrances(here)]              Returns: #456 #457
+    [objmem(me)]                   Returns: 1024
+    [playmem(*Bob)]                Returns: 50000
+    [credits(me)]                  Returns: 100
+    [quota(me)]                    Returns: 1000
+    [quota_left(me)]               Returns: 750
+
+Notes:
+- objlist returns space-separated dbref list
+- Memory values are in bytes
+- Quota is the building/object creation limit');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-list', '', 'LIST FUNCTIONS
+
+List functions work with space-separated lists (or custom delimiters).
+
+Basic List Operations:
+    first(list)       - First element in list
+    rest(list)        - All elements except first
+    extract(list,n,sep) - Extract nth element (1-indexed)
+                          Default separator is space
+    wcount(list)      - Count elements in list
+    flip(list)        - Reverse list order
+
+List Modification:
+    remove(list,item,sep) - Remove item from list
+
+Iteration:
+    foreach(list,attr) - Evaluate attribute for each list element
+                         Use ## for current element
+
+List Generation:
+    lnum(n)           - Generate list 0 to n-1
+
+Examples:
+    [first(apple banana cherry)]           Returns: apple
+    [rest(apple banana cherry)]            Returns: banana cherry
+    [extract(a b c d,3)]                   Returns: c
+    [wcount(one two three)]                Returns: 3
+    [flip(1 2 3 4)]                        Returns: 4 3 2 1
+    [remove(a b c d,b)]                    Returns: a c d
+    [lnum(5)]                              Returns: 0 1 2 3 4
+
+Using with @foreach:
+    @foreach [lnum(10)]=@emit Count: ##');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-logic', '', 'LOGICAL FUNCTIONS
+
+Boolean Operations:
+    land(a,b)         - Logical AND (both true)
+    lor(a,b)          - Logical OR (either true)
+    lxor(a,b)         - Logical XOR (exactly one true)
+    lnot(x)           - Logical NOT (invert)
+    truth(x)          - Convert to truth value (0 or 1)
+
+Bitwise Operations:
+    band(a,b)         - Bitwise AND
+    bor(a,b)          - Bitwise OR
+    bxor(a,b)         - Bitwise XOR
+    bnot(n)           - Bitwise NOT (one''s complement)
+
+Conditional Execution:
+    if(cond,action)   - Execute action if condition true
+    ifelse(cond,true_action,false_action) - If-then-else
+    switch(expr,case1,act1,case2,act2,...) - Multi-way branch
+
+Truth Values:
+    0, empty string = false
+    Non-zero, non-empty = true
+
+Examples:
+    [land(1,1)]                    Returns: 1
+    [land(1,0)]                    Returns: 0
+    [lor(1,0)]                     Returns: 1
+    [lnot(0)]                      Returns: 1
+    [truth(5)]                     Returns: 1
+    [truth(0)]                     Returns: 0
+
+    [if(1,Success!)]               Returns: Success!
+    [ifelse([get(me/READY)],Go!,Wait)]
+                                   Returns: Go! or Wait
+
+    [switch([get(me/COLOR)],red,Stop,yellow,Caution,green,Go)]
+
+Bitwise example:
+    [band(12,10)]                  Returns: 8 (1100 & 1010 = 1000)');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-math', '', 'MATHEMATICAL FUNCTIONS
+
+Integer Math:
+    abs(n)            - Absolute value of n
+    add(a,b)          - a + b
+    sub(a,b)          - a - b
+    mul(a,b)          - a * b
+    div(a,b)          - Integer division a / b
+    mod(a,b)          - Modulus (remainder) a % b
+    pow(a,b)          - Power a^b
+    sqrt(n)           - Integer square root
+    sgn(n)            - Sign: -1 (negative), 0 (zero), 1 (positive)
+
+Floating Point Math:
+    fabs(n)           - Floating point absolute value
+    fadd(a,b)         - Floating point addition
+    fsub(a,b)         - Floating point subtraction
+    fmul(a,b)         - Floating point multiplication
+    fdiv(a,b)         - Floating point division
+    fsqrt(n)          - Floating point square root
+    fsgn(n)           - Floating point sign
+
+Random:
+    rand(max)         - Random integer from 0 to max-1
+
+Base Conversion:
+    base(num,from,to) - Convert number from base ''from'' to base ''to''
+                        Supports bases 2-36
+
+Examples:
+    [add(5,3)]                 Returns: 8
+    [mul(4,7)]                 Returns: 28
+    [div(10,3)]                Returns: 3
+    [mod(10,3)]                Returns: 1
+    [sqrt(16)]                 Returns: 4
+    [rand(100)]                Returns: 0-99
+    [base(255,10,16)]          Returns: ff');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-misc', '', 'MISCELLANEOUS FUNCTIONS
+
+Object Formatting:
+    tmf(obj)          - Formatted object name with attributes
+    tmfl(obj)         - Formatted name with location
+    tml(obj)          - Name with location (simple)
+    tms(obj)          - Short formatted name
+
+Universe:
+    universe(obj)     - Get object''s universe
+    uinfo(univ,type)  - Query universe information
+
+Channel:
+    cname(channel)    - Get channel name
+
+Class:
+    class(player)     - Get player''s class
+
+Parentage:
+    is_a(child,parent) - Check if child inherits from parent
+
+Examples:
+    [tmf(me)]                      Returns: Formatted name
+    [tmfl(#123)]                   Returns: Name (Location)
+    [universe(me)]                 Returns: #1000 (if in universe)
+    [cname(#600)]                  Returns: Public
+    [class(*Bob)]                  Returns: Warrior
+    [is_a(me,#100)]                Returns: 1 (if parent)');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-object', '', 'OBJECT QUERY FUNCTIONS
+
+Object Properties:
+    name(obj)         - Object name
+    num(obj)          - Object dbref number
+    loc(obj)          - Object''s current location
+    owner(obj)        - Object''s owner
+    type(obj)         - Object type (Room/Thing/Exit/Player)
+    flags(obj)        - Object flags as string
+
+Structure:
+    link(obj)         - Object''s link/destination
+    linkup(obj)       - Objects linked to this object
+    con(obj)          - First object in contents
+    exit(obj)         - First exit
+    next(obj)         - Next object in location/exit list
+
+Hierarchy:
+    parents(obj)      - List of parent objects
+    children(obj)     - List of child objects
+
+Permissions:
+    controls(who,what,power) - Check if who controls what with power
+
+Examples:
+    [name(me)]                Returns: YourName
+    [num(me)]                 Returns: 123 (your dbref)
+    [loc(me)]                 Returns: #456 (your location)
+    [owner(here)]             Returns: #789 (room owner)
+    [type(me)]                Returns: PLAYER
+    [controls(me,here,POW_MODIFY)] Returns: 0 or 1');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-string', '', 'STRING FUNCTIONS
+
+String Information:
+    strlen(str)       - Length of string
+
+Extraction:
+    mid(str,pos,len)  - Extract substring at position for length
+                        Positions start at 0
+    first(list)       - First word/element in space-separated list
+    rest(list)        - All but first element in list
+
+Searching:
+    pos(str,sub)      - Find position of substring in string
+                        Returns -1 if not found
+
+Modification:
+    strcat(a,b)       - Concatenate two strings
+    delete(str,pos,len) - Delete characters from string
+    remove(list,item,sep) - Remove item from delimited list
+
+Formatting:
+    ljust(str,width)  - Left justify string to width
+    rjust(str,width)  - Right justify string to width
+    string(n,char)    - Repeat character n times
+    spc(n)            - n spaces
+
+Color Codes:
+    cstrip(str)       - Strip ANSI color codes
+    ctrunc(str,len)   - Truncate to length preserving color codes
+
+List Processing:
+    extract(list,n,sep) - Extract nth element from delimited list
+                          Default separator is space
+    wcount(str)       - Count words in string
+    flip(list)        - Reverse order of list elements
+
+Examples:
+    [strlen(Hello)]              Returns: 5
+    [mid(Hello World,0,5)]       Returns: Hello
+    [pos(Hello World,World)]     Returns: 6
+    [strcat(Hello, World)]       Returns: Hello World
+    [first(one two three)]       Returns: one
+    [rest(one two three)]        Returns: two three
+    [extract(a|b|c,2,|)]         Returns: b
+    [ljust(Hi,10)]               Returns: "Hi        "
+    [string(5,*)]                Returns: *****');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-time', '', 'TIME AND DATE FUNCTIONS
+
+Current Time:
+    time()            - Current Unix timestamp (seconds since 1970)
+    xtime()           - Extended time information
+
+Formatting:
+    ctime(timestamp)  - Format timestamp as readable date/time
+    timedate()        - Current date/time formatted
+
+Modification Times:
+    mtime(obj/attr)   - Attribute modification timestamp
+    mstime(obj/attr)  - Attribute modification (milliseconds)
+    modtime(obj)      - Object modification timestamp
+
+Examples:
+    [time()]                       Returns: 1234567890
+    [ctime([time()])]              Returns: Fri Feb 13 23:31:30 2009
+    [timedate()]                   Returns: Current formatted date/time
+
+    [mtime(me/DESCRIPTION)]        Returns: 1234567890
+    [modtime(here)]                Returns: 1234500000
+
+Time Calculations:
+    Seconds in a day = 86400
+    Seconds in an hour = 3600
+    Seconds in a minute = 60
+
+    Hours ago:
+        [div([sub([time()],[modtime(obj)])],3600)]
+
+    Days since modified:
+        [div([sub([time()],[modtime(obj)])],86400)]');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-trig', '', 'TRIGONOMETRIC FUNCTIONS
+
+Note: All angle arguments are in radians, not degrees.
+      To convert: radians = degrees * pi / 180
+
+Basic Trig:
+    sin(x)            - Sine of x (radians)
+    cos(x)            - Cosine of x (radians)
+    tan(x)            - Tangent of x (radians)
+
+Inverse Trig:
+    arcsin(x)         - Arc sine (inverse sine)
+    arccos(x)         - Arc cosine (inverse cosine)
+    arctan(x)         - Arc tangent (inverse tangent)
+
+Exponential and Logarithms:
+    exp(x)            - e raised to power x (e^x)
+    ln(x)             - Natural logarithm (base e)
+    log(x)            - Base-10 logarithm
+
+Examples:
+    [sin(0)]                   Returns: 0
+    [cos(0)]                   Returns: 1
+    [exp(1)]                   Returns: 2.718... (e)
+    [log(100)]                 Returns: 2');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('func-zone', '', 'ZONE FUNCTIONS
+
+Zone Queries:
+    zone(obj)         - Get object''s primary zone
+    getzone(obj)      - Get object''s zone (alias for zone)
+    lzone(zone)       - List all rooms in zone
+    inzone(obj,zone)  - Check if object is in zone
+
+Related:
+    zwho(zone)        - List connected players in zone
+
+Examples:
+    [zone(here)]                   Returns: #500
+    [lzone(#500)]                  Returns: #101 #102 #103
+    [inzone(here,#500)]            Returns: 1 (true)
+    [inzone(me,#999)]              Returns: 0 (false)
+
+    [zwho([zone(here)])]           Returns: #123 #124 (players in zone)
+
+Usage:
+    Zone-wide announcements:
+        @foreach [lzone([zone(here)])]=
+            @remit ##=Zone announcement: %0
+
+    Check if in same zone:
+        [inzone(%#,[zone(here)])]
+
+See also: help zones, help @zlink, help @zemit');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('functions', '', 'deMUSE PROGRAMMING FUNCTIONS
+
+deMUSE provides 122 built-in functions for programming. Functions are
+called using [function(args)] syntax within attributes.
+
+CATEGORIES:
+    help func-math         - Mathematical operations
+    help func-trig         - Trigonometric functions
+    help func-string       - String manipulation
+    help func-list         - List operations
+    help func-object       - Object queries
+    help func-attribute    - Attribute operations
+    help func-logic        - Logical operations
+    help func-comparison   - Comparison operations
+    help func-database     - Database queries
+    help func-connection   - Player connection info
+    help func-time         - Time and date functions
+    help func-zone         - Zone operations
+    help func-misc         - Miscellaneous functions
+
+QUICK REFERENCE:
+
+Common Math: abs add div mod mul pow sqrt sub
+Common String: mid pos strcat strlen
+Common Object: name num loc owner type flags
+Common Logic: if ifelse switch
+Common List: first rest extract foreach
+
+For detailed information on all functions, see the individual category
+help entries above.
+
+See also: help programming, help attributes, help triggers');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('get', '', 'GET COMMAND
+
+Syntax:  get <object>
+         take <object>
+
+Picks up an object and puts it in your inventory.
+
+Alias: take
+
+Examples:
+    get sword
+    take book
+
+See also: drop, give, inventory');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('give', '', 'GIVE COMMAND
+
+Syntax:  give <player>=<object>
+
+Gives an object to another player.
+
+Examples:
+    give Bob=sword
+    give Alice=10 pennies
+
+See also: get, drop');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('help', '', '==============================================================================
+              deMUSE   O n l i n e   H e l p   F a c i l i t y
+------------------------------------------------------------------------------
+
+Welcome to deMUSE! This help system provides information on commands,
+functions, and features of the deMUSE server.
+
+QUICK START:
+    help topics          - List of help topics
+    help commands        - Basic player commands
+    help @commands       - Advanced @ commands
+    help +commands       - Social/channel + commands
+    help functions       - List of programming functions
+    help syntax          - Help command syntax
+
+BUILDING:
+    help building        - Object creation and editing
+    help attributes      - Attribute system
+    help locks           - Locking and permissions
+
+PROGRAMMING:
+    help programming     - Introduction to programming
+    help triggers        - Trigger commands
+    help control         - Control flow commands
+
+Please contact an Administrator if you find errors or need assistance.
+------------------------------------------------------------------------------');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('i', '', 'INVENTORY COMMAND
+
+Syntax:  inventory
+
+Lists all objects you are carrying.
+
+Shortcut: i
+
+Example:
+    inventory         - Show inventory
+    i                 - Same as inventory
+
+See also: drop, get, look');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('inventory', '', 'INVENTORY COMMAND
+
+Syntax:  inventory
+
+Lists all objects you are carrying.
+
+Shortcut: i
+
+Example:
+    inventory         - Show inventory
+    i                 - Same as inventory
+
+See also: drop, get, look');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('l', '', 'LOOK COMMAND
+
+Syntax:  look [<object>]
+
+The look command displays a description of your surroundings or an object.
+
+Without arguments:
+    look              - Look at current location
+
+With object:
+    look <object>     - Examine a specific object
+    look me           - Look at yourself
+    look <player>     - Look at another player
+    look <thing>      - Look at a thing
+
+Shortcut: l
+
+Examples:
+    look              - Look around
+    l                 - Same as look
+    look sign         - Look at sign
+    look me           - See your own description
+
+See also: examine, @describe');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('locks', '', 'LOCK SYSTEM
+
+Locks control access and permissions using boolean expressions. They
+determine who can use objects and perform actions.
+
+SETTING LOCKS:
+    @lock <object>=<key expression>       - Set basic lock
+    @lock <object>/<type>=<key>           - Set specific lock type
+    @unlock <object>                      - Remove all locks
+
+LOCK TYPES:
+    Basic             - General use of object
+    Use               - @use trigger permission
+    Enter             - Permission to enter
+    Page              - Who can page the player
+    Teleport          - Who can teleport to location
+
+KEY SYNTAX:
+
+Object References:
+    #123              - Specific dbref (object #123)
+    *PlayerName       - Specific player by name
+    me                - Lock owner
+    $<object>         - Indirect (use object''s lock key)
+
+Attribute Checks:
+    <attr>:<value>    - Attribute equals value
+    <attr>:           - Attribute exists with any value
+
+Operators:
+    !<key>            - NOT (invert condition)
+    <key>|<key>       - OR (either condition)
+    <key>&<key>       - AND (both conditions)
+    ( )               - Grouping for precedence
+
+EXAMPLES:
+
+Owner-only:
+    @lock box=#123                        - Lock to owner''s dbref
+
+Multiple players:
+    @lock door=*Alice|*Bob|*Carol         - Alice, Bob, or Carol
+
+Carrying object:
+    @lock gate=#456                       - Must carry object #456
+
+Complex:
+    @lock vault=#100&#101&!#102           - Need items 100 and 101, not 102
+
+Everyone except:
+    @lock room=!*Troll                    - Everyone but Troll
+
+VIEWING LOCKS:
+    examine <object>                      - Shows all set locks
+
+See also: help building, help attributes, help flags');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('look', '', 'LOOK COMMAND
+
+Syntax:  look [<object>]
+
+The look command displays a description of your surroundings or an object.
+
+Without arguments:
+    look              - Look at current location
+
+With object:
+    look <object>     - Examine a specific object
+    look me           - Look at yourself
+    look <player>     - Look at another player
+    look <thing>      - Look at a thing
+
+Shortcut: l
+
+Examples:
+    look              - Look around
+    l                 - Same as look
+    look sign         - Look at sign
+    look me           - See your own description
+
+See also: examine, @describe');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('page', '', 'PAGE COMMAND
+
+Syntax:  page <player>=<message>
+
+Sends a private message to another player, regardless of their location.
+
+Examples:
+    page Bob=Are you ready?
+    page *Alice *Carol=Meeting in 5 minutes!
+
+Players with HAVEN flag set will not receive pages.
+
+See also: whisper, say, @pemit');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('pose', '', 'POSE COMMAND
+
+Syntax:  pose <action>
+         :<action>
+
+Describes an action. Your name is prepended to the action.
+
+Shortcut: : (colon)
+
+Examples:
+    pose waves hello.
+    :waves hello.
+
+Output:
+    Bobby Newmark waves hello.
+
+See also: ;pose, say, @emit');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('programming', '', 'PROGRAMMING IN deMUSE
+
+deMUSE includes a powerful embedded programming language for creating
+interactive objects and automated behaviors.
+
+CORE CONCEPTS:
+
+1. ATTRIBUTES - Storage and code containers
+2. FUNCTIONS - Built-in operations
+3. SUBSTITUTIONS - Dynamic value replacement
+4. TRIGGERS - Code execution events
+
+BASIC SUBSTITUTIONS:
+
+Player/Object References:
+    %#                - Player triggering the action (enactor)
+    %!                - Object containing the attribute
+    %L                - Location of enactor
+    %N                - Name of enactor
+
+Pronouns:
+    %S                - Subjective pronoun (he/she/it/they)
+    %O                - Objective pronoun (him/her/it/them)
+    %P                - Possessive pronoun (his/her/its/their)
+    %A                - Absolute possessive (his/hers/its/theirs)
+
+Arguments:
+    %0                - First argument (0-9 available)
+    %1, %2, etc.      - Additional arguments
+
+Special:
+    ##                - Current element in @foreach loop
+    \
+               - Newline
+    \\t               - Tab
+    %r                - Carriage return
+    %b                - Blank space
+
+FUNCTION SYNTAX:
+
+Call functions using square brackets:
+    [function_name(arg1,arg2,...)]
+
+Nested calls:
+    [add([get(me/COUNT)],1)]
+
+EXAMPLES:
+
+Simple substitution:
+    @set welcome=DESC:Welcome, %N!
+
+Function usage:
+    @set sign=DESC:This room has [add(5,3)] exits.
+
+Combining both:
+    @set greeter=DESC:Hello %N! You are in [name(loc(%#))].
+
+Executable attribute:
+    @set counter=USE:@set me=COUNT:[add(get(me/COUNT),1)];
+                      @pemit %#=Count is now [get(me/COUNT)]
+
+CONTROL STRUCTURES:
+
+Conditionals:
+    [ifelse(<condition>,<true action>,<false action>)]
+    @switch <expr>=<case1>,<action1>,<case2>,<action2>,...
+
+Iteration:
+    @foreach <list>=<command with ##>
+    [foreach(<list>,<attr>)]
+
+BEST PRACTICES:
+
+1. Test code incrementally
+2. Use examine to debug attributes
+3. Check for infinite loops
+4. Validate inputs in public-facing code
+5. Document complex logic with comments in DESC
+
+See also: help functions, help triggers, help control, help attributes');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('register', '', 'CHARACTER REGISTRATION
+
+To create a new character:
+
+1. Connect to the deMUSE server via telnet:
+   telnet server.address.com port
+
+2. At the connection screen, type:
+   create <charactername> <password>
+
+3. Choose a unique name and secure password
+
+4. You''ll be automatically logged in
+
+IMPORTANT:
+- Character names must be unique
+- Passwords are case-sensitive
+- Remember your password (cannot be recovered without admin help)
+- Choose a password you don''t use elsewhere
+
+AFTER REGISTRATION:
+- Type ''look'' to see your surroundings
+- Type ''help commands'' for basic commands
+- Type ''who'' to see other players
+- Type ''help'' for general help
+
+If you have problems, use the ''gripe'' command to contact administrators.');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('say', '', 'SAY COMMAND
+
+Syntax:  say <message>
+         "<message>
+
+Says something out loud in your current location. Everyone in the room
+will see your message.
+
+Shortcut: " (quote character)
+
+Examples:
+    say Hello everyone!
+    "Hello everyone!
+
+Output:
+    Bobby Newmark says, "Hello everyone!"
+
+See also: pose, whisper, page, think');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('syntax', '', 'HELP COMMAND SYNTAX
+
+The help command displays information about commands, functions, and topics.
+
+Syntax:  help [<topic>]
+
+Notes on help descriptions:
+    [text]        - Text in []''s is optional (don''t type the brackets)
+    <parameter>   - Information about what to type (don''t type the < >)
+    |             - Separates alternative options (choose one)
+
+Examples:
+    help              - Display general help information
+    help look         - Get help on the ''look'' command
+    help @create      - Get help on the ''@create'' command
+    help functions    - List all programming functions');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('take', '', 'GET COMMAND
+
+Syntax:  get <object>
+         take <object>
+
+Picks up an object and puts it in your inventory.
+
+Alias: take
+
+Examples:
+    get sword
+    take book
+
+See also: drop, give, inventory');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('think', '', 'THINK COMMAND
+
+Syntax:  think <thought>
+         #<thought>
+
+Private thought to yourself. Only you see it.
+
+Shortcut: # (hash)
+
+Examples:
+    think What should I do next?
+    #This is interesting...
+
+See also: say, pose, @exec');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('topics', '', 'HELP TOPICS
+
+Basic Topics:
+    commands          - Basic player commands
+    @commands         - Advanced administrator commands
+    +commands         - Social and channel commands
+    functions         - Programming functions list
+
+Building Topics:
+    building          - Creating and editing objects
+    attributes        - Attribute system
+    locks             - Lock system and security
+    zones             - Zone system
+
+Programming Topics:
+    programming       - Introduction to deMUSE programming
+    triggers          - Trigger system (@trigger, @tr_as)
+    control           - Control flow (@switch, @foreach, @cycle)
+    functions         - Function reference
+
+System Topics:
+    syntax            - Help syntax notation
+    register          - How to register a character
+    flags             - Object flags');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('triggers', '', 'TRIGGER COMMANDS
+
+Triggers execute attribute code on demand or in response to events.
+
+MANUAL TRIGGERS:
+
+@TRIGGER <object>/<attribute>[=<arguments>]
+    Executes the specified attribute on the object. Arguments are passed
+    as %0-%9 to the code.
+
+    Permissions: Must control the object
+
+    Examples:
+        @trigger me/GREET
+        @trigger here/ANNOUNCE=The meeting will start soon!
+
+@TR_AS <executor>=<object>/<attribute>[=<arguments>]
+    Triggers an attribute as if <executor> had triggered it. The executor''s
+    permissions and identity (%#) are used.
+
+    Permissions: Must control both executor and target object
+
+    Example:
+        @tr_as *Bob=here/WELCOME
+
+AUTOMATIC TRIGGERS:
+
+Connection Events:
+    ACONNECT          - Player connects to game
+    ADISCONNECT       - Player disconnects from game
+
+Interaction Events:
+    ADESC             - Someone examines/looks at object
+    AUSE              - Someone uses object (@use command)
+    AHEAR             - Someone speaks near object
+    AMHEAR            - Speech matches LISTEN pattern
+
+Action Events:
+    ASUCC             - Action succeeds (moving through exit)
+    AFAIL             - Action fails (locked exit)
+    ADROP             - Object is dropped
+    ALEAVE            - Someone leaves object
+    AENTER            - Someone enters object
+
+TRIGGER CONTEXT:
+
+When an attribute triggers:
+    %#                - Player who triggered it
+    %!                - Object with the attribute
+    %0-%9             - Arguments (manual triggers)
+    %N                - Triggering player''s name
+    %L                - Triggering player''s location
+
+ADVANCED USAGE:
+
+Chaining Triggers:
+    @set obj1=TRIGGER2:@trigger obj2/RESPONSE=%0
+    @trigger obj1/TRIGGER2=Hello
+
+Passing Data:
+    @set calculator=COMPUTE:@pemit %#=Result: [add(%0,%1)]
+    @trigger calculator/COMPUTE=5 3
+
+See also: help programming, help attributes, help control, help @wait');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('universe', '', 'UNIVERSE SYSTEM
+
+The universe system extends zones to create separate game contexts or
+parallel worlds within the same database. Each universe can have different
+rules, settings, and player populations.
+
+UNIVERSE COMMANDS:
+
+Creating and Managing:
+    @ucreate <name>                       - Create new universe
+    @uconfig <universe>=<setting>:<value> - Configure universe
+    @uinfo [<universe>]                   - View universe information
+
+Linking Objects:
+    @ulink <object>=<universe>            - Link to universe
+    @unulink <object>                     - Unlink from universe
+
+Universe-Wide Commands:
+    @guniverse <universe>=<command>       - Execute for universe
+
+UNIVERSE FUNCTIONS:
+    universe(<object>)                    - Get object''s universe
+    uinfo(<universe>,<info type>)         - Query universe information
+
+CONFIGURATION:
+
+Universe Settings:
+    starting_location - Where new players start
+    player_count      - Number of players (read-only)
+    parser            - Command parser to use
+
+USES:
+
+Game Separation:
+    - Run multiple game types in one database
+    - Testing environments separate from production
+    - Alternate reality scenarios
+
+NOTE: The universe system is still under development. Some features may
+be incomplete or experimental.
+
+See also: help zones, help @guniverse, help @ulink');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('whisper', '', 'WHISPER COMMAND
+
+Syntax:  whisper <player>=<message>
+
+Whispers privately to a player in the same room. Only that player sees
+the message.
+
+Examples:
+    whisper Bob=Meet me later.
+
+See also: page, say, pose');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('who', '', 'WHO COMMAND
+
+Syntax:  who
+
+Displays a list of all connected players, their idle times, and location
+information (if visible).
+
+Example:
+    who               - List connected players
+
+See also: @hide, @whereis, +laston');
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('zones', '', 'ZONE SYSTEM
+
+Zones organize related objects into groups for centralized control and
+theming. Objects can belong to multiple zones through parent chains.
+
+BASIC ZONE OPERATIONS:
+
+Linking to Zones:
+    @zlink <object>=<zone object>         - Add object to zone
+    @unzlink <object>                     - Remove from zone
+
+Creating Zones:
+Zones are typically special objects (things or rooms) designated for
+organizational purposes. Create a regular object and use it as a zone.
+
+ZONE FUNCTIONS:
+
+Query Functions:
+    zone(<object>)                        - Get primary zone of object
+    lzone(<zone>)                         - List all objects in zone
+    inzone(<object>,<zone>)               - Test zone membership
+
+Zone Commands:
+    @gzone <zone>=<command>               - Execute command for zone
+    @zemit <zone>=<message>               - Emit message to zone
+
+USES FOR ZONES:
+
+Organization:
+    - Group themed areas (e.g., "Fantasy District", "SciFi Sector")
+    - Collect related objects for management
+    - Apply zone-wide settings or themes
+
+Administration:
+    - Track ownership and attribution
+    - Apply consistent settings
+    - Enable zone-wide announcements
+
+Broadcasting:
+    - Send messages to all zone members
+    - Coordinate area-wide events
+
+Example Zone Setup:
+    @create Zone Controller
+    @set Zone Controller=ZONE
+    @zlink room1=Zone Controller
+    @zlink room2=Zone Controller
+    @zlink room3=Zone Controller
+
+See also: help building, help @gzone, help @zemit, help universe');
+
+-- ============================================================================
+-- DEFAULT NEWS ARTICLE
+-- ============================================================================
+
+INSERT IGNORE INTO news (news_id, topic, body, author) VALUES (1, 'Welcome to deMUSE', 'Welcome to deMUSE!
+
+This is a modernized version of the classic TinyMUSE server, descended from
+TinyMUSE ''97 and TinyMUSE 1.8a4.
+
+Type ''help'' for the online help system.
+Type ''+news list'' to see all news articles.
+Type ''who'' to see who else is online.
+
+Enjoy your stay!', 1);

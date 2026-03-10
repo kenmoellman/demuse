@@ -268,4 +268,44 @@ char *int_to_str(int a)
   return stralloc(buf);
 }
 
+/* ===================================================================
+ * Subject/Body Parsing
+ * =================================================================== */
+
+/**
+ * parse_subject_body - Split a string on the @@ delimiter
+ *
+ * Used by +mail, +board, and +news to separate subject from body.
+ * Modifies input in-place (replaces first @ of @@ with '\0').
+ *
+ * If @@ is found:  subject_out = part before @@, body_out = part after @@
+ * If @@ not found: subject_out = NULL, body_out = entire input
+ *
+ * Caller should treat NULL subject as "(no subject)".
+ *
+ * @param input       The input string (modified in-place if @@ found)
+ * @param subject_out Output: pointer to subject, or NULL if no @@
+ * @param body_out    Output: pointer to body (always set)
+ */
+void parse_subject_body(char *input, char **subject_out, char **body_out)
+{
+    char *delim;
+
+    if (!input || !*input) {
+        *subject_out = NULL;
+        *body_out = input;
+        return;
+    }
+
+    delim = strstr(input, "@@");
+    if (delim) {
+        *delim = '\0';
+        *subject_out = input;
+        *body_out = delim + 2;
+    } else {
+        *subject_out = NULL;
+        *body_out = input;
+    }
+}
+
 /* End of stringutil.c */

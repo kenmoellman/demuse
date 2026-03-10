@@ -45,6 +45,7 @@ typedef struct mail_result {
     dbref recipient;      /* recipient / board_room */
     long sent_date;       /* Unix timestamp */
     int flags;            /* MF_DELETED=1, MF_READ=2, MF_NEW=4 */
+    char *subject;        /* Caller must SMART_FREE */
     char *message;        /* Caller must SMART_FREE */
 } MAIL_RESULT;
 
@@ -71,13 +72,14 @@ int mariadb_mail_init(void);
  * PARAMETERS:
  *   sender    - dbref of sender (NOTHING for system mail)
  *   recipient - dbref of recipient player
+ *   subject   - Subject line (NULL or "" for no subject)
  *   message   - Message text
  *   flags     - Initial flags (typically MF_NEW)
  *
  * RETURNS: 1 on success, 0 on failure
  */
-int mariadb_mail_send(dbref sender, dbref recipient, const char *message,
-                      int flags);
+int mariadb_mail_send(dbref sender, dbref recipient, const char *subject,
+                      const char *message, int flags);
 
 /*
  * mariadb_mail_get_by_position - Get a mail message by position number
@@ -269,7 +271,8 @@ int mariadb_mail_stats(long *total_out, long *deleted_out, long *new_out,
 
 static inline int mariadb_mail_init(void) { return 0; }
 static inline int mariadb_mail_send(dbref s __attribute__((unused)),
-    dbref r __attribute__((unused)), const char *m __attribute__((unused)),
+    dbref r __attribute__((unused)), const char *su __attribute__((unused)),
+    const char *m __attribute__((unused)),
     int f __attribute__((unused))) { return 0; }
 static inline int mariadb_mail_get_by_position(dbref r __attribute__((unused)),
     long n __attribute__((unused)), int d __attribute__((unused)),

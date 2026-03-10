@@ -11,6 +11,8 @@
 #include "mariadb_board.h"
 #include "mariadb_channel.h"
 #include "mariadb_lockout.h"
+#include "mariadb_help.h"
+#include "mariadb_news.h"
 
 #include <stddef.h>
 #include <sys/time.h>
@@ -101,6 +103,16 @@ int main(int argc, char *argv[])
     }
     if (!mariadb_lockout_init()) {
         fprintf(stderr, "FATAL: Failed to initialize lockout table.\n");
+        mariadb_cleanup();
+        exit(1);
+    }
+    if (!mariadb_help_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize help table.\n");
+        mariadb_cleanup();
+        exit(1);
+    }
+    if (!mariadb_news_init()) {
+        fprintf(stderr, "FATAL: Failed to initialize news tables.\n");
         mariadb_cleanup();
         exit(1);
     }

@@ -1990,12 +1990,22 @@ static void cmd_gripe(dbref player, char *arg1, char *arg2)
 /**
  * cmd_help - Wrapper for help command
  *
- * Core: do_text(player, "help", arg1, NULL)
+ * Core: do_help(player, arg1)
  */
 static void cmd_help(dbref player, char *arg1, char *arg2)
 {
     (void)arg2;
-    do_text(player, "help", arg1, NULL);
+    do_help(player, arg1);
+}
+
+/**
+ * cmd_news - Wrapper for +news command
+ *
+ * Core: do_news(player, arg1, arg2)
+ */
+static void cmd_news(dbref player, char *arg1, char *arg2)
+{
+    do_news(player, arg1, arg2);
 }
 
 /**
@@ -2548,6 +2558,7 @@ static void register_demuse_commands(parser_t *parser)
          * ================================================================== */
         {"+board",      cmd_board,     2, 0, 0, 0, 0},
         {"+mail",       cmd_mail,      2, 0, 0, 0, 0},
+        {"+news",       cmd_news,      2, 0, 0, 0, 0},
 
         /* ==================================================================
          * PASTE/CODE COMMANDS - Code paste and management

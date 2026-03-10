@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS mail (
   recipient    BIGINT       NOT NULL,
   sent_date    BIGINT       NOT NULL,
   flags        INT          NOT NULL DEFAULT 0,
+  subject      VARCHAR(80)  NOT NULL DEFAULT '',
   message      TEXT         NOT NULL,
   created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_recipient       (recipient),
@@ -77,6 +78,7 @@ CREATE TABLE IF NOT EXISTS board (
   board_room   BIGINT       NOT NULL DEFAULT 0,
   posted_date  BIGINT       NOT NULL,
   flags        INT          NOT NULL DEFAULT 0,
+  subject      VARCHAR(80)  NOT NULL DEFAULT '',
   message      TEXT         NOT NULL,
   created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_board_room (board_room),
@@ -154,5 +156,60 @@ CREATE TABLE IF NOT EXISTS lockouts (
   COLLATE=utf8mb4_unicode_ci
   COMMENT='deMUSE lockout entries for IP, player, and guest-IP bans';
 
--- After starting deMUSE, run @config/seed in-game to populate
--- all config values from the running server into this table.
+-- ============================================================================
+-- HELP_TOPICS TABLE - Online help system
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS help_topics (
+  help_id      BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  command      VARCHAR(30)  NOT NULL COMMENT 'command name (e.g. +channel, look, @create)',
+  subcommand   VARCHAR(30)  NOT NULL DEFAULT '' COMMENT 'subcommand (e.g. join, leave) or empty for overview',
+  body         TEXT         NOT NULL,
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                            ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE INDEX idx_cmd_sub (command, subcommand)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE online help topics';
+
+-- ============================================================================
+-- NEWS TABLE - News articles
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS news (
+  news_id      BIGINT       AUTO_INCREMENT PRIMARY KEY,
+  topic        VARCHAR(80)  NOT NULL,
+  body         TEXT         NOT NULL,
+  author       BIGINT       NOT NULL COMMENT 'dbref of poster',
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_created (created_at)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE news articles';
+
+-- ============================================================================
+-- NEWS_READ TABLE - Tracks which news articles each player has read
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS news_read (
+  player_dbref BIGINT       NOT NULL,
+  news_id      BIGINT       NOT NULL,
+  read_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (player_dbref, news_id),
+  FOREIGN KEY (news_id) REFERENCES news(news_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE news read tracking per player';
+
+-- ============================================================================
+-- SEED DATA
+-- ============================================================================
+-- After creating tables, load default data:
+--   mysql -u demuse -p demuse < config/defaults.sql
+--   mysql -u demuse -p demuse < config/help_seed.sql
+--
+-- Or use @help/import and @news/import in-game to import from legacy files.

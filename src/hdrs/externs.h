@@ -290,6 +290,9 @@ extern void free_hash (void);
 
 /* From help.c */
 extern void do_text (dbref, char *, char *, ATTR *);
+extern void do_help (dbref, char *);
+extern void do_news (dbref, char *, char *);
+extern void check_news (dbref);
 extern void do_motd (dbref);
 
 /* From info.c */
@@ -630,6 +633,7 @@ extern int string_prefix (const char *, char *);
 extern char to_lower (int);
 extern char to_upper (int);
 extern char *int_to_str (int);
+extern void parse_subject_body(char *, char **, char **);
 
 
 /* From timer.c */

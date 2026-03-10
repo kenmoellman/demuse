@@ -38,13 +38,14 @@ int mariadb_board_init(void);
  * PARAMETERS:
  *   author     - dbref of poster
  *   board_room - dbref of board room (typically default_room)
+ *   subject    - Subject line (NULL or "" for no subject)
  *   message    - Message text
  *   flags      - Initial flags (typically MF_READ for board posts)
  *
  * RETURNS: 1 on success, 0 on failure
  */
-int mariadb_board_post(dbref author, dbref board_room, const char *message,
-                       int flags);
+int mariadb_board_post(dbref author, dbref board_room, const char *subject,
+                       const char *message, int flags);
 
 /*
  * mariadb_board_get_by_position - Get a board post by position number
@@ -155,7 +156,8 @@ int mariadb_board_stats(long *total_out, long *deleted_out,
 
 static inline int mariadb_board_init(void) { return 0; }
 static inline int mariadb_board_post(dbref a __attribute__((unused)),
-    dbref b __attribute__((unused)), const char *m __attribute__((unused)),
+    dbref b __attribute__((unused)), const char *su __attribute__((unused)),
+    const char *m __attribute__((unused)),
     int f __attribute__((unused))) { return 0; }
 static inline int mariadb_board_get_by_position(dbref b __attribute__((unused)),
     long n __attribute__((unused)), int d __attribute__((unused)),

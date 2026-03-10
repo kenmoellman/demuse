@@ -53,7 +53,7 @@ void init_mail(void);
 void free_mail(void);
 
 /* Core message operations */
-void send_message(dbref, dbref, const char *, msg_dest_type, int);
+void post_message(dbref, dbref, const char *, const char *, msg_dest_type, int);
 void read_message(dbref, dbref, long);
 long delete_messages(dbref, dbref, long, long, int);
 void purge_deleted(dbref, dbref);
@@ -168,8 +168,8 @@ long count_unread(dbref player)
 }
 
 /* Send a message - unified function for both mail and board */
-void send_message(dbref from, dbref to, const char *message,
-                  msg_dest_type type, int flags)
+void post_message(dbref from, dbref to, const char *subject,
+                  const char *message, msg_dest_type type, int flags)
 {
     long msgnum;
 
@@ -191,14 +191,14 @@ void send_message(dbref from, dbref to, const char *message,
 
     /* Route to appropriate MariaDB table */
     if (type == MSG_BOARD) {
-        if (!mariadb_board_post(from, to, message, flags)) {
+        if (!mariadb_board_post(from, to, subject, message, flags)) {
             if (from != NOTHING) {
                 notify(from, "+board: Failed to post message.");
             }
             return;
         }
     } else {
-        if (!mariadb_mail_send(from, to, message, flags)) {
+        if (!mariadb_mail_send(from, to, subject, message, flags)) {
             if (from != NOTHING) {
                 notify(from, "+mail: Failed to send message.");
             }
@@ -319,8 +319,12 @@ static void list_message_callback(const MAIL_RESULT *mr, long position,
     safe_copy(date_buf, mktm(mr->sent_date, "D", ctx->player),
              sizeof(date_buf));
 
-    /* Get message preview */
-    preview = tprintf("%s", truncate_color(mr->message ? mr->message : "", 25));
+    /* Get subject or message preview */
+    if (mr->subject && mr->subject[0]) {
+        preview = tprintf("%s", truncate_color(mr->subject, 25));
+    } else {
+        preview = tprintf("%s", truncate_color(mr->message ? mr->message : "", 25));
+    }
 
     /* Remove newlines from preview */
     {
@@ -404,12 +408,17 @@ void read_message(dbref player, dbref mailbox, long msgnum)
         !(is_board && power(player, POW_BOARD))) {
         notify(player, tprintf("%s: Invalid message number.",
                               is_board ? "+board" : "+mail"));
+        if (mr.subject) SMART_FREE(mr.subject);
         if (mr.message) SMART_FREE(mr.message);
         return;
     }
 
     /* Display message */
     notify(player, tprintf("Message %ld:", msgnum));
+
+    notify(player, tprintf("Subject: %s",
+                          (mr.subject && mr.subject[0]) ?
+                          mr.subject : "(no subject)"));
 
     if (!is_board) {
         notify(player, tprintf("To: %s", db[mailbox].cname));
@@ -444,6 +453,7 @@ void read_message(dbref player, dbref mailbox, long msgnum)
         }
     }
 
+    if (mr.subject) SMART_FREE(mr.subject);
     if (mr.message) SMART_FREE(mr.message);
 }
 
@@ -909,13 +919,16 @@ void do_mail(dbref player, char *arg1, char *arg2)
         list_messages(player, player, MSG_PRIVATE);
     }
     else if (*arg1 && *arg2) {
-        /* Send mail */
+        /* Send mail: +mail <player>=<subject>@@<message> */
+        char *subject, *body;
         dbref recip = lookup_player(arg1);
         if (recip == NOTHING || Typeof(recip) != TYPE_PLAYER) {
             notify(player, "+mail: Unknown player.");
             return;
         }
-        send_message(player, recip, arg2, MSG_PRIVATE, MF_NEW);
+        parse_subject_body(arg2, &subject, &body);
+        if (!subject) subject = "(no subject)";
+        post_message(player, recip, subject, body, MSG_PRIVATE, MF_NEW);
         notify(player, tprintf("+mail: Message sent to %s.", db[recip].cname));
     }
     else {
@@ -950,7 +963,11 @@ void do_board(dbref player, char *arg1, char *arg2)
     }
     else if (!string_compare(arg1, "write")) {
         if (arg2 && *arg2) {
-            send_message(player, default_room, arg2, MSG_BOARD, MF_READ);
+            /* +board write=<subject>@@<message> */
+            char *subject, *body;
+            parse_subject_body(arg2, &subject, &body);
+            if (!subject) subject = "(no subject)";
+            post_message(player, default_room, subject, body, MSG_BOARD, MF_READ);
             notify(player, "+board: Message posted.");
         } else {
             notify(player, "+board: You must provide a message.");

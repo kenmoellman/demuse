@@ -130,6 +130,9 @@ void announce_connect(dbref player)
         
         /* Check for new mail */
         check_mail(player, db[player].name);
+
+        /* Check for unread news */
+        check_news(player);
     }
 
     /* Trigger connection attributes */

@@ -30,6 +30,14 @@ run/cmd_crash
 run/4201*
 src/util/convert_db
 src/logs/
+run/msgs/connect.txt
+run/msgs/guest.txt
+run/msgs/leave.txt
+run/msgs/motd.txt
+run/msgs/register.txt
+run/msgs/welcome.txt
+run/msgs/helpindx
+run/msgs/newsindx
 CLAUDE.md
 .claude/
 memory/

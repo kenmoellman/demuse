@@ -1,8 +1,0 @@
-
-                        Welcome to deMUSE
-
-     To connect to an existing character, type: connect <name> <password>
-     To create a new character, type: create <name> <password>
-
-     Use "help" for more information after connecting.
-
