@@ -4,7 +4,7 @@ deMUSE is a TinyMUSE-derived Multi-User Simulation Environment (MUSE) server, or
 
 deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
 
-Future planned improvements include moving the object database from flat file to MariaDB.
+MariaDB is now required for server operation, handling configuration, mail, boards, channels, and lockouts. The object database still uses the flat-file format; migrating it to MariaDB is a future goal.
 
 You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
 
@@ -110,23 +110,27 @@ Individual utilities are built in `src/util/`:
 - Permission system (powers framework)
 - Time-based events
 
-### Modernization Features (2025)
+### Modernization Features (2025-2026)
 
 The codebase has been significantly modernized with:
 
 1. **Memory Safety**
-   - `SAFE_MALLOC`/`SMART_FREE` system replaces raw malloc/free
+   - `SAFE_MALLOC`/`SMART_FREE` system replaces raw malloc/free (complete)
    - Memory debugging with `MEMORY_DEBUG_LOG` (logs to `./logs/malloc-debug.log`)
-   - Buffer overflow protection (all `strcpy`→`strncpy`, `sprintf`→`snprintf`)
+   - Buffer overflow protection: all `strcpy`→`strncpy`, `sprintf`→`snprintf` (complete)
 
 2. **Security Hardening**
-   - `GoodObject()` validation before all database access unless a deleted object is okay (such as dumping the database)
+   - `GoodObject()` validation before all database access unless a deleted object is okay (such as dumping the database) — in progress, see eval.c audit notes
+   - Fixed crash bugs in `@join` and `@summon` (unvalidated `lookup_player()` results)
+   - Fixed crash risk in `calc_stats()` (NULL pows pointer, out-of-bounds array index)
+   - Fixed crash risk in `do_teleport()` universe chain (three-deep unvalidated db[] access)
    - Bounds checking on array access
    - Recursion depth limits in expression evaluator
    - Stack protection (`-fstack-protector-strong`)
 
 3. **Code Quality**
-   - ANSI C prototypes throughout (removed K&R style)
+   - ANSI C prototypes throughout (K&R style fully removed, complete)
+   - `DBREF_FMT` macro used for all dbref format specifiers (complete)
    - Compiler warnings enabled (`-Wall -Wextra -pedantic`)
    - Security warnings (`-Wformat-security`, `-Werror=format-security`)
    - Position Independent Executable (`-fPIE -pie`)
@@ -135,6 +139,11 @@ The codebase has been significantly modernized with:
    - Merged `funcs.c` into `eval.c` (eliminated gperf dependency)
    - Binary search for function dispatch
    - Unified hash system across components
+   - `colorize()` rewritten: reads from const input, builds output in separate buffer (fixes adjacent color code bugs)
+   - Unified MOTD system: `motd_msg` and `motd_msg_player` config vars in MariaDB, set via `+motd`
+   - Message files (welcome, create, guest, register, leave, motd) moved to MariaDB config vars, editable via `@config`
+   - Welcome message now sent on new direct socket connections (was missing from `initializesock()`)
+   - Combat commands `#ifdef`'d out of parser (`USE_COMBAT_TM97`)
 
 ### MariaDB Integration (2026)
 
@@ -256,20 +265,26 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 
 ## Development Notes
 
-**Things to do**
-- convert to using ANSI C instead of K&R C - should be completed, but need to verify.
-- Modernize the code to replace deprecated functions and improve logic - always in progress
-- Look for potential buffer overruns and prevent them - always in progress
-- We should use SAFE_MALLOC and SMART_FREE to malloc and free - should be completed, but need to verify.
-- Better safety - Use snprintf() and strncpy() instead of sprintf()/strcpy(), etc - should be completed, but need to verify.
-- Extensive validation - GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database - should be completed, but need to verify.
-- Better documentation - More detailed explanations of logic and functions, and better inline comments  - always in progress
-- Improved header - Comprehensive modernization notes  - in progress
+**Completed**
+- Convert to ANSI C instead of K&R C — done
+- Use SAFE_MALLOC and SMART_FREE instead of raw malloc/free — done
+- Use snprintf()/strncpy() instead of sprintf()/strcpy() — done
+- Convert dbref format specifiers to DBREF_FMT macro — done
+- Fix int/size_t mismatches from strlen() — done
 
-**Converting int to long**
-- In the past dbref was defined as an int, and then later it was changed to be a long, but there were still places in the code where this wasn't correctly implemented.
-- Need to utilize recently-created macro DBREF_FMT defined in config.h to replace instances where variables of type dbref are being placed into a string, instead of having a hardcoded %d or %ld 
-- Need to watch for and fix places where variables were type int that are getting value of strlen which is now a size_t 
+**In Progress**
+- Modernize the code to replace deprecated functions and improve logic — always in progress
+- Look for potential buffer overruns and prevent them — always in progress
+- Extensive validation — GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database. Remaining gaps in eval.c (fun_foreach) and admin.c (Wizard() macro entry guards)
+- Better documentation — more detailed explanations of logic and functions, and better inline comments
+- Improved header — comprehensive modernization notes
+
+**Future Work**
+- Migrate object database from flat-file to MariaDB (three-table design: players, objects, attributes)
+- Upgrade Pueblo 1.0 support to MXP (MUD eXtension Protocol)
+- Overhaul universe system (do_teleport() universe checks are fragile)
+- Fix signal.c SIGCHLD bug: `signal(SIGCHLD, SIG_IGN)` overrides `sigaction(SIGCHLD, reaper)` handler
+- Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
 
 ### Working with the Database
 
@@ -329,13 +344,13 @@ Mail and board messages are stored in MariaDB (migrated from the flat-file forma
 
 ## Known Issues and Limitations
 
-From the TODO file, known unresolved issues include:
 - Idle system timing anomalies
 - Prefix/suffix recursion bugs with high idle times
-- Function memory leaks (being addressed)
 - @booting yourself has bugs
-- Most MAZE combat features not implemented (maze.c)
-- Universe code incomplete
+- MAZE combat features not implemented (maze.c behind `#ifdef USE_COMBAT`, combat.h doesn't exist)
+- Universe code incomplete (`USE_UNIV` ifdef)
+- signal.c: `signal(SIGCHLD, SIG_IGN)` overrides the `sigaction(SIGCHLD, reaper)` handler
+- eval.c: `fun_foreach()` accesses `db[doer]` without GoodObject validation
 
 ## Historical Context
 
@@ -344,4 +359,5 @@ From the TODO file, known unresolved issues include:
 - Created for deMUSEcracy, an online government simulation
 - Originally developed on Slackware Linux 4.0
 - Ancient codebase with multiple authors over decades
-- Recent modernization effort (2025) for safety and security
+- Recent modernization effort (2025-2026) for safety, security, and MariaDB integration
+- Current version: 2.26.3.2 beta 1
