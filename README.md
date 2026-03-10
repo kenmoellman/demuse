@@ -280,6 +280,8 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - Improved header — comprehensive modernization notes
 
 **Future Work**
+- Help topic cleanup — ~119 @ commands still lack help documentation; audit existing topics for correct syntax
+- Unify +board and +news code — both are public posting systems, with +board writable by anyone and +news admin-only; share underlying storage and display logic, add per-player read tracking to +board. Add `+board ban=<player>` and `+board unban=<player>` for blocking/unblocking individual users from posting
 - Migrate object database from flat-file to MariaDB (three-table design: players, objects, attributes)
 - Upgrade Pueblo 1.0 support to MXP (MUD eXtension Protocol)
 - Overhaul universe system (do_teleport() universe checks are fragile)
