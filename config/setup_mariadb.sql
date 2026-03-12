@@ -89,6 +89,35 @@ CREATE TABLE IF NOT EXISTS board (
   COMMENT='deMUSE public board posts';
 
 -- ============================================================================
+-- BOARD_BANS TABLE - Players banned from posting to the board
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS board_bans (
+  player       BIGINT       NOT NULL COMMENT 'banned player dbref',
+  banned_by    BIGINT       NOT NULL COMMENT 'admin who issued ban',
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE INDEX idx_player (player)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE board posting bans';
+
+-- ============================================================================
+-- BOARD_READ TABLE - Tracks which board posts each player has read
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS board_read (
+  player_dbref BIGINT       NOT NULL,
+  post_id      BIGINT       NOT NULL,
+  read_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (player_dbref, post_id),
+  FOREIGN KEY (post_id) REFERENCES board(post_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='deMUSE board read tracking per player';
+
+-- ============================================================================
 -- CHANNELS TABLE - Channel definitions
 -- ============================================================================
 
@@ -175,7 +204,10 @@ CREATE TABLE IF NOT EXISTS help_topics (
   COMMENT='deMUSE online help topics';
 
 -- ============================================================================
--- NEWS TABLE - News articles
+-- NEWS TABLE - DEPRECATED: News articles now stored in board table
+-- News uses board_room = -2 (NEWS_ROOM). Read tracking uses board_read.
+-- These tables are kept for migration rollback safety.
+-- Run config/migrate_news_to_board.sql to migrate existing data.
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS news (
@@ -188,10 +220,10 @@ CREATE TABLE IF NOT EXISTS news (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
-  COMMENT='deMUSE news articles';
+  COMMENT='DEPRECATED - deMUSE news articles (migrated to board table)';
 
 -- ============================================================================
--- NEWS_READ TABLE - Tracks which news articles each player has read
+-- NEWS_READ TABLE - DEPRECATED: Now uses board_read with NEWS_ROOM posts
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS news_read (
@@ -203,7 +235,7 @@ CREATE TABLE IF NOT EXISTS news_read (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
-  COMMENT='deMUSE news read tracking per player';
+  COMMENT='DEPRECATED - deMUSE news read tracking (migrated to board_read)';
 
 -- ============================================================================
 -- SEED DATA

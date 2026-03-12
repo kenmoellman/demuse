@@ -133,6 +133,9 @@ void announce_connect(dbref player)
 
         /* Check for unread news */
         check_news(player);
+
+        /* Check for unread board posts */
+        check_board(player);
     }
 
     /* Trigger connection attributes */

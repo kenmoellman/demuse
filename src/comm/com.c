@@ -694,6 +694,24 @@ void do_channel(dbref player, char *arg1, char *arg2)
         notify(player, "+channel: No channel specified and no default channel set.");
       }
     }
+  } else if (!string_compare(arg1, "pastecode") || !string_compare(arg1, "paste")) {
+    /* +channel paste=<channel> or +channel pastecode=<channel> */
+    int code = !string_compare(arg1, "pastecode") ? 1 : 0;
+    channel_cache_t *chan;
+    if (!arg2 || !*arg2) {
+      notify(player, "+channel: Specify a channel. Usage: +channel paste=<channel>");
+      return;
+    }
+    chan = channel_cache_lookup(channel_strip_prefix(arg2));
+    if (!chan) {
+      notify(player, "+channel: Channel doesn't exist.");
+      return;
+    }
+    if (channel_int_is_on_channel(player, chan->name) < 0) {
+      notify(player, "+channel: You're not on that channel.");
+      return;
+    }
+    start_paste_session(player, PASTE_CHANNEL, NOTHING, NULL, chan->name, code);
   } else if (!*arg2) {
     channel_default(player, arg1);
   } else {

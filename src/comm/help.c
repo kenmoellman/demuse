@@ -1,10 +1,10 @@
-/* help.c - Help system, news system, and MOTD display
+/* help.c - Help system and MOTD display
  * Located in comm/ directory
  *
  * ============================================================================
  * MODERNIZATION NOTES (2026)
  * ============================================================================
- * Help and news are now backed by MariaDB instead of flat text files.
+ * Help is backed by MariaDB instead of flat text files.
  *
  * Help system:
  *   Two-level hierarchy: command + subcommand.
@@ -13,12 +13,8 @@
  *   "help" with no args shows general help.
  *
  * News system:
- *   Articles with author, date, topic, body. Per-player read tracking.
- *   +news / +news list      - List unread articles
- *   +news list=all           - List all articles
- *   +news read=<#>           - Read article (marks as read)
- *   +news post=<topic>@@<body> - Post article (admin)
- *   +news remove=<#>         - Delete article (admin)
+ *   Moved to messaging.c — news articles are stored in the board table
+ *   with board_room = NEWS_ROOM (-2), sharing all board infrastructure.
  *
  * Legacy support:
  *   @text command still reads from flat files (msgs/ directory).
@@ -32,14 +28,12 @@
 #include <ctype.h>
 #include <errno.h>
 #include <time.h>
-
 #include "config.h"
 #include "db.h"
 #include "interface.h"
 #include "externs.h"
 #include "help.h"
 #include "mariadb_help.h"
-#include "mariadb_news.h"
 
 /* ===================================================================
  * Input Validation (for legacy @text command)
@@ -343,247 +337,6 @@ void do_help(dbref player, char *arg1)
     }
     if (sublist) {
         SMART_FREE(sublist);
-    }
-}
-
-/* ===================================================================
- * News Command (+news, MariaDB-backed)
- * =================================================================== */
-
-/**
- * News command - view and manage news articles
- *
- * Subcommands:
- *   +news             - List unread articles
- *   +news list        - List unread articles
- *   +news list=all    - List all articles
- *   +news list=new    - List unread articles
- *   +news read=<#>    - Read article (marks as read)
- *   +news post=<topic>@@<body> - Post article (admin)
- *   +news remove=<#>  - Delete article (admin)
- *
- * @param player Player using the command
- * @param arg1   Subcommand (list, read, post, remove)
- * @param arg2   Subcommand argument (after =)
- */
-void do_news(dbref player, char *arg1, char *arg2)
-{
-    if (Typeof(player) != TYPE_PLAYER) {
-        notify(player, "Only players can use +news.");
-        return;
-    }
-
-    /* Default: list unread */
-    if (!arg1 || !*arg1 || !string_compare(arg1, "list")) {
-        int unread_only = 1;
-        char *list = NULL;
-        int count = 0;
-
-        if (arg2 && !string_compare(arg2, "all")) {
-            unread_only = 0;
-        }
-        /* "new" or empty arg2 = unread only */
-
-        notify(player, "------------------------------------------------------------------------------");
-        if (unread_only) {
-            notify(player, "                            Unread News Articles");
-        } else {
-            notify(player, "                            All News Articles");
-        }
-        notify(player, "------------------------------------------------------------------------------");
-
-        if (mariadb_news_list(player, unread_only, &list, &count)) {
-            if (count > 0 && list) {
-                /* Send line by line */
-                char *line_start = list;
-                char *newline;
-                while ((newline = strchr(line_start, '\n')) != NULL) {
-                    *newline = '\0';
-                    notify(player, line_start);
-                    line_start = newline + 1;
-                }
-                if (*line_start) {
-                    notify(player, line_start);
-                }
-            } else {
-                if (unread_only) {
-                    notify(player, "  No unread news. Use '+news list=all' to see all articles.");
-                } else {
-                    notify(player, "  No news articles.");
-                }
-            }
-            if (list) {
-                SMART_FREE(list);
-            }
-        } else {
-            notify(player, "  Error reading news.");
-        }
-
-        notify(player, "------------------------------------------------------------------------------");
-        notify(player, tprintf("  %d article%s listed. Use '+news read=<#>' to read.",
-                              count, count == 1 ? "" : "s"));
-        return;
-    }
-
-    /* Read article */
-    if (!string_compare(arg1, "read")) {
-        NEWS_RESULT article;
-        long news_id;
-
-        if (!arg2 || !*arg2) {
-            notify(player, "+news: Specify an article number. Usage: +news read=<#>");
-            return;
-        }
-
-        news_id = atol(arg2);
-        if (news_id <= 0) {
-            notify(player, "+news: Invalid article number.");
-            return;
-        }
-
-        if (!mariadb_news_get(news_id, &article)) {
-            notify(player, "+news: Article not found.");
-            return;
-        }
-
-        /* Format date */
-        char date_str[32];
-        time_t t = (time_t)article.created_at;
-        struct tm *tm_info = localtime(&t);
-        if (tm_info) {
-            strftime(date_str, sizeof(date_str), "%B %d, %Y", tm_info);
-        } else {
-            strncpy(date_str, "Unknown date", sizeof(date_str) - 1);
-            date_str[sizeof(date_str) - 1] = '\0';
-        }
-
-        /* Format author name */
-        const char *author_name = "Unknown";
-        if (GoodObject(article.author) && Typeof(article.author) == TYPE_PLAYER) {
-            author_name = db[article.author].name;
-        }
-
-        /* Display article */
-        notify(player, "==============================================================================");
-        notify(player, tprintf("  %s", article.topic ? article.topic : "(untitled)"));
-        notify(player, tprintf("  Posted by %s on %s", author_name, date_str));
-        notify(player, "------------------------------------------------------------------------------");
-
-        if (article.body) {
-            char *line_start = article.body;
-            char *newline;
-            while ((newline = strchr(line_start, '\n')) != NULL) {
-                *newline = '\0';
-                notify(player, line_start);
-                line_start = newline + 1;
-            }
-            if (*line_start) {
-                notify(player, line_start);
-            }
-        }
-
-        notify(player, "==============================================================================");
-
-        /* Mark as read */
-        mariadb_news_mark_read(player, news_id);
-
-        /* Clean up */
-        if (article.topic) SMART_FREE(article.topic);
-        if (article.body) SMART_FREE(article.body);
-        return;
-    }
-
-    /* Post article (admin only): +news post=<topic>@@<body> */
-    if (!string_compare(arg1, "post")) {
-        char *topic, *body;
-
-        if (!Wizard(player) && !power(player, POW_ANNOUNCE)) {
-            notify(player, "+news: Permission denied.");
-            return;
-        }
-
-        if (!arg2 || !*arg2) {
-            notify(player, "+news: Usage: +news post=<topic>@@<body>");
-            return;
-        }
-
-        /* Split arg2 on @@ into topic and body */
-        parse_subject_body(arg2, &topic, &body);
-        if (!topic || !*topic) {
-            notify(player, "+news: Usage: +news post=<topic>@@<body>");
-            return;
-        }
-        if (!body || !*body) {
-            notify(player, "+news: Usage: +news post=<topic>@@<body>");
-            return;
-        }
-
-        long news_id = mariadb_news_post(player, topic, body);
-        if (news_id > 0) {
-            notify(player, tprintf("+news: Article #%ld posted: %s", news_id, topic));
-            log_important(tprintf("NEWS: %s(#%" DBREF_FMT ") posted article #%ld: %s",
-                                 db[player].name, player, news_id, topic));
-        } else {
-            notify(player, "+news: Error posting article.");
-        }
-        return;
-    }
-
-    /* Remove article (admin only) */
-    if (!string_compare(arg1, "remove") || !string_compare(arg1, "delete")) {
-        long news_id;
-
-        if (!Wizard(player) && !power(player, POW_ANNOUNCE)) {
-            notify(player, "+news: Permission denied.");
-            return;
-        }
-
-        if (!arg2 || !*arg2) {
-            notify(player, "+news: Specify an article number. Usage: +news remove=<#>");
-            return;
-        }
-
-        news_id = atol(arg2);
-        if (news_id <= 0) {
-            notify(player, "+news: Invalid article number.");
-            return;
-        }
-
-        if (mariadb_news_delete(news_id)) {
-            notify(player, tprintf("+news: Article #%ld removed.", news_id));
-            log_important(tprintf("NEWS: %s(#%" DBREF_FMT ") removed article #%ld",
-                                 db[player].name, player, news_id));
-        } else {
-            notify(player, "+news: Article not found or could not be removed.");
-        }
-        return;
-    }
-
-    notify(player, "+news: Unknown subcommand. Use: list, read, post, remove");
-    notify(player, "  +news                    - List unread articles");
-    notify(player, "  +news list=all           - List all articles");
-    notify(player, "  +news read=<#>           - Read an article");
-    notify(player, "  +news post=<topic>@@<body> - Post an article (admin)");
-    notify(player, "  +news remove=<#>         - Remove an article (admin)");
-}
-
-/* ===================================================================
- * News Connection Check
- * =================================================================== */
-
-/**
- * Check for unread news on player connect
- * Called from descriptor_mgmt.c after announce_connect()
- *
- * @param player Player who just connected
- */
-void check_news(dbref player)
-{
-    long unread = mariadb_news_count_unread(player);
-
-    if (unread > 0) {
-        notify(player, tprintf("|Y!+You have %ld unread news article%s. Type '+news' to read.|",
-                              unread, unread == 1 ? "" : "s"));
     }
 }
 

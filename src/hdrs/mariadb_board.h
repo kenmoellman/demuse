@@ -116,6 +116,27 @@ long mariadb_board_list(dbref board_room, int include_deleted,
                         mail_list_callback callback, void *userdata);
 
 /*
+ * mariadb_board_list_for_player - Iterate over posts with per-player read status
+ *
+ * Like mariadb_board_list, but LEFT JOINs with board_read to determine
+ * whether each post has been read by the specified player. Sets MF_READ
+ * in the MAIL_RESULT flags accordingly.
+ *
+ * PARAMETERS:
+ *   board_room      - dbref of board room
+ *   player          - dbref of player (for read status lookup)
+ *   include_deleted - Whether to include deleted posts
+ *   unread_only     - If true, only return posts not read by player
+ *   callback        - Function called for each post
+ *   userdata        - Passed through to callback
+ *
+ * RETURNS: Number of posts iterated
+ */
+long mariadb_board_list_for_player(dbref board_room, dbref player,
+                                   int include_deleted, int unread_only,
+                                   mail_list_callback callback, void *userdata);
+
+/*
  * mariadb_board_count - Count posts on a board
  *
  * PARAMETERS:
@@ -148,6 +169,67 @@ int mariadb_board_remove_all(void);
 int mariadb_board_stats(long *total_out, long *deleted_out,
                         long *text_size_out);
 
+/* ============================================================================
+ * BOARD BAN FUNCTIONS
+ * ============================================================================ */
+
+/*
+ * mariadb_board_ban - Ban a player from posting to the board
+ *
+ * PARAMETERS:
+ *   player    - dbref of player to ban
+ *   banned_by - dbref of admin performing the ban
+ *
+ * RETURNS: 1 on success, 0 on failure
+ */
+int mariadb_board_ban(dbref player, dbref banned_by);
+
+/*
+ * mariadb_board_unban - Remove a player's board ban
+ *
+ * PARAMETERS:
+ *   player - dbref of player to unban
+ *
+ * RETURNS: 1 on success, 0 on failure
+ */
+int mariadb_board_unban(dbref player);
+
+/*
+ * mariadb_board_is_banned - Check if a player is banned from the board
+ *
+ * PARAMETERS:
+ *   player - dbref of player to check
+ *
+ * RETURNS: 1 if banned, 0 if not
+ */
+int mariadb_board_is_banned(dbref player);
+
+/* ============================================================================
+ * BOARD READ TRACKING FUNCTIONS
+ * ============================================================================ */
+
+/*
+ * mariadb_board_mark_read - Mark a board post as read by a player
+ *
+ * PARAMETERS:
+ *   player  - dbref of player
+ *   post_id - ID of the board post
+ *
+ * RETURNS: 1 on success, 0 on failure
+ */
+int mariadb_board_mark_read(dbref player, long post_id);
+
+/*
+ * mariadb_board_count_unread - Count unread board posts for a player
+ *
+ * PARAMETERS:
+ *   player     - dbref of player
+ *   board_room - dbref of board room
+ *
+ * RETURNS: Count of unread posts, or 0 on error
+ */
+long mariadb_board_count_unread(dbref player, dbref board_room);
+
 #else /* !USE_MARIADB */
 
 /* ============================================================================
@@ -174,12 +256,27 @@ static inline long mariadb_board_list(dbref b __attribute__((unused)),
     int d __attribute__((unused)),
     mail_list_callback c __attribute__((unused)),
     void *u __attribute__((unused))) { return 0; }
+static inline long mariadb_board_list_for_player(dbref b __attribute__((unused)),
+    dbref p __attribute__((unused)), int d __attribute__((unused)),
+    int uo __attribute__((unused)),
+    mail_list_callback c __attribute__((unused)),
+    void *u __attribute__((unused))) { return 0; }
 static inline long mariadb_board_count(dbref b __attribute__((unused)),
     int d __attribute__((unused))) { return -1; }
 static inline int mariadb_board_remove_all(void) { return 0; }
 static inline int mariadb_board_stats(long *t __attribute__((unused)),
     long *d __attribute__((unused)), long *s __attribute__((unused)))
     { return 0; }
+static inline int mariadb_board_ban(dbref p __attribute__((unused)),
+    dbref b __attribute__((unused))) { return 0; }
+static inline int mariadb_board_unban(dbref p __attribute__((unused)))
+    { return 0; }
+static inline int mariadb_board_is_banned(dbref p __attribute__((unused)))
+    { return 0; }
+static inline int mariadb_board_mark_read(dbref p __attribute__((unused)),
+    long id __attribute__((unused))) { return 0; }
+static inline long mariadb_board_count_unread(dbref p __attribute__((unused)),
+    dbref b __attribute__((unused))) { return 0; }
 
 #endif /* USE_MARIADB */
 

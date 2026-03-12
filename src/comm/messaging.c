@@ -26,12 +26,14 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <time.h>
+#include <limits.h>
 #include <unistd.h>
 
 #include "externs.h"
 #include "db.h"
 #include "mariadb_mail.h"
 #include "mariadb_board.h"
+#include "mariadb_news.h"
 
 /* Message flags are defined in mariadb_mail.h:
  * MF_DELETED  0x01
@@ -40,11 +42,7 @@
  * MF_BOARD    0x08  (legacy, used only during flat-file conversion)
  */
 
-/* Message destination types */
-typedef enum {
-    MSG_PRIVATE,    /* Private player mail */
-    MSG_BOARD       /* Public board post */
-} msg_dest_type;
+/* msg_dest_type is defined in externs.h */
 
 /* Function prototypes - ANSI C style */
 
@@ -57,7 +55,7 @@ void post_message(dbref, dbref, const char *, const char *, msg_dest_type, int);
 void read_message(dbref, dbref, long);
 long delete_messages(dbref, dbref, long, long, int);
 void purge_deleted(dbref, dbref);
-void list_messages(dbref, dbref, msg_dest_type);
+static void list_mail_messages(dbref, dbref);
 
 /* Utility functions */
 long count_messages(dbref, int);
@@ -86,6 +84,59 @@ void info_mail(dbref);
 #ifdef SHRINK_DB
 void remove_all_mail(void);
 #endif
+
+/* ============================================================================
+ * RANGE PARSING
+ * ============================================================================ */
+
+/*
+ * parse_delete_range - Parse a deletion argument into start/end values
+ *
+ * Handles: single number ("5"), range ("3-7"), or "all".
+ * Sets start_out/end_out and returns 1 on success, 0 on parse error.
+ * For "all", sets start=1, end=LONG_MAX.
+ */
+static int parse_delete_range(const char *arg, long *start_out, long *end_out)
+{
+    char *dash;
+    char buf[64];
+
+    if (!arg || !*arg || !start_out || !end_out) {
+        return 0;
+    }
+
+    /* Handle "all" */
+    if (!string_compare((char *)arg, "all")) {
+        *start_out = 1;
+        *end_out = LONG_MAX;
+        return 1;
+    }
+
+    /* Copy to scratch buffer for parsing */
+    strncpy(buf, arg, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    /* Look for range separator */
+    dash = strchr(buf, '-');
+    if (dash && dash != buf) {
+        /* Range: "3-7" */
+        *dash = '\0';
+        *start_out = atol(buf);
+        *end_out = atol(dash + 1);
+        if (*start_out <= 0 || *end_out <= 0 || *end_out < *start_out) {
+            return 0;
+        }
+        return 1;
+    }
+
+    /* Single number */
+    *start_out = atol(buf);
+    *end_out = *start_out;
+    if (*start_out <= 0) {
+        return 0;
+    }
+    return 1;
+}
 
 /* Safe string operations - prevent buffer overflows */
 static void safe_copy(char *dest, const char *src, size_t dest_size)
@@ -167,17 +218,29 @@ long count_unread(dbref player)
     return (count >= 0) ? count : 0;
 }
 
-/* Send a message - unified function for both mail and board */
+/* Send a message - unified function for mail, board, and news */
 void post_message(dbref from, dbref to, const char *subject,
                   const char *message, msg_dest_type type, int flags)
 {
     long msgnum;
 
     if (!message || !*message) return;
-    if (to < 0 || to >= db_top) return;
 
     /* Validate sender */
     if (from != NOTHING && (from < 0 || from >= db_top)) return;
+
+    /* For news, to is NOTHING — skip recipient validation and quota */
+    if (type == MSG_NEWS) {
+        if (!mariadb_news_post_article(from, subject ? subject : "(untitled)",
+                                        message)) {
+            if (from != NOTHING) {
+                notify(from, "+news: Failed to post article.");
+            }
+        }
+        return;
+    }
+
+    if (to < 0 || to >= db_top) return;
 
     /* Check quota for non-board messages */
     if (type != MSG_BOARD) {
@@ -268,6 +331,7 @@ typedef struct {
     dbref player;       /* Player viewing the list */
     dbref mailbox;      /* Mailbox/board being listed */
     int is_board;       /* Whether this is a board listing */
+    const char *label;  /* Display label ("+board", "+news", etc.) */
 } list_context;
 
 /* Callback for list_messages - displays one message line */
@@ -276,7 +340,6 @@ static void list_message_callback(const MAIL_RESULT *mr, long position,
 {
     list_context *ctx = (list_context *)userdata;
     char status_char;
-    char name_buf[32];
     char date_buf[32];
     char *preview;
     char buf[1024];
@@ -309,105 +372,164 @@ static void list_message_callback(const MAIL_RESULT *mr, long position,
         }
     }
 
-    /* Format sender name - validate sender still exists */
-    safe_copy(name_buf,
-             GoodObject(mr->sender) ?
-             truncate_color(db[mr->sender].cname, 20) : "*deleted*",
-             sizeof(name_buf));
-
-    /* Format date */
-    safe_copy(date_buf, mktm(mr->sent_date, "D", ctx->player),
-             sizeof(date_buf));
-
-    /* Get subject or message preview */
-    if (mr->subject && mr->subject[0]) {
-        preview = tprintf("%s", truncate_color(mr->subject, 25));
-    } else {
-        preview = tprintf("%s", truncate_color(mr->message ? mr->message : "", 25));
-    }
-
-    /* Remove newlines from preview */
+    /* Format sender name - validate sender still exists, color-aware padding */
     {
-        char *nl = strchr(preview, '\n');
-        if (nl) *nl = '\0';
-    }
+        char *padded_name;
+        char *padded_date;
 
-    snprintf(buf, sizeof(buf), "%5ld) %c %-20s | %-19s | %s",
-            position, status_char, name_buf, date_buf, preview);
-    notify(ctx->player, buf);
+        if (GoodObject(mr->sender)) {
+            padded_name = ljust(truncate_color(db[mr->sender].cname, 20), 20);
+        } else {
+            padded_name = ljust("*deleted*", 20);
+        }
+
+        /* Format date */
+        safe_copy(date_buf, mktm(mr->sent_date, "D", ctx->player),
+                 sizeof(date_buf));
+        padded_date = ljust(date_buf, 19);
+
+        /* Get subject or message preview */
+        if (mr->subject && mr->subject[0]) {
+            preview = tprintf("%s", truncate_color(mr->subject, 25));
+        } else {
+            preview = tprintf("%s", truncate_color(mr->message ? mr->message : "", 25));
+        }
+
+        /* Remove newlines from preview */
+        {
+            char *nl = strchr(preview, '\n');
+            if (nl) *nl = '\0';
+        }
+
+        snprintf(buf, sizeof(buf), "%5ld) %c %s | %s | %s",
+                position, status_char, padded_name, padded_date, preview);
+        notify(ctx->player, buf);
+    }
 }
 
-/* List messages - unified function with type awareness */
-void list_messages(dbref player, dbref mailbox, msg_dest_type type)
+/* List private mail messages */
+static void list_mail_messages(dbref player, dbref mailbox)
 {
     char buf[1024];
-    int is_board = (type == MSG_BOARD);
     list_context ctx;
 
     if (mailbox < 0 || mailbox >= db_top) return;
 
     /* Print header */
-    if (is_board) {
-        notify(player,
-            "|C++board|   |Y!+Author|               | |W!+Time/Date|           | Message");
-        notify(player,
-            "------------------------------+---------------------+------------------------");
-    } else {
-        snprintf(buf, sizeof(buf),
-            "|W!+------>| |B!++mail| |W!+for| %s", db[mailbox].cname);
-        if (player != mailbox) {
-            safe_append(buf, tprintf(" |W!+from| %s", db[player].cname), sizeof(buf));
-        }
-        safe_append(buf, " |W!+<------|", sizeof(buf));
-        notify(player, buf);
+    snprintf(buf, sizeof(buf),
+        "|W!+------>| |B!++mail| |W!+for| %s", db[mailbox].cname);
+    if (player != mailbox) {
+        safe_append(buf, tprintf(" |W!+from| %s", db[player].cname), sizeof(buf));
     }
+    safe_append(buf, " |W!+<------|", sizeof(buf));
+    notify(player, buf);
 
     /* Setup callback context */
     ctx.player = player;
     ctx.mailbox = mailbox;
-    ctx.is_board = is_board;
+    ctx.is_board = 0;
+    ctx.label = "+mail";
 
     /* List all messages (including deleted for owner/admin visibility) */
-    if (is_board) {
-        mariadb_board_list(mailbox, 1, list_message_callback, &ctx);
-    } else {
-        mariadb_mail_list(mailbox, 1, list_message_callback, &ctx);
-    }
+    mariadb_mail_list(mailbox, 1, list_message_callback, &ctx);
 
     notify(player, "");
 }
 
-/* Read a message - unified function */
-void read_message(dbref player, dbref mailbox, long msgnum)
+/* List public messages (board or news) with per-player read tracking */
+static void list_public_messages(dbref player, dbref board_room,
+                                  int unread_only, const char *label)
+{
+    list_context ctx;
+    long count;
+
+    /* Print header */
+    if (unread_only) {
+        notify(player, tprintf("|C+%s|   |Y!+Unread Posts|", label));
+    } else {
+        notify(player, tprintf("|C+%s|   |Y!+All Posts|", label));
+    }
+    notify(player,
+        "------------------------------+---------------------+------------------------");
+    notify(player,
+        "         |Y!+Author|               | |W!+Time/Date|           | Message");
+    notify(player,
+        "------------------------------+---------------------+------------------------");
+
+    /* Setup callback context */
+    ctx.player = player;
+    ctx.mailbox = board_room;
+    ctx.is_board = 1;
+    ctx.label = label;
+
+    /* Use per-player read tracking — dispatch to news or board */
+    if (board_room == NEWS_ROOM) {
+        count = mariadb_news_list_for_player(player, 1, unread_only,
+                                              list_message_callback, &ctx);
+    } else {
+        count = mariadb_board_list_for_player(board_room, player, 1, unread_only,
+                                              list_message_callback, &ctx);
+    }
+
+    if (count == 0 && unread_only) {
+        notify(player, tprintf("  No unread posts. Use '%s list=all' to see all posts.",
+                              label));
+    }
+
+    notify(player,
+        "------------------------------+---------------------+------------------------");
+
+    /* Show unread/total summary */
+    {
+        long total, unread;
+
+        if (board_room == NEWS_ROOM) {
+            total = mariadb_news_count(0);
+            unread = mariadb_news_count_unread(player);
+        } else {
+            total = mariadb_board_count(board_room, 0);
+            unread = mariadb_board_count_unread(player, board_room);
+        }
+        if (total < 0) total = 0;
+
+        notify(player, tprintf("  %ld unread, %ld total.%s",
+                              unread, total,
+                              unread_only && total > count ?
+                              tprintf(" Use '%s list=all' to see all.", label) : ""));
+    }
+}
+
+
+/* Read a public message (board or news) by position */
+static void read_public_message(dbref player, dbref board_room, long msgnum,
+                                 const char *label)
 {
     MAIL_RESULT mr;
     char buf[512];
-    int is_board = (mailbox == default_room);
     int found;
 
-    if (mailbox < 0 || mailbox >= db_top) return;
-    if (msgnum <= 0) return;
+    if (msgnum <= 0) {
+        notify(player, tprintf("%s: Specify a post number to read.", label));
+        return;
+    }
 
     /* Get message by position (include deleted for permission checking) */
-    if (is_board) {
-        found = mariadb_board_get_by_position(mailbox, msgnum, 1, &mr);
+    if (board_room == NEWS_ROOM) {
+        found = mariadb_news_get_by_position(msgnum, 1, &mr);
     } else {
-        found = mariadb_mail_get_by_position(mailbox, msgnum, 1, &mr);
+        found = mariadb_board_get_by_position(board_room, msgnum, 1, &mr);
     }
 
     if (!found) {
-        notify(player, tprintf("%s: Invalid message number.",
-                              is_board ? "+board" : "+mail"));
+        notify(player, tprintf("%s: Invalid post number.", label));
         return;
     }
 
     /* Check permissions for deleted messages */
     if ((mr.flags & MF_DELETED) &&
-        mailbox != player &&
         mr.sender != player &&
-        !(is_board && power(player, POW_BOARD))) {
-        notify(player, tprintf("%s: Invalid message number.",
-                              is_board ? "+board" : "+mail"));
+        !Wizard(player) && !power(player, POW_BOARD)) {
+        notify(player, tprintf("%s: Invalid post number.", label));
         if (mr.subject) SMART_FREE(mr.subject);
         if (mr.message) SMART_FREE(mr.message);
         return;
@@ -420,9 +542,67 @@ void read_message(dbref player, dbref mailbox, long msgnum)
                           (mr.subject && mr.subject[0]) ?
                           mr.subject : "(no subject)"));
 
-    if (!is_board) {
-        notify(player, tprintf("To: %s", db[mailbox].cname));
+    notify(player, tprintf("From: %s",
+                          mr.sender == NOTHING ? "The MUSE Server" :
+                          unparse_object(player, mr.sender)));
+
+    snprintf(buf, sizeof(buf), "Date: %s", mktm(mr.sent_date, "D", player));
+    notify(player, buf);
+
+    /* Show flags if applicable */
+    if (mr.flags & MF_DELETED) {
+        notify(player, "Flags: deleted");
     }
+
+    notify(player, "");
+    notify(player, mr.message ? mr.message : "(empty)");
+
+    /* Mark as read via board_read (per-player tracking) */
+    if (board_room == NEWS_ROOM) {
+        mariadb_news_mark_read(player, mr.id);
+    } else {
+        mariadb_board_mark_read(player, mr.id);
+    }
+
+    if (mr.subject) SMART_FREE(mr.subject);
+    if (mr.message) SMART_FREE(mr.message);
+}
+
+/* Read a private mail message by position (mail only) */
+void read_message(dbref player, dbref mailbox, long msgnum)
+{
+    MAIL_RESULT mr;
+    char buf[512];
+    int found;
+
+    if (mailbox < 0 || mailbox >= db_top) return;
+    if (msgnum <= 0) return;
+
+    found = mariadb_mail_get_by_position(mailbox, msgnum, 1, &mr);
+
+    if (!found) {
+        notify(player, "+mail: Invalid message number.");
+        return;
+    }
+
+    /* Check permissions for deleted messages */
+    if ((mr.flags & MF_DELETED) &&
+        mailbox != player &&
+        mr.sender != player) {
+        notify(player, "+mail: Invalid message number.");
+        if (mr.subject) SMART_FREE(mr.subject);
+        if (mr.message) SMART_FREE(mr.message);
+        return;
+    }
+
+    /* Display message */
+    notify(player, tprintf("Message %ld:", msgnum));
+
+    notify(player, tprintf("Subject: %s",
+                          (mr.subject && mr.subject[0]) ?
+                          mr.subject : "(no subject)"));
+
+    notify(player, tprintf("To: %s", db[mailbox].cname));
 
     notify(player, tprintf("From: %s",
                           mr.sender == NOTHING ? "The MUSE Server" :
@@ -443,14 +623,10 @@ void read_message(dbref player, dbref mailbox, long msgnum)
     notify(player, "");
     notify(player, mr.message ? mr.message : "(empty)");
 
-    /* Mark as read if viewing own mail */
+    /* Mark as read if reading own mail */
     if (mailbox == player) {
         int new_flags = (mr.flags & ~MF_NEW) | MF_READ;
-        if (is_board) {
-            mariadb_board_update_flags(mr.id, new_flags);
-        } else {
-            mariadb_mail_update_flags(mr.id, new_flags);
-        }
+        mariadb_mail_update_flags(mr.id, new_flags);
     }
 
     if (mr.subject) SMART_FREE(mr.subject);
@@ -461,31 +637,28 @@ void read_message(dbref player, dbref mailbox, long msgnum)
  * Board Ban System
  * =================================================================== */
 
-/* Board ban checking */
+/* Board ban checking - uses MariaDB board_bans table */
 int is_banned_from_board(dbref player)
 {
-    char *blist, *blbegin, *target;
-    char buf[1024];
+    return mariadb_board_is_banned(player);
+}
 
-    if (!could_doit(player, default_room, A_LPAGE)) {
-        snprintf(buf, sizeof(buf), "%s&", atr_get(default_room, A_LPAGE));
-        blbegin = blist = stralloc(buf);
-        target = tprintf("#%" DBREF_FMT, player);
+/**
+ * check_board - Notify player of unread board posts on connect
+ */
+void check_board(dbref player)
+{
+    long unread;
 
-        while (*blist) {
-            char *amp = strchr(blist, '&');
-            if (amp) *amp = '\0';
-
-            if (!strcmp(blist, target)) {
-                return 1;
-            }
-
-            blist += strlen(blist) + 1;
-        }
-        (void)blbegin;  /* Suppress unused warning - stralloc auto-frees */
+    if (!GoodObject(player) || Typeof(player) != TYPE_PLAYER) {
+        return;
     }
 
-    return 0;
+    unread = mariadb_board_count_unread(player, default_room);
+    if (unread > 0) {
+        notify(player, tprintf("You have %ld unread board post%s. Type '+board' to view.",
+                              unread, unread == 1 ? "" : "s"));
+    }
 }
 
 /* ===================================================================
@@ -745,6 +918,7 @@ void info_mail(dbref player)
     long mail_unread = 0, mail_read = 0, mail_text = 0;
     long mail_players = 0;
     long board_total = 0, board_deleted = 0, board_text = 0;
+    long news_total = 0, news_deleted = 0, news_text = 0;
 
     notify(player, "|W!+========================================|");
     notify(player, "|W!+      Mail System Information        |");
@@ -756,8 +930,11 @@ void info_mail(dbref player)
                        &mail_unread, &mail_read, &mail_text,
                        &mail_players);
 
-    /* Get board statistics */
+    /* Get board statistics (excludes news) */
     mariadb_board_stats(&board_total, &board_deleted, &board_text);
+
+    /* Get news statistics */
+    mariadb_news_stats(&news_total, &news_deleted, &news_text);
 
     notify(player, "|C!+Storage Backend:|  MariaDB");
     notify(player, "");
@@ -784,12 +961,19 @@ void info_mail(dbref player)
                           board_text, board_text / 1024.0));
     notify(player, "");
 
+    notify(player, "|C!+News Statistics:|");
+    notify(player, tprintf("  Total articles:      %ld", news_total));
+    notify(player, tprintf("  Deleted (purgable):  %ld", news_deleted));
+    notify(player, tprintf("  Article text:        %ld bytes (%.2f KB)",
+                          news_text, news_text / 1024.0));
+    notify(player, "");
+
     notify(player, "|C!+Combined:|");
     notify(player, tprintf("  Total entries:       %ld",
-                          mail_total + board_total));
+                          mail_total + board_total + news_total));
     notify(player, tprintf("  Total text:          %ld bytes (%.2f KB)",
-                          mail_text + board_text,
-                          (mail_text + board_text) / 1024.0));
+                          mail_text + board_text + news_text,
+                          (mail_text + board_text + news_text) / 1024.0));
     notify(player, "");
 
     /* Show top mail users if admin */
@@ -890,14 +1074,52 @@ void do_mail(dbref player, char *arg1, char *arg2)
     }
 
     /* Route to appropriate handler */
-    if (!string_compare(arg1, "delete") || !string_compare(arg1, "undelete")) {
-        /* Handle delete/undelete */
-        long del = delete_messages(player, player,
-                                   arg2 && *arg2 ? atol(arg2) : 0,
-                                   arg2 && *arg2 ? atol(arg2) : 0,
-                                   !string_compare(arg1, "undelete"));
-        notify(player, tprintf("+mail: %ld messages %sdeleted.", del,
-                              !string_compare(arg1, "delete") ? "" : "un"));
+    if (!string_compare(arg1, "send") || !string_compare(arg1, "sendcode")) {
+        /* +mail send=*<player> — enter paste mode for mail */
+        int code = !string_compare(arg1, "sendcode") ? 1 : 0;
+        dbref recip;
+
+        if (!arg2 || !*arg2) {
+            notify(player, "+mail: Specify a recipient. Usage: +mail send=*<player>");
+            return;
+        }
+        recip = lookup_player(arg2);
+        if (recip == NOTHING || Typeof(recip) != TYPE_PLAYER) {
+            notify(player, "+mail: Unknown player.");
+            return;
+        }
+        /* Check page lock and blacklist */
+        if (!could_doit(player, recip, A_LPAGE)) {
+            notify(player, "+mail: That player is page-locked against you.");
+            return;
+        }
+        if (!could_doit(real_owner(player), real_owner(recip), A_BLACKLIST) ||
+            !could_doit(real_owner(recip), real_owner(player), A_BLACKLIST)) {
+            notify(player, "+mail: There's a blacklist in effect.");
+            return;
+        }
+        start_paste_session(player, PASTE_MAIL, recip, NULL, NULL, code);
+    }
+    else if (!string_compare(arg1, "delete") || !string_compare(arg1, "undelete")) {
+        /* Handle delete/undelete — supports single, range (3-7), or "all" */
+        long start, end, del;
+        int is_undelete = !string_compare(arg1, "undelete");
+
+        if (!arg2 || !*arg2) {
+            notify(player, tprintf("+mail: Specify a message number, range, or 'all'. "
+                                  "Usage: +mail %s=<#|#-#|all>",
+                                  is_undelete ? "undelete" : "delete"));
+            return;
+        }
+        if (!parse_delete_range(arg2, &start, &end)) {
+            notify(player, tprintf("+mail: Invalid range '%s'. "
+                                  "Use a number, range (3-7), or 'all'.", arg2));
+            return;
+        }
+        del = delete_messages(player, player, start, end, is_undelete);
+        notify(player, tprintf("+mail: %ld message%s %sdeleted.", del,
+                              del == 1 ? "" : "s",
+                              is_undelete ? "un" : ""));
     }
     else if (!string_compare(arg1, "check")) {
         long unread_count = count_unread(player);
@@ -916,20 +1138,7 @@ void do_mail(dbref player, char *arg1, char *arg2)
         notify(player, "+mail: Deleted messages purged.");
     }
     else if (!string_compare(arg1, "list") || (!*arg1 && !*arg2)) {
-        list_messages(player, player, MSG_PRIVATE);
-    }
-    else if (*arg1 && *arg2) {
-        /* Send mail: +mail <player>=<subject>@@<message> */
-        char *subject, *body;
-        dbref recip = lookup_player(arg1);
-        if (recip == NOTHING || Typeof(recip) != TYPE_PLAYER) {
-            notify(player, "+mail: Unknown player.");
-            return;
-        }
-        parse_subject_body(arg2, &subject, &body);
-        if (!subject) subject = "(no subject)";
-        post_message(player, recip, subject, body, MSG_PRIVATE, MF_NEW);
-        notify(player, tprintf("+mail: Message sent to %s.", db[recip].cname));
+        list_mail_messages(player, player);
     }
     else {
         notify(player, "+mail: Invalid syntax. See 'help +mail'.");
@@ -952,34 +1161,275 @@ void do_board(dbref player, char *arg1, char *arg2)
 
     /* Route to appropriate handler */
     if (!string_compare(arg1, "list") || (!*arg1 && !*arg2)) {
-        list_messages(player, default_room, MSG_BOARD);
+        /* +board or +board list = unread only; +board list=all = all posts */
+        int unread_only = 1;
+        if (arg2 && !string_compare(arg2, "all")) {
+            unread_only = 0;
+        }
+        list_public_messages(player, default_room, unread_only, "+board");
     }
     else if (!string_compare(arg1, "read")) {
         if (arg2 && *arg2) {
-            read_message(player, default_room, atol(arg2));
+            read_public_message(player, default_room, atol(arg2), "+board");
         } else {
-            notify(player, "+board: Specify a message number to read.");
+            notify(player, "+board: Specify a post number to read.");
         }
     }
-    else if (!string_compare(arg1, "write")) {
-        if (arg2 && *arg2) {
-            /* +board write=<subject>@@<message> */
-            char *subject, *body;
-            parse_subject_body(arg2, &subject, &body);
-            if (!subject) subject = "(no subject)";
-            post_message(player, default_room, subject, body, MSG_BOARD, MF_READ);
-            notify(player, "+board: Message posted.");
-        } else {
-            notify(player, "+board: You must provide a message.");
+    else if (!string_compare(arg1, "post") || !string_compare(arg1, "postcode")) {
+        /* +board post=<subject> — enter paste mode for board post */
+        int code = !string_compare(arg1, "postcode") ? 1 : 0;
+        if (!arg2 || !*arg2) {
+            notify(player, "+board: Specify a subject. Usage: +board post=<subject>");
+            return;
         }
+        start_paste_session(player, PASTE_BOARD, default_room, arg2, NULL, code);
     }
-    else if (!string_compare(arg1, "delete") && power(player, POW_BOARD)) {
-        long del = delete_messages(player, default_room,
-                                   arg2 && *arg2 ? atol(arg2) : 0,
-                                   arg2 && *arg2 ? atol(arg2) : 0, 0);
-        notify(player, tprintf("+board: %ld messages deleted.", del));
+    else if (!string_compare(arg1, "delete")) {
+        /* Delete board posts — supports single, range (3-7), or "all"
+         * Permission check is per-post in mariadb_board_delete_range:
+         * authors can delete their own posts, admins can delete any. */
+        long start, end, del;
+
+        if (!arg2 || !*arg2) {
+            notify(player, "+board: Specify a post number, range, or 'all'. "
+                          "Usage: +board delete=<#|#-#|all>");
+            return;
+        }
+        if (!parse_delete_range(arg2, &start, &end)) {
+            notify(player, tprintf("+board: Invalid range '%s'. "
+                                  "Use a number, range (3-7), or 'all'.", arg2));
+            return;
+        }
+        del = delete_messages(player, default_room, start, end, 0);
+        notify(player, tprintf("+board: %ld post%s deleted.", del,
+                              del == 1 ? "" : "s"));
+    }
+    else if (!string_compare(arg1, "undelete")) {
+        /* Undelete board posts — supports single, range (3-7), or "all" */
+        long start, end, undel;
+
+        if (!arg2 || !*arg2) {
+            notify(player, "+board: Specify a post number, range, or 'all'. "
+                          "Usage: +board undelete=<#|#-#|all>");
+            return;
+        }
+        if (!parse_delete_range(arg2, &start, &end)) {
+            notify(player, tprintf("+board: Invalid range '%s'. "
+                                  "Use a number, range (3-7), or 'all'.", arg2));
+            return;
+        }
+        undel = delete_messages(player, default_room, start, end, 1);
+        notify(player, tprintf("+board: %ld post%s undeleted.", undel,
+                              undel == 1 ? "" : "s"));
+    }
+    else if (!string_compare(arg1, "purge")) {
+        /* Purge deleted board posts (admin only) */
+        long purged;
+
+        if (!Wizard(player) && !power(player, POW_BOARD)) {
+            notify(player, "+board: Permission denied.");
+            return;
+        }
+        purged = mariadb_board_purge(default_room, player);
+        notify(player, tprintf("+board: %ld deleted post%s purged.", purged,
+                              purged == 1 ? "" : "s"));
+    }
+    else if (!string_compare(arg1, "ban") && power(player, POW_BOARD)) {
+        dbref target;
+        if (!arg2 || !*arg2) {
+            notify(player, "+board: Usage: +board ban=*<player>");
+            return;
+        }
+        target = lookup_player(arg2);
+        if (target == NOTHING || Typeof(target) != TYPE_PLAYER) {
+            notify(player, "+board: Unknown player.");
+            return;
+        }
+        mariadb_board_ban(target, player);
+        notify(player, tprintf("+board: %s has been banned from posting.", db[target].cname));
+    }
+    else if (!string_compare(arg1, "unban") && power(player, POW_BOARD)) {
+        dbref target;
+        if (!arg2 || !*arg2) {
+            notify(player, "+board: Usage: +board unban=*<player>");
+            return;
+        }
+        target = lookup_player(arg2);
+        if (target == NOTHING || Typeof(target) != TYPE_PLAYER) {
+            notify(player, "+board: Unknown player.");
+            return;
+        }
+        mariadb_board_unban(target);
+        notify(player, tprintf("+board: %s has been unbanned from posting.", db[target].cname));
+    }
+    else if (!string_compare(arg1, "check")) {
+        long unread = mariadb_board_count_unread(player, default_room);
+        notify(player, tprintf("+board: You have %ld unread post%s.",
+                              unread, unread == 1 ? "" : "s"));
     }
     else {
         notify(player, "+board: Invalid syntax. See 'help +board'.");
+    }
+}
+
+/* ===================================================================
+ * News Command (+news)
+ *
+ * News articles are stored in the board table with board_room = NEWS_ROOM.
+ * Permission model: only Wizards and POW_ANNOUNCE can post/delete/purge.
+ * Guests CAN read news (unlike +board which blocks guests entirely).
+ * =================================================================== */
+
+/* Command: +news */
+void do_news(dbref player, char *arg1, char *arg2)
+{
+    if (Typeof(player) != TYPE_PLAYER) {
+        notify(player, "Only players can use +news.");
+        return;
+    }
+
+    /* Default: list unread */
+    if (!arg1 || !*arg1 || !string_compare(arg1, "list")) {
+        int unread_only = 1;
+        if (arg2 && !string_compare(arg2, "all")) {
+            unread_only = 0;
+        }
+        list_public_messages(player, NEWS_ROOM, unread_only, "+news");
+        return;
+    }
+
+    /* Read article by position */
+    if (!string_compare(arg1, "read")) {
+        if (!arg2 || !*arg2) {
+            notify(player, "+news: Specify an article number. Usage: +news read=<#>");
+            return;
+        }
+        read_public_message(player, NEWS_ROOM, atol(arg2), "+news");
+        return;
+    }
+
+    /* Post article (admin only): +news post=<topic> — enter paste mode */
+    if (!string_compare(arg1, "post") || !string_compare(arg1, "postcode")) {
+        int code = !string_compare(arg1, "postcode") ? 1 : 0;
+
+        if (!Wizard(player) && !power(player, POW_ANNOUNCE)) {
+            notify(player, "+news: Permission denied.");
+            return;
+        }
+
+        if (!arg2 || !*arg2) {
+            notify(player, "+news: Specify a topic. Usage: +news post=<topic>");
+            return;
+        }
+
+        start_paste_session(player, PASTE_NEWS, NOTHING, arg2, NULL, code);
+        return;
+    }
+
+    /* Check unread count */
+    if (!string_compare(arg1, "check")) {
+        long unread = mariadb_news_count_unread(player);
+        notify(player, tprintf("+news: You have %ld unread article%s.",
+                              unread, unread == 1 ? "" : "s"));
+        return;
+    }
+
+    /* Delete article(s) (admin only) — supports single, range (3-7), or "all" */
+    if (!string_compare(arg1, "remove") || !string_compare(arg1, "delete")) {
+        long start, end, del;
+
+        if (!Wizard(player) && !power(player, POW_ANNOUNCE)) {
+            notify(player, "+news: Permission denied.");
+            return;
+        }
+
+        if (!arg2 || !*arg2) {
+            notify(player, "+news: Specify an article number, range, or 'all'. "
+                          "Usage: +news delete=<#|#-#|all>");
+            return;
+        }
+
+        if (!parse_delete_range(arg2, &start, &end)) {
+            notify(player, tprintf("+news: Invalid range '%s'. "
+                                  "Use a number, range (3-7), or 'all'.", arg2));
+            return;
+        }
+
+        del = mariadb_news_delete_range(start, end, 0, player);
+        if (del > 0) {
+            notify(player, tprintf("+news: %ld article%s deleted.", del,
+                                  del == 1 ? "" : "s"));
+            log_important(tprintf("NEWS: %s(#%" DBREF_FMT ") deleted %ld article%s",
+                                 db[player].name, player, del,
+                                 del == 1 ? "" : "s"));
+        } else {
+            notify(player, "+news: No articles found in that range.");
+        }
+        return;
+    }
+
+    /* Undelete article(s) (admin only) */
+    if (!string_compare(arg1, "undelete")) {
+        long start, end, undel;
+
+        if (!Wizard(player) && !power(player, POW_ANNOUNCE)) {
+            notify(player, "+news: Permission denied.");
+            return;
+        }
+
+        if (!arg2 || !*arg2) {
+            notify(player, "+news: Specify an article number, range, or 'all'. "
+                          "Usage: +news undelete=<#|#-#|all>");
+            return;
+        }
+
+        if (!parse_delete_range(arg2, &start, &end)) {
+            notify(player, tprintf("+news: Invalid range '%s'. "
+                                  "Use a number, range (3-7), or 'all'.", arg2));
+            return;
+        }
+
+        undel = mariadb_news_delete_range(start, end, 1, player);
+        notify(player, tprintf("+news: %ld article%s undeleted.", undel,
+                              undel == 1 ? "" : "s"));
+        return;
+    }
+
+    /* Purge deleted articles (admin only) */
+    if (!string_compare(arg1, "purge")) {
+        long purged;
+
+        if (!Wizard(player) && !power(player, POW_ANNOUNCE)) {
+            notify(player, "+news: Permission denied.");
+            return;
+        }
+
+        purged = mariadb_news_purge(player);
+        notify(player, tprintf("+news: %ld deleted article%s purged.", purged,
+                              purged == 1 ? "" : "s"));
+        return;
+    }
+
+    notify(player, "+news: Unknown subcommand. See 'help +news'.");
+}
+
+/* ===================================================================
+ * News Connection Check
+ * =================================================================== */
+
+/**
+ * check_news - Notify player of unread news on connect
+ *
+ * Called from descriptor_mgmt.c after announce_connect().
+ *
+ * @param player Player who just connected
+ */
+void check_news(dbref player)
+{
+    long unread = mariadb_news_count_unread(player);
+
+    if (unread > 0) {
+        notify(player, tprintf("|Y!+You have %ld unread news article%s. Type '+news' to read.|",
+                              unread, unread == 1 ? "" : "s"));
     }
 }

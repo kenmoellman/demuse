@@ -300,8 +300,8 @@ long mariadb_board_delete_range(dbref board_room, long start, long end,
             long post_id = strtol(row[0], NULL, 10);
             dbref author = strtol(row[1], NULL, 10);
 
-            /* Check permissions: author or board admin */
-            if (author == player || power(player, POW_BOARD)) {
+            /* Check permissions: author, Wizard, or board admin */
+            if (author == player || Wizard(player) || power(player, POW_BOARD)) {
                 char update[256];
                 snprintf(update, sizeof(update),
                          "UPDATE board SET flags = %d WHERE post_id = %ld",
@@ -335,8 +335,8 @@ long mariadb_board_purge(dbref board_room, dbref player)
         return 0;
     }
 
-    if (power(player, POW_BOARD)) {
-        /* Board admin: purge all deleted posts */
+    if (Wizard(player) || power(player, POW_BOARD)) {
+        /* Board admin or Wizard: purge all deleted posts */
         snprintf(query, sizeof(query),
                  "DELETE FROM board WHERE board_room = %" DBREF_FMT " "
                  "AND (flags & 1)",
@@ -427,6 +427,90 @@ long mariadb_board_list(dbref board_room, int include_deleted,
     return count;
 }
 
+/*
+ * mariadb_board_list_for_player - Iterate over posts with per-player read status
+ *
+ * Like mariadb_board_list, but LEFT JOINs with board_read to set MF_READ
+ * based on whether the specified player has read each post.
+ *
+ * Always fetches ALL posts to maintain correct global position numbering
+ * (so positions match +board read=N). When unread_only is true, read posts
+ * are skipped in the callback but still counted for position numbering.
+ */
+long mariadb_board_list_for_player(dbref board_room, dbref player,
+                                   int include_deleted, int unread_only,
+                                   mail_list_callback callback, void *userdata)
+{
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+    char query[768];
+    long count = 0;
+    long pos = 1;
+
+    if (!conn || !callback) {
+        return 0;
+    }
+
+    /* Always fetch all posts — unread_only filtering happens in the loop
+     * to preserve correct global position numbering */
+    snprintf(query, sizeof(query),
+             "SELECT b.post_id, b.author, b.board_room, b.posted_date, "
+             "b.flags, b.message, b.subject, "
+             "(br.post_id IS NOT NULL) AS is_read "
+             "FROM board b "
+             "LEFT JOIN board_read br ON b.post_id = br.post_id "
+             "AND br.player_dbref = %" DBREF_FMT " "
+             "WHERE b.board_room = %" DBREF_FMT " "
+             "%s"
+             "ORDER BY b.post_id",
+             player, board_room,
+             include_deleted ? "" : "AND NOT (b.flags & 1) ");
+
+    if (mysql_query(conn, query)) {
+        log_error(tprintf("MariaDB board: list_for_player query failed: %s",
+                          mysql_error(conn)));
+        return 0;
+    }
+
+    result = mysql_store_result(conn);
+    if (!result) {
+        return 0;
+    }
+
+    while ((row = mysql_fetch_row(result)) != NULL) {
+        MAIL_RESULT mr;
+        int is_read;
+
+        mr.id = strtol(row[0], NULL, 10);
+        mr.sender = strtol(row[1], NULL, 10);     /* author */
+        mr.recipient = strtol(row[2], NULL, 10);   /* board_room */
+        mr.sent_date = strtol(row[3], NULL, 10);
+        mr.flags = (int)strtol(row[4], NULL, 10);
+        mr.message = row[5];
+        mr.subject = (row[6] && row[6][0]) ? row[6] : NULL;
+        is_read = (int)strtol(row[7], NULL, 10);
+
+        /* Override MF_READ based on per-player read tracking */
+        if (is_read) {
+            mr.flags |= MF_READ;
+        } else {
+            mr.flags &= ~MF_READ;
+        }
+
+        /* Skip read posts when filtering to unread only, but always
+         * increment position to keep numbering consistent */
+        if (!unread_only || !is_read) {
+            callback(&mr, pos, userdata);
+            count++;
+        }
+        pos++;
+    }
+
+    mysql_free_result(result);
+    return count;
+}
+
 /* ============================================================================
  * COUNT OPERATIONS
  * ============================================================================ */
@@ -511,12 +595,13 @@ int mariadb_board_stats(long *total_out, long *deleted_out,
         return 0;
     }
 
+    /* Exclude NEWS_ROOM (-2) posts so board stats only show board posts */
     const char *stats_sql =
         "SELECT "
         "  COUNT(*), "
         "  SUM(CASE WHEN flags & 1 THEN 1 ELSE 0 END), "
         "  COALESCE(SUM(LENGTH(message)), 0) "
-        "FROM board";
+        "FROM board WHERE board_room != -2";
 
     if (mysql_query(conn, stats_sql)) {
         log_error(tprintf("MariaDB board: stats query failed: %s",
@@ -538,6 +623,150 @@ int mariadb_board_stats(long *total_out, long *deleted_out,
 
     mysql_free_result(result);
     return 1;
+}
+
+/* ============================================================================
+ * BOARD BAN FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * Ban a player from posting to the board
+ */
+int mariadb_board_ban(dbref player, dbref banned_by)
+{
+    char query[512];
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+
+    if (!conn) return 0;
+
+    snprintf(query, sizeof(query),
+             "INSERT IGNORE INTO board_bans (player, banned_by) "
+             "VALUES (%" DBREF_FMT ", %" DBREF_FMT ")",
+             player, banned_by);
+
+    if (mysql_query(conn, query)) {
+        fprintf(stderr, "mariadb_board_ban: %s\n", mysql_error(conn));
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
+ * Remove a player's board ban
+ */
+int mariadb_board_unban(dbref player)
+{
+    char query[256];
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+
+    if (!conn) return 0;
+
+    snprintf(query, sizeof(query),
+             "DELETE FROM board_bans WHERE player = %" DBREF_FMT,
+             player);
+
+    if (mysql_query(conn, query)) {
+        fprintf(stderr, "mariadb_board_unban: %s\n", mysql_error(conn));
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
+ * Check if a player is banned from the board
+ */
+int mariadb_board_is_banned(dbref player)
+{
+    char query[256];
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+    MYSQL_RES *result;
+
+    if (!conn) return 0;
+
+    snprintf(query, sizeof(query),
+             "SELECT 1 FROM board_bans WHERE player = %" DBREF_FMT " LIMIT 1",
+             player);
+
+    if (mysql_query(conn, query)) {
+        fprintf(stderr, "mariadb_board_is_banned: %s\n", mysql_error(conn));
+        return 0;
+    }
+
+    result = mysql_store_result(conn);
+    if (!result) return 0;
+
+    int banned = (mysql_num_rows(result) > 0) ? 1 : 0;
+    mysql_free_result(result);
+    return banned;
+}
+
+/* ============================================================================
+ * BOARD READ TRACKING FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * Mark a board post as read by a player
+ */
+int mariadb_board_mark_read(dbref player, long post_id)
+{
+    char query[512];
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+
+    if (!conn) return 0;
+
+    snprintf(query, sizeof(query),
+             "INSERT IGNORE INTO board_read (player_dbref, post_id) "
+             "VALUES (%" DBREF_FMT ", %ld)",
+             player, post_id);
+
+    if (mysql_query(conn, query)) {
+        fprintf(stderr, "mariadb_board_mark_read: %s\n", mysql_error(conn));
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
+ * Count unread board posts for a player
+ */
+long mariadb_board_count_unread(dbref player, dbref board_room)
+{
+    char query[512];
+    MYSQL *conn = (MYSQL *)mariadb_get_connection();
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+    long count = 0;
+
+    if (!conn) return 0;
+
+    snprintf(query, sizeof(query),
+             "SELECT COUNT(*) FROM board b "
+             "WHERE b.board_room = %" DBREF_FMT " "
+             "AND NOT (b.flags & %d) "
+             "AND NOT EXISTS ("
+             "  SELECT 1 FROM board_read br "
+             "  WHERE br.post_id = b.post_id AND br.player_dbref = %" DBREF_FMT
+             ")",
+             board_room, MF_DELETED, player);
+
+    if (mysql_query(conn, query)) {
+        fprintf(stderr, "mariadb_board_count_unread: %s\n", mysql_error(conn));
+        return 0;
+    }
+
+    result = mysql_store_result(conn);
+    if (!result) return 0;
+
+    row = mysql_fetch_row(result);
+    if (row && row[0]) {
+        count = strtol(row[0], NULL, 10);
+    }
+
+    mysql_free_result(result);
+    return count;
 }
 
 #endif /* USE_MARIADB */

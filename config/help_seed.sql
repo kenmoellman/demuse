@@ -537,37 +537,53 @@ Syntax:
     +away              - Clear your away message
 
 When you have an away message set, players who page you will see it.');
-INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+board', '', '+BOARD - Public bulletin board
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+board', '', '+BOARD - Public message board
 
 Syntax:
-    +board                              - List all posts
-    +board list                         - List all posts
-    +board read=<#>                     - Read post number
-    +board write=<subject>@@<message>   - Post with subject
-    +board write=<message>              - Post (no subject)
-    +board delete=<#>                   - Delete a post (admin only)
+    +board                             - List unread posts
+    +board list                        - List unread posts
+    +board list=all                    - List all posts
+    +board read=<#>                    - Read a post
+    +board post=<subject>              - Post a message (enters paste mode)
+    +board postcode=<subject>          - Post a message (paste, preserve formatting)
+    +board check                       - Show unread post count
+    +board delete=<#|#-#|all>          - Delete post(s)
+    +board undelete=<#|#-#|all>        - Undelete post(s)
+    +board purge                       - Permanently remove deleted posts (admin)
+    +board ban=*<player>               - Ban player from posting (admin only)
+    +board unban=*<player>             - Unban player (admin only)
 
-The @@ delimiter separates the subject from the message body.
-If no @@ is used, the subject defaults to "(no subject)".
+Authors can delete and undelete their own posts. Board admins can
+delete, undelete, and purge any posts.
+
+When posting, enter the message body after the prompt. Type ''.'' on
+a blank line to post, or @pasteabort to cancel.
 
 Examples:
-    +board write=LFB@@Looking for builders to help with the new area!
-    +board write=Quick announcement about the event.
+    +board post=Looking for builders
     +board read=2
+    +board delete=3-5
+    +board undelete=3
+    +board ban=*TrollUser
 
-Only real players (not guests) can use +board.
-Players banned from the board cannot post.');
+Only real players (not guests) can use +board.');
 INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+channel', '', '+CHANNEL - Global communication channel system
 
 Syntax:
-    +channel                         - List your channels (or speak on default)
-    +channel list[=filter]           - List available channels
-    +channel join=<name>[:<alias>]   - Join a channel
-    +channel leave=<name>            - Leave a channel
-    +channel default=<name>          - Set your default channel
-    +channel who[=name]              - Show who is on a channel
-    +channel create=<name>           - Create a new channel
-    +channel destroy=<name>          - Destroy a channel you own
+    +channel                           - List channels (same as +channel list)
+    +channel list                      - List all channels
+    +channel join=<name>               - Join a channel
+    +channel leave=<name>              - Leave a channel
+    +channel who=<name>                - Show who is on a channel
+    +channel default=<name>            - Set your default channel
+    +channel alias=<name>:<alias>      - Set a personal alias for a channel
+    +channel mute=<name>               - Mute a channel (stop receiving messages)
+    +channel unmute=<name>             - Unmute a channel
+    +channel color=<name>:<color>      - Set your display color on a channel
+    +channel paste=<name>              - Paste multi-line text to a channel
+    +channel pastecode=<name>          - Paste text preserving formatting
+    +channel create=<name>             - Create a new channel
+    +channel destroy=<name>            - Destroy a channel you own
 
 Additional help topics:
     help +channel join      help +channel leave
@@ -746,19 +762,19 @@ Syntax:
     +mail                              - List your messages
     +mail list                         - List your messages
     +mail read=<#>                     - Read message number
-    +mail *<player>=<subject>@@<message> - Send mail with subject
-    +mail *<player>=<message>           - Send mail (no subject)
+    +mail send=*<player>               - Send mail (enters paste mode)
+    +mail sendcode=*<player>           - Send mail (paste, preserve formatting)
     +mail check                        - Show unread count
     +mail delete=<#>                   - Mark message for deletion
     +mail undelete=<#>                 - Restore deleted message
     +mail purge                        - Permanently delete all marked messages
 
-The @@ delimiter separates the subject from the message body.
-If no @@ is used, the subject defaults to "(no subject)".
+When sending mail, you will be prompted for a subject line, then
+the message body. Type ''.'' on a blank line to send, or @pasteabort
+to cancel.
 
 Examples:
-    +mail *Bobby=Hello@@Hey, how are you?
-    +mail *Bobby=Just a quick message
+    +mail send=*Bobby
     +mail read=3
     +mail delete=5
     +mail purge
@@ -778,38 +794,53 @@ Syntax:
     +news                              - List unread articles
     +news list                         - List unread articles
     +news list=all                     - List all articles
-    +news read=<#>                     - Read an article
-    +news post=<topic>@@<body>         - Post an article (admin)
-    +news remove=<#>                   - Remove an article (admin)
+    +news read=<#>                     - Read an article (position-based)
+    +news check                        - Show unread article count
+    +news post=<topic>                 - Post article (admin only, paste mode)
+    +news postcode=<topic>             - Post article (admin, preserve formatting)
+    +news delete=<#|#-#|all>           - Delete article(s) (admin only)
+    +news remove=<#|#-#|all>           - Same as delete
+    +news undelete=<#|#-#|all>         - Undelete article(s) (admin only)
+    +news purge                        - Permanently remove deleted articles (admin)
 
-The @@ delimiter separates the topic from the article body.
+Article numbers are position-based (1, 2, 3...), not database IDs.
+Deletion is soft — deleted articles can be undeleted. Purge permanently
+removes them.
+
+When posting, enter the article body after the prompt. Type ''.'' on
+a blank line to post, or @pasteabort to cancel.
 
 When you connect, you will be notified if there are unread news articles.
 Reading an article marks it as read for you.
 
-Only Wizards and players with the ANNOUNCE power can post or remove articles.
+Only Wizards and players with the ANNOUNCE power can post, delete, or
+purge articles.
 
 Examples:
-    +news post=Server Update@@The server has been updated to version 2.26.
+    +news
     +news read=1
-    +news remove=3
+    +news post=Server Update
+    +news delete=2-4
+    +news undelete=3
 
 See also: help, +motd');
-INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+paste', '', '+PASTE / @PASTE - Multi-line text input
+INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+paste', '', '@PASTE - Multi-line text input
 
 Syntax:
     @paste                        - Paste to current room
     @paste <target>               - Paste to object
     @paste <target>/<attribute>   - Paste to attribute
-    @paste channel <channel>      - Paste to channel
-    @paste mail <player>          - Paste as mail
 
 End input by typing . (period) on a line by itself.
 Cancel with @pasteabort.
 
 @pastecode preserves formatting and leading spaces.
 
-+paste and +pastecode are aliases for @paste and @pastecode.');
+For mail, board, news, and channel paste, use the dedicated commands:
+    +mail send=*<player>          - Mail paste mode
+    +board post=<subject>         - Board paste mode
+    +news post=<topic>            - News paste mode (admin)
+    +channel paste=<channel>      - Channel paste mode');
 INSERT IGNORE INTO help_topics (command, subcommand, body) VALUES ('+uptime', '', '+UPTIME - Server uptime information
 
 Syntax:  +uptime

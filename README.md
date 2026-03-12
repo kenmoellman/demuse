@@ -4,7 +4,7 @@ deMUSE is a TinyMUSE-derived Multi-User Simulation Environment (MUSE) server, or
 
 deMUSE is now developed on Ubuntu Linux, after previously being developed under Slackware Linux. It should compile in other versions of Linux.
 
-MariaDB is now required for server operation, handling configuration, mail, boards, channels, and lockouts. The object database still uses the flat-file format; migrating it to MariaDB is a future goal.
+MariaDB is now required for server operation, handling configuration, mail, boards, news, help, channels, and lockouts. The object database still uses the flat-file format; migrating it to MariaDB is a future goal.
 
 You can find the latest patches, sourcecode, etc, at https://github.com/kenmoellman/demuse
 
@@ -99,8 +99,8 @@ Individual utilities are built in `src/util/`:
 **Command System** (`src/comm/`)
 - Player commands (@-commands, say, pose, etc.)
 - Communication channels (`+channel` for admin/config, `+com`/`=` for speaking)
-- Private mail (`+mail`) and public board (`+board`)
-- Help system with indexed text files
+- Private mail (`+mail`), public board (`+board`), and admin news (`+news`)
+- Help system (MariaDB-backed, two-level command/subcommand hierarchy)
 - Object creation and manipulation
 
 **Game Logic** (`src/muse/`)
@@ -144,6 +144,7 @@ The codebase has been significantly modernized with:
    - Message files (welcome, create, guest, register, leave, motd) moved to MariaDB config vars, editable via `@config`
    - Welcome message now sent on new direct socket connections (was missing from `initializesock()`)
    - Combat commands `#ifdef`'d out of parser (`USE_COMBAT_TM97`)
+   - Unified +board and +news: news stored in board table with `NEWS_ROOM` sentinel, shared display/read/delete/undelete/purge code in messaging.c. Both support soft delete, per-player read tracking, and position-based numbering.
 
 ### MariaDB Integration (2026)
 
@@ -151,9 +152,11 @@ MariaDB is now required for server operation. The following subsystems use Maria
 
 1. **Configuration** - All `@config` settings stored in MariaDB `config` table (config.c eliminated)
 2. **Private Mail (+mail)** - Player-to-player mail stored in MariaDB `mail` table
-3. **Public Board (+board)** - Board posts stored in MariaDB `board` table
-4. **Channels** - Channel definitions and memberships stored in MariaDB `channels` and `channel_members` tables (TYPE_CHANNEL objects deprecated)
-5. **Lockouts** - IP bans, player bans, and guest-IP bans stored in MariaDB `lockouts` table with in-memory cache
+3. **Public Board (+board)** - Board posts stored in MariaDB `board` table with per-player read tracking (`board_read`)
+4. **Admin News (+news)** - News articles stored in the `board` table with sentinel `board_room = -2` (`NEWS_ROOM`). `mariadb_news.c` functions are thin wrappers around `mariadb_board_*`. Only Wizards/POW_ANNOUNCE can post; all players can read. Guests can read news (unlike board).
+5. **Help** - Help topics stored in MariaDB `help_topics` table with two-level hierarchy (command/subcommand)
+6. **Channels** - Channel definitions and memberships stored in MariaDB `channels` and `channel_members` tables (TYPE_CHANNEL objects deprecated)
+7. **Lockouts** - IP bans, player bans, and guest-IP bans stored in MariaDB `lockouts` table with in-memory cache
 
 The object database continues to use the flat-file format for backward compatibility.
 
@@ -164,12 +167,16 @@ The object database continues to use the flat-file format for backward compatibi
 **Key files:**
 - `src/db/mariadb.c` - Connection management and config operations
 - `src/db/mariadb_mail.c` - SQL operations for private mail
-- `src/db/mariadb_board.c` - SQL operations for board posts
+- `src/db/mariadb_board.c` - SQL operations for board posts and per-player read tracking
+- `src/db/mariadb_news.c` - News wrapper functions (delegates to mariadb_board with NEWS_ROOM)
+- `src/db/mariadb_help.c` - SQL operations for help topics (two-level command/subcommand)
 - `src/db/mariadb_channel.c` - SQL operations and in-memory cache for channels
 - `src/db/mariadb_lockout.c` - SQL operations and in-memory cache for lockouts
-- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` / `mariadb_channel.h` / `mariadb_lockout.h` - Declarations and stubs
+- `src/hdrs/mariadb_mail.h` / `mariadb_board.h` / `mariadb_news.h` / `mariadb_help.h` / `mariadb_channel.h` / `mariadb_lockout.h` - Declarations and stubs
 - `src/util/convert_db.c` - Standalone database migration tool (`--mail`, `--board`, `--channels`, `--all`)
 - `config/setup_mariadb.sql` - Table definitions
+- `config/migrate_news_to_board.sql` - One-time migration: copies news articles into board table with NEWS_ROOM
+- `config/help_seed.sql` - Help topic seed data
 
 **Dependencies:** `libmariadb-dev` (auto-detected by Makefiles via pkg-config)
 
@@ -234,7 +241,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 
 **Primary config files:**
 - `config/config.h` - Compile-time configuration (network options, features, limits)
-- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board, channels, channel_members, lockouts)
+- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board, board_read, help_topics, channels, channel_members, lockouts)
 - `config/defaults.sql` - Default configuration values (seeded on install)
 - `run/db/mariadb.conf` - MariaDB credentials (not in version control)
 
@@ -251,17 +258,16 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - `run/db/mdb` - Main object database file (flat-file format)
 - `run/db/initial.mdb` - Starting database for new installations
 - `run/db/mariadb.conf` - MariaDB connection credentials
-- MariaDB tables: `config`, `mail`, `board`, `channels`, `channel_members`, `lockouts` (created automatically on startup)
+- MariaDB tables: `config`, `mail`, `board`, `board_read`, `help_topics`, `channels`, `channel_members`, `lockouts` (created automatically on startup)
 
 **Logs:**
 - `run/logs/` - Server logs (connections, commands, errors)
 - `run/logs/malloc-debug.log` - Memory debugging (if enabled)
 
-**Messages:**
-- `run/msgs/helptext` - Help content
-- `run/msgs/newstext` - News content
-- `run/msgs/helpindx` - Help index (built with `bin/mkindx help`)
-- `run/msgs/newsindx` - News index (built with `bin/mkindx news`)
+**Messages (legacy):**
+- `run/msgs/helptext` - Legacy help content (migrated to MariaDB `help_topics` table)
+- `run/msgs/newstext` - Legacy news content (migrated to MariaDB `board` table with NEWS_ROOM)
+- `run/msgs/helpindx` / `newsindx` - Legacy index files (built with `bin/mkindx`)
 
 ## Development Notes
 
@@ -281,7 +287,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 
 **Future Work**
 - Help topic cleanup — ~119 @ commands still lack help documentation; audit existing topics for correct syntax
-- Unify +board and +news code — both are public posting systems, with +board writable by anyone and +news admin-only; share underlying storage and display logic, add per-player read tracking to +board. Add `+board ban=<player>` and `+board unban=<player>` for blocking/unblocking individual users from posting
+- ~~Unify +board and +news code~~ — DONE: news articles stored in board table with NEWS_ROOM (-2), +board has undelete/purge/ban/unban
 - Migrate object database from flat-file to MariaDB (three-table design: players, objects, attributes)
 - Upgrade Pueblo 1.0 support to MXP (MUD eXtension Protocol)
 - Overhaul universe system (do_teleport() universe checks are fragile)
@@ -342,7 +348,7 @@ The object database is a flat-file format that remains compatible with:
 
 Do not change the database I/O functions without ensuring backward compatibility.
 
-Mail and board messages are stored in MariaDB (migrated from the flat-file format as of 2026). Legacy databases with messages appended after `***END OF DUMP***` are automatically converted on first startup.
+Mail, board, and news messages are stored in MariaDB (migrated from the flat-file format as of 2026). News articles share the `board` table using a sentinel `board_room` value. Legacy databases with messages appended after `***END OF DUMP***` are automatically converted on first startup.
 
 ## Known Issues and Limitations
 

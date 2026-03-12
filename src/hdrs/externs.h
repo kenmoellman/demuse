@@ -291,8 +291,6 @@ extern void free_hash (void);
 /* From help.c */
 extern void do_text (dbref, char *, char *, ATTR *);
 extern void do_help (dbref, char *);
-extern void do_news (dbref, char *, char *);
-extern void check_news (dbref);
 extern void do_motd (dbref);
 
 /* From info.c */
@@ -372,10 +370,23 @@ extern char *comma (char *);
 #define Wizard(x) (*db[x].pows == CLASS_DIR)
 
 /* from messaging.c */
+typedef enum {
+    MSG_PRIVATE,    /* Private player mail */
+    MSG_BOARD,      /* Public board post */
+    MSG_NEWS        /* News article (stored in board table with NEWS_ROOM) */
+} msg_dest_type;
+
+/* News articles are stored in the board table with this sentinel board_room */
+#define NEWS_ROOM ((dbref)-2)
+
 extern void check_mail (dbref,char *);
 extern long check_mail_internal (dbref,char *);
+extern void check_board (dbref);
+extern void check_news (dbref);
 extern void do_board (dbref, char *, char *);
 extern void do_mail (dbref, char *, char *);
+extern void do_news (dbref, char *, char *);
+extern void post_message(dbref, dbref, const char *, const char *, msg_dest_type, int);
 extern long dt_mail (dbref obj);  /* Defined in mail.c */
 extern void info_mail(dbref player);
 extern long mail_size (dbref);
@@ -440,12 +451,22 @@ extern int memdebug_is_active (void);
 extern void do_page (dbref, char *, char *);
 
 /* From paste.c */
+typedef enum {
+    PASTE_ATTR,      /* Attribute paste (@paste obj/attr) */
+    PASTE_ROOM,      /* Room/player paste (@paste here) */
+    PASTE_MAIL,      /* +mail send */
+    PASTE_BOARD,     /* +board post */
+    PASTE_NEWS,      /* +news post */
+    PASTE_CHANNEL    /* +channel paste */
+} paste_type_t;
+
 extern char is_pasting (dbref);
 extern void remove_paste (dbref);
 extern void do_paste (dbref, char *, char *);
 extern void do_pastecode (dbref, char *, char *);
 extern void add_more_paste (dbref, char *);
 extern void do_pastestats (dbref, char *);
+extern int start_paste_session(dbref, paste_type_t, dbref, const char *, const char *, int);
 
 /* From pcmds.c */
 extern void do_at (dbref, const char *, const char *);
