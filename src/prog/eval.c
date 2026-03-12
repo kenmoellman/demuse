@@ -1243,9 +1243,14 @@ static void fun_foreach(char *buff, char *args[10], dbref privs, dbref doer, int
     char *s = args[0];
     int i = 0;
     int j = 0;
-    
+
+    if (!GoodObject(doer)) {
+        buff[0] = '\0';
+        return;
+    }
+
     ptrsrv = wptr[0];
-    
+
     if (!args[0] || !strcmp(args[0], "")) {
         buff[0] = '\0';
         return;
@@ -3193,13 +3198,15 @@ static int udef_fun(char **str, char *buff, dbref privs, dbref doer)
         }
         
         /* Copy result, skipping object name */
-        {
+        if (GoodObject(doer)) {
             size_t name_len = strlen(db[doer].name) + 1;
             if (name_len < strlen(result)) {
                 safe_str_copy(buff, result + name_len, EVAL_BUFFER_SIZE);
             } else {
                 buff[0] = '\0';
             }
+        } else {
+            buff[0] = '\0';
         }
     }
     

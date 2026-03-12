@@ -289,10 +289,101 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - Help topic cleanup — ~119 @ commands still lack help documentation; audit existing topics for correct syntax
 - ~~Unify +board and +news code~~ — DONE: news articles stored in board table with NEWS_ROOM (-2), +board has undelete/purge/ban/unban
 - Migrate object database from flat-file to MariaDB (three-table design: players, objects, attributes)
-- Upgrade Pueblo 1.0 support to MXP (MUD eXtension Protocol)
-- Overhaul universe system (do_teleport() universe checks are fragile)
+- ~~Upgrade Pueblo 1.0 support to MXP~~ — SUPERSEDED by Universe Project Phase 1 (web client)
+- ~~Overhaul universe system~~ — SUPERSEDED by Universe Project (revert and reimplement, see below)
 - ~~Fix signal.c SIGCHLD bug~~ — TESTING: `signal(SIGCHLD, SIG_IGN)` commented out 2026-03-12, reaper() handler now active
 - Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
+
+### Universe Project: Revert and Reimplement
+
+The existing universe system (`USE_UNIV`, `TYPE_UNIVERSE`, universe attributes in `db[]`, `@ucreate`/`@ulink`/`@uconfig` commands) is an incomplete implementation of an older design. It will be reverted and replaced with a new architecture that enables hosting multiple MU* game variants (TinyMUSH, PennMUSH, TinyMUSE, TinyMARE, etc.) as pluggable parser extensions within a single server, sharing common infrastructure.
+
+**Core Design Principles:**
+
+- **Account-based identity.** One login identity per person, with separate player objects per universe. Mail, channels, boards, and news operate at the account level, not the player object level. A player's `+mail` follows them across universes.
+- **Player-per-universe model.** Objects exist in exactly one universe. Players don't cross between universes — they "switch" by detaching from their player object in one universe and attaching to their player object in another. Multi-connection support allows simultaneous play in multiple universes on separate connections.
+- **Two-tier command dispatch.** Shared `+` commands (+mail, +board, +news, +com, +motd, etc.) and basic interaction (say, pose, page, look, WHO, QUIT) are handled by the core server before the parser extension. Building, admin, softcode functions, and lock evaluation are handled by the per-universe parser plugin.
+- **Parser plugins as shared objects.** Each parser extension is a `.so` loaded at startup via `dlopen()`. Plugins register their commands and functions into a `parser_t` hash table. Each plugin provides its own expression evaluator, lock evaluator, and command preprocessor (to handle dialect-specific syntax like MUSH `/switches`).
+- **Full-duplex real-time connections.** All connection types (telnet, TLS telnet, WebSocket) are full-duplex — server pushes output immediately when events occur (someone enters a room, a channel message fires, mail arrives). No polling or user action required.
+
+**Phase 1: Web Client and Account Layer**
+
+Replace the plain-text telnet login with a secure web-based interface using WebSocket, and introduce the account/identity system that the universe architecture requires.
+
+*Account system (MariaDB):*
+- `accounts` table: `account_id`, `username`, `password_hash` (bcrypt/argon2), `email`, `created_at`, `last_login`
+- `account_players` table: `account_id`, `universe_id`, `player_dbref`
+- On first startup, auto-migrate existing player passwords to accounts (one account per player object)
+- Player object `password` field becomes vestigial after migration
+- All shared `+` commands key on `account_id` rather than player `dbref`
+
+*WebSocket connection layer:*
+- Add libwebsockets to the build; listen on a WebSocket port alongside the existing telnet port
+- WebSocket connections become descriptors in the existing `select()` loop, just like telnet sockets
+- Add `conn_type` to descriptor struct: `CONN_TELNET`, `CONN_TELNET_TLS`, `CONN_WEBSOCKET`
+- From the game's perspective, all connection types are identical after handshake — text in, text out
+
+*Web terminal client:*
+- Single HTML page served over HTTPS with xterm.js (renders ANSI colors, handles input, feels like a real terminal)
+- Authentication: HTTPS login form → validate against `accounts` table → session token → WebSocket connects with token
+- No plain-text passwords ever cross the wire
+- Real-time server push via WebSocket — room events, channel messages, notifications appear instantly
+
+*TLS telnet (optional, same phase):*
+- Add OpenSSL/LibreSSL to the socket layer for encrypted telnet on a separate port
+- Modern MUD clients (Mudlet, Blightmud) support TLS connections
+- Legacy plain telnet port remains available
+
+*Dependencies:* libwebsockets, libssl/libcrypto (OpenSSL), libargon2 or libbcrypt, xterm.js (client-side)
+
+**Phase 2: Parser Plugin Architecture**
+
+Extract the current deMUSE command table and function evaluator into a shared-object plugin, establishing the plugin interface.
+
+*Plugin interface:*
+- Each `.so` exports a `parser_plugin_t` struct with: `init()`, `shutdown()`, `eval_expression()`, `eval_lock()`, `preprocess_command()`, and universe lifecycle hooks (`on_player_enter`, `on_player_leave`)
+- `init()` registers commands and functions into the parser's hash table (same mechanism as today's `init_parsers()`)
+- The expression evaluator and lock evaluator are per-plugin — this is where MU* dialects diverge most
+
+*Refactor:*
+- Move current command registrations from parser.c into `parsers/demuse.so`
+- Move eval.c function table and evaluation logic into the deMUSE plugin
+- Core server retains only Tier 1 shared commands (+mail, +board, +news, +com, say, pose, page, look, WHO, QUIT, movement)
+- Add `universe_id` to descriptor struct; command dispatch routes through the universe's parser
+
+*Validation:* Build and test with only the deMUSE plugin. The game should behave identically to today.
+
+**Phase 3: Universe Management**
+
+Implement the runtime universe system: creation, player switching, and cross-universe infrastructure.
+
+- `@universe create <name>=<parser>` — create a universe using a loaded parser plugin
+- `@universe switch <name>` — detach from current player object, attach to player object in target universe (create if first visit)
+- `@universe list` — show available universes and which parser each uses
+- `@universe who` — show players across all universes
+- `WHO` output shows universe indicator per player
+- Universe-aware connect screen: after account login, present character selection (universe + player name)
+- Per-universe object numbering within the shared `db[]` array (dbrefs are globally unique)
+
+**Phase 4: Additional Parser Plugins**
+
+With the architecture proven, implement additional MU* dialect parsers:
+- TinyMUSH 3.x parser (closest relative, shares the most code)
+- PennMUSH parser (larger function library, different evaluation rules)
+- Minimal/sandbox parser (restricted command set for limited-capability universes)
+
+Each parser brings its own command table, function library, expression evaluator, and lock syntax.
+
+**Existing Universe Code to Revert:**
+- `TYPE_UNIVERSE` object type in db.h
+- `universe`, `ua_string`, `ua_int`, `ua_float` fields in struct object
+- Universe attributes in universe.h (UA_TELEPORT, UA_DESTREXIT, etc.)
+- `@ucreate`, `@uconfig`, `@uinfo`, `@ulink`, `@unulink` commands
+- `@guniverse`, `@gzone` commands
+- `fun_universe()`, `fun_uinfo()` in eval.c
+- TYPE_UNIVERSE movement handling in move.c
+- Universe-related code in zones.c
+- `USE_UNIV` remnants throughout
 
 ### Working with the Database
 
@@ -352,13 +443,11 @@ Mail, board, and news messages are stored in MariaDB (migrated from the flat-fil
 
 ## Known Issues and Limitations
 
-- Idle system timing anomalies
-- Prefix/suffix recursion bugs with high idle times
 - ~~@booting yourself has bugs~~ — FIXED: self-boot already prevented, updated error message
 - MAZE combat features not implemented (maze.c behind `#ifdef USE_COMBAT`, combat.h doesn't exist)
-- Universe code incomplete (`USE_UNIV` ifdef)
+- ~~Universe code incomplete~~ — will be reverted and reimplemented (see Universe Project)
 - signal.c: `signal(SIGCHLD, SIG_IGN)` was overriding the `sigaction(SIGCHLD, reaper)` handler — commented out 2026-03-12, testing to confirm no side effects
-- eval.c: `fun_foreach()` accesses `db[doer]` without GoodObject validation
+- ~~eval.c: `fun_foreach()` accesses `db[doer]` without GoodObject validation~~ — FIXED: added GoodObject(doer) checks to fun_foreach and udef_fun
 
 ## Historical Context
 

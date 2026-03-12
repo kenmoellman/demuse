@@ -252,17 +252,18 @@ extern int dozonetemp;            /* Temporary variable for DOZONE macro */
 
 /* Special object checks */
 #define is_root(x)      ((x) == root)
-#define Robot(x)        ((Typeof(x) == TYPE_PLAYER) && ((x) != db[(x)].owner))
-#define Guest(x)        ((Typeof(x) == TYPE_PLAYER && *db[x].pows == CLASS_GUEST))
-#define Dark(x)         (((db[(x)].flags & DARK) != 0) && \
+#define Robot(x)        (GoodObject(x) && (Typeof(x) == TYPE_PLAYER) && ((x) != db[(x)].owner))
+#define Guest(x)        (GoodObject(x) && (Typeof(x) == TYPE_PLAYER) && (*db[x].pows == CLASS_GUEST))
+#define Dark(x)         (GoodObject(x) && ((db[(x)].flags & DARK) != 0) && \
                         (Typeof(x) != TYPE_PLAYER) && \
                         !(db[(x)].flags & PUPPET))
-#define Alive(x)        ((Typeof(x) == TYPE_PLAYER) || \
-                        ((Typeof(x) == TYPE_THING) && (db[x].flags & PUPPET)))
-#define Builder(x)      ((db[db[(x)].owner].flags & PLAYER_BUILD) || \
+#define Alive(x)        (GoodObject(x) && ((Typeof(x) == TYPE_PLAYER) || \
+                        ((Typeof(x) == TYPE_THING) && (db[x].flags & PUPPET))))
+#define Builder(x)      (GoodObject(x) && \
+                        ((GoodObject(db[(x)].owner) && (db[db[(x)].owner].flags & PLAYER_BUILD)) || \
                         (Typeof(x) == TYPE_PLAYER && *db[x].pows == CLASS_DIR) || \
-                        Wizard(x))
-#define Wizard(x)       (*db[x].pows == CLASS_DIR)
+                        Wizard(x)))
+#define Wizard(x)       (GoodObject(x) && (*db[x].pows == CLASS_DIR))
 
 /* Doomsday (scheduled destruction) checks */
 #define IS_DOOMED(x)    ((*atr_get((x), A_DOOMSDAY)) && \
