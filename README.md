@@ -291,7 +291,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - Migrate object database from flat-file to MariaDB (three-table design: players, objects, attributes)
 - Upgrade Pueblo 1.0 support to MXP (MUD eXtension Protocol)
 - Overhaul universe system (do_teleport() universe checks are fragile)
-- Fix signal.c SIGCHLD bug: `signal(SIGCHLD, SIG_IGN)` overrides `sigaction(SIGCHLD, reaper)` handler
+- ~~Fix signal.c SIGCHLD bug~~ — TESTING: `signal(SIGCHLD, SIG_IGN)` commented out 2026-03-12, reaper() handler now active
 - Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
 
 ### Working with the Database
@@ -354,10 +354,10 @@ Mail, board, and news messages are stored in MariaDB (migrated from the flat-fil
 
 - Idle system timing anomalies
 - Prefix/suffix recursion bugs with high idle times
-- @booting yourself has bugs
+- ~~@booting yourself has bugs~~ — FIXED: self-boot already prevented, updated error message
 - MAZE combat features not implemented (maze.c behind `#ifdef USE_COMBAT`, combat.h doesn't exist)
 - Universe code incomplete (`USE_UNIV` ifdef)
-- signal.c: `signal(SIGCHLD, SIG_IGN)` overrides the `sigaction(SIGCHLD, reaper)` handler
+- signal.c: `signal(SIGCHLD, SIG_IGN)` was overriding the `sigaction(SIGCHLD, reaper)` handler — commented out 2026-03-12, testing to confirm no side effects
 - eval.c: `fun_foreach()` accesses `db[doer]` without GoodObject validation
 
 ## Historical Context

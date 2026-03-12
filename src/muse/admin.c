@@ -1804,13 +1804,7 @@ void do_boot(dbref player, char *name, char *reason)
 
   if (victim == player)
   {
-    dbref dummy = lookup_player("viper");
-
-    if (dummy != NOTHING)
-      notify(player, tprintf("You don't wanna be like %s and boot yourself.",
-			     db[dummy].cname));
-    else
-      notify(player, "You don't wanna be like viper and boot yourself.");
+    notify(player, "Type QUIT to quit.");
     return;
   }
 

@@ -163,8 +163,11 @@ void set_signals(void)
             strerror(errno));
   }
 
-  /* Also ignore SIGCHLD at base level for additional safety */
-  signal(SIGCHLD, SIG_IGN);
+  /* 2026-03-12: Commented out SIG_IGN — it was overriding the sigaction()
+   * reaper handler above, preventing zombie reaping and the dbinfo channel
+   * notification on database dumps. The reaper() function uses WNOHANG so
+   * there is no hang risk. Testing to see if this causes any issues. */
+  /* signal(SIGCHLD, SIG_IGN); */
 
   /* Free sigaction structure */
   SMART_FREE(act);
