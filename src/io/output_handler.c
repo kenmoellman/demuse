@@ -5,6 +5,7 @@
 #include "config.h"
 #include "externs.h"
 #include "io_internal.h"
+#include "websocket.h"
 #include <errno.h>
 #include <unistd.h>
 
@@ -329,7 +330,12 @@ int process_output(struct descriptor_data *d)
     }
 #endif
 
-    /* Normal (non-remote) output processing */
+    /* WebSocket output — route through lws */
+    if (d->cstatus & C_WEBSOCKET) {
+        return websocket_write_output(d);
+    }
+
+    /* Normal (non-remote/telnet) output processing */
     for (qp = &d->output.head; (cur = *qp);) {
         cnt = write(d->descriptor, cur->start, cur->nchars);
         if (cnt < 0) {

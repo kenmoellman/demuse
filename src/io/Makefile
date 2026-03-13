@@ -45,6 +45,12 @@ ifneq ($(MARIADB_CFLAGS),)
 CFLAGS += -DUSE_MARIADB
 endif
 
+# Detect libwebsockets
+LWS_EXISTS := $(shell test -f /usr/include/libwebsockets.h && echo yes)
+ifeq ($(LWS_EXISTS),yes)
+CFLAGS += -DUSE_WEBSOCKET
+endif
+
 # Top directory
 TOPDIR = ../..
 
@@ -67,7 +73,8 @@ SRCS = server_main.c \
        nalloc.c \
        io_globals.c \
        color.c \
-       lstats.c
+       lstats.c \
+       websocket.c
 
 # NOTE: color.c and lstats.c moved from comm/ directory (2025 reorganization)
 # These are I/O infrastructure files:

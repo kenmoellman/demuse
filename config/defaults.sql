@@ -67,6 +67,7 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('announce_guests', '0', 'NUM'),
 ('announce_connects', '0', 'NUM'),
 ('inet_port', '4208', 'NUM'),
+('websocket_port', '4209', 'NUM'),
 ('fixup_interval', '1243', 'NUM'),
 ('dump_interval', '2714', 'NUM'),
 ('garbage_chunk', '3', 'NUM'),

@@ -178,7 +178,7 @@ The object database continues to use the flat-file format for backward compatibi
 - `config/migrate_news_to_board.sql` - One-time migration: copies news articles into board table with NEWS_ROOM
 - `config/help_seed.sql` - Help topic seed data
 
-**Dependencies:** `libmariadb-dev` (auto-detected by Makefiles via pkg-config)
+**Dependencies:** `libmariadb-dev`, `libwebsockets-dev` (auto-detected by Makefiles)
 
 ### Channel System (2026)
 
@@ -293,6 +293,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - ~~Overhaul universe system~~ — SUPERSEDED by Universe Project (revert and reimplement, see below)
 - ~~Fix signal.c SIGCHLD bug~~ — TESTING: `signal(SIGCHLD, SIG_IGN)` commented out 2026-03-12, reaper() handler now active
 - Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
+- ~~WebSocket connectivity (Phase 1a)~~ — DONE: libwebsockets integration, xterm.js web client, nginx proxy config
 
 ### Universe Project: Revert and Reimplement
 
@@ -310,6 +311,36 @@ The existing universe system (`USE_UNIV`, `TYPE_UNIVERSE`, universe attributes i
 
 Replace the plain-text telnet login with a secure web-based interface using WebSocket, and introduce the account/identity system that the universe architecture requires.
 
+*Network architecture (nginx reverse proxy):*
+
+All web traffic runs through an existing nginx reverse proxy which handles TLS termination and SSL certificates. The game server only listens on localhost — it never handles TLS directly.
+
+```
+Browser → HTTPS (nginx) → static HTML/JS/CSS files (served by nginx)
+Browser → WSS  (nginx) → proxy_pass → WS (netmuse localhost:4209)
+Telnet  → TCP  (netmuse:4208, existing, unchanged)
+```
+
+Nginx configuration for the WebSocket proxy:
+```nginx
+location /ws {
+    proxy_pass http://127.0.0.1:4209;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_read_timeout 86400s;   # MUD connections stay open for hours/days
+    proxy_send_timeout 86400s;
+}
+```
+
+This means:
+- The game server adds a plain WebSocket listener on a local port (e.g., 4209) — no TLS handling needed
+- Nginx provides HTTPS/WSS encryption using existing SSL certificates
+- The web terminal page is served as static files by nginx (no HTTP serving in the game server)
+- The existing telnet port (4208) remains unchanged for traditional MUD clients
+- TLS telnet is deferred — nginx WSS covers encrypted access; traditional clients can connect via telnet as they do today
+
 *Account system (MariaDB):*
 - `accounts` table: `account_id`, `username`, `password_hash` (bcrypt/argon2), `email`, `created_at`, `last_login`
 - `account_players` table: `account_id`, `universe_id`, `player_dbref`
@@ -317,24 +348,25 @@ Replace the plain-text telnet login with a secure web-based interface using WebS
 - Player object `password` field becomes vestigial after migration
 - All shared `+` commands key on `account_id` rather than player `dbref`
 
-*WebSocket connection layer:*
-- Add libwebsockets to the build; listen on a WebSocket port alongside the existing telnet port
-- WebSocket connections become descriptors in the existing `select()` loop, just like telnet sockets
-- Add `conn_type` to descriptor struct: `CONN_TELNET`, `CONN_TELNET_TLS`, `CONN_WEBSOCKET`
-- From the game's perspective, all connection types are identical after handshake — text in, text out
+*WebSocket connection layer (DONE):*
+- libwebsockets integrated via "foreign loop" pattern: game's `select()` loop drives lws via `lws_service_fd()` / `lws_service_tsi()`
+- `C_WEBSOCKET` flag and `void *wsi` field on descriptor struct (same void* pattern as MariaDB to avoid header dependencies)
+- WebSocket connections become standard descriptors — identical to telnet after handshake
+- `websocket_port` config var (default 4209), auto-detected by Makefiles
+- Implementation: `src/io/websocket.c` (init, fd tracking, output, protocol callback), `src/hdrs/websocket.h` (API with `#ifdef USE_WEBSOCKET` stubs)
+- WebSocket descriptors can't survive @reload (exec) — they're cleanly disconnected with a reboot message
 
-*Web terminal client:*
-- Single HTML page served over HTTPS with xterm.js (renders ANSI colors, handles input, feels like a real terminal)
+*Web terminal client (DONE):*
+- Single HTML page with xterm.js (renders ANSI colors, local line editing, auto-reconnect)
+- Served as static files by Apache (behind the nginx reverse proxy)
+- Example config: `web/nginx.conf.example`, client: `web/index.html`
+
+*Account system and secure auth (TODO):*
 - Authentication: HTTPS login form → validate against `accounts` table → session token → WebSocket connects with token
 - No plain-text passwords ever cross the wire
 - Real-time server push via WebSocket — room events, channel messages, notifications appear instantly
 
-*TLS telnet (optional, same phase):*
-- Add OpenSSL/LibreSSL to the socket layer for encrypted telnet on a separate port
-- Modern MUD clients (Mudlet, Blightmud) support TLS connections
-- Legacy plain telnet port remains available
-
-*Dependencies:* libwebsockets, libssl/libcrypto (OpenSSL), libargon2 or libbcrypt, xterm.js (client-side)
+*Dependencies:* libwebsockets (server-side), libargon2 or libbcrypt (password hashing, TODO), xterm.js (client-side, served by web server)
 
 **Phase 2: Parser Plugin Architecture**
 

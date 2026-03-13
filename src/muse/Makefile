@@ -27,6 +27,13 @@ ifneq ($(MARIADB_LIBS),)
 LIBS += $(MARIADB_LIBS)
 endif
 
+# Detect libwebsockets
+LWS_EXISTS := $(shell test -f /usr/include/libwebsockets.h && echo yes)
+ifeq ($(LWS_EXISTS),yes)
+CFLAGS += -DUSE_WEBSOCKET
+LIBS += -lwebsockets
+endif
+
 # Top directory
 TOPDIR = ..
 

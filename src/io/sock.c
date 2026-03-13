@@ -38,18 +38,26 @@ void close_sockets(void)
   for (d = descriptor_list; d; d = dnext)
   {
     dnext = d->next;
-    if (!(d->cstatus & C_REMOTE))
+    if (d->cstatus & C_WEBSOCKET)
+    {
+      /* WebSocket connections can't survive reboot — disconnect them */
+      const char *msg = (exit_status == 1) ? reboot_message : shutdown_message;
+      queue_string(d, tprintf("%s %s\n", muse_name, msg));
+      process_output(d);
+      shutdownsock(d);
+    }
+    else if (!(d->cstatus & C_REMOTE))
     {
       if (exit_status == 1)
-        write(d->descriptor, tprintf("%s %s", muse_name, reboot_message), 
+        write(d->descriptor, tprintf("%s %s", muse_name, reboot_message),
               (strlen(reboot_message) + strlen(muse_name) + 1));
       else
-        write(d->descriptor, tprintf("%s %s", muse_name, shutdown_message), 
+        write(d->descriptor, tprintf("%s %s", muse_name, shutdown_message),
               (strlen(shutdown_message) + strlen(muse_name) + 1));
       process_output(d);
       if (x && d->player >= 0 && d->state == CONNECTED && !Guest(d->player))
       {
-        fprintf(x, "%010d %010ld %010ld %010ld\n", d->descriptor, 
+        fprintf(x, "%010d %010ld %010ld %010ld\n", d->descriptor,
                 (long)d->connected_at, (long)d->last_time, (long)d->player);
         fcntl(d->descriptor, F_SETFD, 0);
       }
@@ -276,6 +284,7 @@ struct descriptor_data *initializesock(int s, struct sockaddr_in *a,
   d->raw_input_at = 0;
   d->pueblo = 0;
   d->emergency_bypass = 0;
+  d->wsi = NULL;
   d->quota = command_burst_size;
   d->last_time = now;
   strncpy(d->addr, addr, 50);
@@ -357,10 +366,18 @@ void shutdownsock(struct descriptor_data *d)
   
   clearstrings(d);
   
-  if (!(d->cstatus & C_REMOTE))
-  { 
-    shutdown(d->descriptor, SHUT_RDWR);
-    close(d->descriptor);
+  if (d->cstatus & C_WEBSOCKET)
+  {
+    /* WebSocket: lws owns the fd — don't close it ourselves.
+     * If wsi is still set, lws will clean it up on return. */
+    d->wsi = NULL;
+  }
+  else if (!(d->cstatus & C_REMOTE))
+  {
+    if (d->descriptor >= 0) {
+      shutdown(d->descriptor, SHUT_RDWR);
+      close(d->descriptor);
+    }
   }
   else
   {

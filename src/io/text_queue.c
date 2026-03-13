@@ -5,6 +5,7 @@
 #include "config.h"
 #include "externs.h"
 #include "net.h"
+#include "websocket.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -157,7 +158,12 @@ int queue_write(struct descriptor_data *d, const char *b, int n)
 
     add_to_queue(&d->output, b, n);
     d->output_size += n;
-    
+
+    /* WebSocket: notify lws that we have data to send */
+    if (d->cstatus & C_WEBSOCKET) {
+        websocket_request_write(d);
+    }
+
     return n;
 }
 

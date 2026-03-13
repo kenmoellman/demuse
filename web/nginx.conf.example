@@ -1,0 +1,58 @@
+# nginx reverse proxy configuration for deMUSE web client
+#
+# Architecture:
+#   Browser → nginx (reverse proxy, SSL termination)
+#     → Apache (static files: index.html)
+#     → Game server (WebSocket: /ws)
+#
+# Prerequisites:
+#   - SSL certificate (Let's Encrypt / Cloudflare)
+#   - Apache serving the web client files (index.html)
+#   - deMUSE game server running with websocket_port configured
+#
+# Adjust IPs, ports, and domain to match your installation.
+
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    # SSL certificates (adjust paths)
+    ssl_certificate     /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+
+    # Modern TLS configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    # Static files served by Apache backend
+    location / {
+        proxy_pass http://APACHE_IP:APACHE_PORT;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # WebSocket proxy to game server
+    location /ws {
+        proxy_pass http://GAME_SERVER_IP:WEBSOCKET_PORT;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # MUD connections are long-lived — keep alive for 24 hours
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+    }
+}

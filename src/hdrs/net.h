@@ -43,6 +43,7 @@ struct descriptor_data {
   int cstatus;
 #define C_CCONTROL 1
 #define C_REMOTE 2
+#define C_WEBSOCKET 4
   struct descriptor_data *parent; /* for C_REMOTE stuff */
   char addr[51];
   dbref player;
@@ -64,6 +65,7 @@ struct descriptor_data {
   int snag_input;               /* for @paste */
   int pueblo; /* flag for the pueblo client */
   int emergency_bypass; /* flag for emergency bypass login */
+  void *wsi; /* libwebsockets instance handle (NULL for telnet) */
 };
 
 extern struct descriptor_data *descriptor_list;

@@ -13,6 +13,7 @@
 #include "mariadb_lockout.h"
 #include "mariadb_help.h"
 #include "mariadb_news.h"
+#include "websocket.h"
 
 #include <stddef.h>
 #include <sys/time.h>
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
 
     /* Shutdown sequence */
     log_important("Shutting down normally.");
+    websocket_shutdown();
     close_sockets();
     do_haltall(1);
     dump_database();
@@ -391,6 +393,13 @@ static void shovechars(int port)
         maxd = sock + 1;
     }
 
+    /* Initialize WebSocket listener if configured */
+    if (websocket_port > 0) {
+        if (!websocket_init(websocket_port)) {
+            log_error("WebSocket initialization failed (non-fatal, telnet still available)");
+        }
+    }
+
     gettimeofday(&last_slice, &tz);
     avail_descriptors = getdtablesize() - 5;
 
@@ -426,18 +435,21 @@ static void shovechars(int port)
 
         /* Setup descriptor sets */
         for (d = descriptor_list; d; d = d->next) {
-            if (!(d->cstatus & C_REMOTE)) {
+            if (!(d->cstatus & (C_REMOTE | C_WEBSOCKET))) {
                 if (d->input.head) {
                     timeout = slice_timeout;
                 } else {
                     FD_SET(d->descriptor, &input_set);
                 }
-                if (d->output.head && 
+                if (d->output.head &&
                     (d->state != CONNECTED || d->player > 0)) {
                     FD_SET(d->descriptor, &output_set);
                 }
             }
         }
+
+        /* Add WebSocket fds to select sets */
+        websocket_add_fds(&input_set, &output_set, &maxd);
 
 #ifdef USE_CID_PLAY
         /* Process remote output again */
@@ -452,13 +464,17 @@ static void shovechars(int port)
         /* Process pending output */
         for (d = descriptor_list; d; d = dnext) {
             dnext = d->next;
-            if (!(d->cstatus & C_REMOTE) &&
+            if (!(d->cstatus & (C_REMOTE | C_WEBSOCKET)) &&
                 FD_ISSET(d->descriptor, &output_set)) {
                 if (!process_output(d)) {
                     shutdownsock(d);
                 }
             }
         }
+
+        /* Service WebSocket connections */
+        websocket_service_fds(&input_set, &output_set);
+        websocket_service_timeout();
     }
 
     /* ================================================================
@@ -529,18 +545,21 @@ static void shovechars(int port)
 
         /* Setup descriptor sets */
         for (d = descriptor_list; d; d = d->next) {
-            if (!(d->cstatus & C_REMOTE)) {
+            if (!(d->cstatus & (C_REMOTE | C_WEBSOCKET))) {
                 if (d->input.head) {
                     timeout = slice_timeout;
                 } else {
                     FD_SET(d->descriptor, &input_set);
                 }
-                if (d->output.head && 
+                if (d->output.head &&
                     (d->state != CONNECTED || d->player > 0)) {
                     FD_SET(d->descriptor, &output_set);
                 }
             }
         }
+
+        /* Add WebSocket fds to select sets */
+        websocket_add_fds(&input_set, &output_set, &maxd);
 
         /* Wait for I/O or timeout */
         found = select(maxd, &input_set, &output_set,
@@ -578,11 +597,15 @@ static void shovechars(int port)
                 }
             }
 
+            /* Service WebSocket connections */
+            websocket_service_fds(&input_set, &output_set);
+            websocket_service_timeout();
+
             /* Process input from descriptors */
             for (d = descriptor_list; d; d = dnext) {
                 dnext = d->next;
-                if (FD_ISSET(d->descriptor, &input_set) && 
-                    !(d->cstatus & C_REMOTE)) {
+                if (FD_ISSET(d->descriptor, &input_set) &&
+                    !(d->cstatus & (C_REMOTE | C_WEBSOCKET))) {
                     if (!process_input(d)) {
                         shutdownsock(d);
                     }
@@ -602,7 +625,7 @@ static void shovechars(int port)
             /* Process output to descriptors */
             for (d = descriptor_list; d; d = dnext) {
                 dnext = d->next;
-                if (!(d->cstatus & C_REMOTE) &&
+                if (!(d->cstatus & (C_REMOTE | C_WEBSOCKET)) &&
                     FD_ISSET(d->descriptor, &output_set)) {
                     if (!process_output(d)) {
                         shutdownsock(d);
@@ -658,6 +681,7 @@ void outgoing_setupfd(dbref player, int fd)
     d->raw_input_at = NULL;
     d->quota = command_burst_size;
     d->last_time = 0;
+    d->wsi = NULL;
     strcpy(d->addr, "UNUSED");  /* Was "RWHO" - RWHO system removed */
 
     if (descriptor_list) {

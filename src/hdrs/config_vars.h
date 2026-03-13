@@ -67,6 +67,7 @@ extern int number_guests;
 extern int announce_guests;
 extern int announce_connects;
 extern int inet_port;
+extern int websocket_port;
 extern int fixup_interval;
 extern int dump_interval;
 extern int garbage_chunk;

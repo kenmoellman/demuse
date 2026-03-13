@@ -29,6 +29,7 @@ DO_STR("guest_alias_prefix",guest_alias_prefix)
 DO_STR("guest_description",guest_description)
 DO_LNG("max_pennies",max_pennies)
 DO_NUM("inet_port",inet_port)
+DO_NUM("websocket_port",websocket_port)
 DO_NUM("fixup_interval",fixup_interval)
 DO_NUM("dump_interval",dump_interval)
 /*DO_NUM("fight_interval",fight_interval)*/

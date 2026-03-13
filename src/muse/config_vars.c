@@ -102,6 +102,7 @@ int loginstats_max_backups = 0;
 int max_emails_per_day = 0;
 int email_cooldown = 0;
 int max_email_length = 0;
+int websocket_port = 0;
 int smtp_port = 0;
 int smtp_use_ssl = 0;
 
