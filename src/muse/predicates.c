@@ -1347,6 +1347,7 @@ int ok_name(char *name)
       case '%':
       case '\'':
       case '\"':
+      case ':':
         return 0;
     }
   }
