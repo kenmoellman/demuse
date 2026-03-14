@@ -12,6 +12,7 @@
 
 #include "sock.h"
 #include "mariadb_lockout.h"
+#include "websocket.h"
 
 /* Null device for reserving file descriptors */
 static const char *NullFile = "logs/null";
@@ -333,7 +334,17 @@ void shutdownsock(struct descriptor_data *d)
   struct descriptor_data *sd;
   
   if (!d) return;
-  
+
+  /* If this is a WebSocket connection and wsi is still set, the call
+   * is coming from the game side (idle boot, @boot, etc.), not from
+   * the lws callback. Delegate to lws so it can close the connection
+   * properly — lws will fire LWS_CALLBACK_CLOSED which calls us back
+   * with wsi cleared to do the actual cleanup. */
+  if ((d->cstatus & C_WEBSOCKET) && d->wsi) {
+    websocket_close_connection(d);
+    return;
+  }
+
   guest_player = NOTHING;
   if (d->state == CONNECTED && d->player > 0 && Guest(d->player))
     guest_player = d->player;

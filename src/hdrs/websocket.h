@@ -25,6 +25,7 @@ void websocket_service_fds(fd_set *read_set, fd_set *write_set);
 void websocket_service_timeout(void);
 void websocket_request_write(struct descriptor_data *d);
 int websocket_write_output(struct descriptor_data *d);
+void websocket_close_connection(struct descriptor_data *d);
 
 #else
 /* Stubs when WebSocket not compiled in */
@@ -35,6 +36,7 @@ int websocket_write_output(struct descriptor_data *d);
 #define websocket_service_timeout() ((void)0)
 #define websocket_request_write(d) ((void)0)
 #define websocket_write_output(d) (1)
+#define websocket_close_connection(d) ((void)0)
 #endif
 
 #endif /* _WEBSOCKET_H_ */

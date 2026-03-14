@@ -218,6 +218,18 @@ void websocket_request_write(struct descriptor_data *d)
     }
 }
 
+/* Close a WebSocket connection from the game side (e.g., idle boot).
+ * Tells lws to close the connection; lws will fire LWS_CALLBACK_CLOSED
+ * which calls shutdownsock() to do the actual descriptor cleanup.
+ * The caller must NOT free the descriptor — lws still owns it. */
+void websocket_close_connection(struct descriptor_data *d)
+{
+    if (d && d->wsi) {
+        lws_set_timeout((struct lws *)d->wsi,
+                        PENDING_TIMEOUT_CLOSE_SEND, 1);
+    }
+}
+
 /* Write queued output to a WebSocket connection.
  * Called from process_output() when d->cstatus & C_WEBSOCKET.
  * Returns 1 on success, 0 on error (connection should be closed). */
