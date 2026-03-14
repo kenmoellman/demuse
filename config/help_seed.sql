@@ -93,8 +93,7 @@ Linking and Ownership:
 Communication/Emit:
     @announce         - Global announcement to all players
     @broadcast        - Broadcast message
-    @cemit            - Channel emit
-    @chemit           - Channel emit with header
+    @cemit            - Connection emit
     @echo             - Echo message to location
     @emit             - Emit message to room
     @necho            - Named echo

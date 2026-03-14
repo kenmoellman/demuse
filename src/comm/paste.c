@@ -9,7 +9,7 @@
  * - Mail messages (+mail send=*<player>)
  * - Board posts (+board post=<subject>)
  * - News articles (+news post=<topic>)
- * - Channel paste (+channel paste=<channel>)
+ * - Channel paste (+channel paste=<channel>, +channel npaste=<channel>)
  *
  * Usage:
  *   @paste <target>[/<attribute>]   - Paste to attribute
@@ -176,8 +176,9 @@ static const char *paste_type_name(paste_type_t type)
         case PASTE_MAIL:    return "MAIL";
         case PASTE_BOARD:   return "BOARD";
         case PASTE_NEWS:    return "NEWS";
-        case PASTE_CHANNEL: return "CHANNEL";
-        default:            return "UNKNOWN";
+        case PASTE_CHANNEL:      return "CHANNEL";
+        case PASTE_CHANNEL_EMIT: return "CHANNEL_EMIT";
+        default:                 return "UNKNOWN";
     }
 }
 
@@ -653,6 +654,24 @@ static void do_end_paste(dbref player)
             }
         }
         com_send_as(p->channel_name, footer, player);
+        return;
+    }
+
+    /* Handle channel emit paste (anonymous — no player name) */
+    if (p->type == PASTE_CHANNEL_EMIT && p->channel_name) {
+        snprintf(header, sizeof(header),
+                 "|W+----- ||C!+Begin paste |W+-----|");
+        snprintf(footer, sizeof(footer),
+                 "|W+----- ||C!+End paste |W+-----|");
+
+        com_send_int(p->channel_name, header, player, 0);
+        for (line = p->paste; line; line = line->next) {
+            text = (p->code == 1) ? line->str : strip_leading_spaces(line->str);
+            if (text && *text) {
+                com_send_int(p->channel_name, text, player, 0);
+            }
+        }
+        com_send_int(p->channel_name, footer, player, 0);
         return;
     }
 

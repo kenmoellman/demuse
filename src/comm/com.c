@@ -65,7 +65,6 @@ char *channel_int_find_color(dbref, const char *);
 int channel_int_remove_player(dbref, const char *);
 int channel_int_is_on(dbref, dbref);
 void channel_mute(dbref, const char *, const char *);
-void do_chemit(dbref, char *, char *);
 void channel_talk(dbref, char *, char *, char *);
 void com_send_int(char *, char *, dbref, int);
 
@@ -694,12 +693,17 @@ void do_channel(dbref player, char *arg1, char *arg2)
         notify(player, "+channel: No channel specified and no default channel set.");
       }
     }
-  } else if (!string_compare(arg1, "pastecode") || !string_compare(arg1, "paste")) {
-    /* +channel paste=<channel> or +channel pastecode=<channel> */
+  } else if (!string_compare(arg1, "pastecode") || !string_compare(arg1, "paste") ||
+             !string_compare(arg1, "npaste")) {
+    /* +channel paste=<channel>, +channel pastecode=<channel>,
+     * +channel npaste=<channel> (anonymous emit) */
     int code = !string_compare(arg1, "pastecode") ? 1 : 0;
+    int is_emit = !string_compare(arg1, "npaste");
+    paste_type_t ptype = is_emit ? PASTE_CHANNEL_EMIT : PASTE_CHANNEL;
     channel_cache_t *chan;
     if (!arg2 || !*arg2) {
-      notify(player, "+channel: Specify a channel. Usage: +channel paste=<channel>");
+      notify(player, tprintf("+channel: Specify a channel. Usage: +channel %s=<channel>",
+                             arg1));
       return;
     }
     chan = channel_cache_lookup(channel_strip_prefix(arg2));
@@ -711,7 +715,7 @@ void do_channel(dbref player, char *arg1, char *arg2)
       notify(player, "+channel: You're not on that channel.");
       return;
     }
-    start_paste_session(player, PASTE_CHANNEL, NOTHING, NULL, chan->name, code);
+    start_paste_session(player, ptype, NOTHING, NULL, chan->name, code);
   } else if (!*arg2) {
     channel_default(player, arg1);
   } else {
@@ -1304,12 +1308,6 @@ void channel_join(dbref player, char *arg2)
     password = strchr(alias, ':');
     if (password && *password) {
       *password++ = '\0';
-      if (password && *password) {
-        cryptpass = crypt(password, "XX");
-        if (!strcmp(cryptpass, Pass(player))) {
-          pmatch = 1;
-        }
-      }
     }
   }
 
@@ -1337,6 +1335,23 @@ void channel_join(dbref player, char *arg2)
   if (m && m->is_banned) {
     notify(player, "You have been banned from that channel.");
     return;
+  }
+
+  /* Check channel password if one is set */
+  if (chan->password && *chan->password) {
+    if (password && *password) {
+      cryptpass = crypt(password, "XX");
+      if (!strcmp(cryptpass, chan->password)) {
+        pmatch = 1;  /* Correct password bypasses level/lock checks */
+      } else {
+        notify(player, "+channel: Incorrect channel password.");
+        return;
+      }
+    } else {
+      notify(player, "+channel: This channel requires a password. "
+                      "Use: +channel join=<name>:<alias>:<password>");
+      return;
+    }
   }
 
   /* Permission checks for min_level channels */
@@ -2355,37 +2370,6 @@ void channel_talk(dbref player, char *chan, char *arg1, char *arg2)
   }
 
   do_com(player, channel, msg);
-}
-
-/**
- * CHEMIT command - emit to channel as staff
- * Syntax: @chemit <channel>=<message>
- */
-void do_chemit(dbref player, char *channel, char *message)
-{
-  if (!channel || !*channel) {
-    notify(player, "What channel?");
-    return;
-  }
-
-  if (strchr(channel, ' ')) {
-    notify(player, "You're spacey.");
-    return;
-  }
-
-  if (!message || !*message) {
-    notify(player, "No message");
-    return;
-  }
-
-  /* Check if channel exists */
-  if (!channel_cache_lookup(channel)) {
-    notify(player, "+channel: Invalid channel.");
-    return;
-  }
-
-  /* Send message */
-  com_send_int(channel, message, player, 0);
 }
 
 /* ===================================================================

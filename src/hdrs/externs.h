@@ -457,7 +457,8 @@ typedef enum {
     PASTE_MAIL,      /* +mail send */
     PASTE_BOARD,     /* +board post */
     PASTE_NEWS,      /* +news post */
-    PASTE_CHANNEL    /* +channel paste */
+    PASTE_CHANNEL,   /* +channel paste */
+    PASTE_CHANNEL_EMIT /* +channel npaste (anonymous emit) */
 } paste_type_t;
 
 extern char is_pasting (dbref);
@@ -630,7 +631,6 @@ extern void do_announce (dbref, char *, char *);
 extern void do_broadcast (dbref, char *, char *);
 extern void do_emit (dbref, char *, char *, int);
 extern void do_cemit (dbref, char *, char *);
-extern void do_chemit (dbref, char *, char *);
 extern void do_wemit (dbref, char *, char *);
 extern void do_echo (dbref, char *, char *, int);
 extern void do_gripe (dbref, char *, char *);

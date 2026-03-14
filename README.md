@@ -194,7 +194,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 **Commands:**
 
 - **`+channel <subcommand>`** - All channel administration and control:
-  `create`, `destroy`, `join`, `leave`, `default`, `alias`, `op`, `owner`, `lock`, `password`, `boot`, `ban`, `unban`, `list`, `search`, `log`, `color`, `who`, `mute`, `unmute`
+  `create`, `destroy`, `join`, `leave`, `default`, `alias`, `op`, `owner`, `lock`, `password`, `boot`, `ban`, `unban`, `list`, `search`, `log`, `color`, `who`, `mute`, `unmute`, `paste`, `pastecode`, `npaste`
 - **`+com <channel>=<message>`** - Speaking on channels (say, pose, think, directed messages)
 - **`=<message>`** - Shortcut to speak on default channel
 
@@ -204,7 +204,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - `channel_*` - Subcommand handlers (e.g., `channel_create`, `channel_join`)
 - `channel_cache_*` - Cache operations (e.g., `channel_cache_lookup`, `channel_cache_get_member`)
 - `channel_int_*` - Legacy compatibility wrappers (thin wrappers around cache, kept during transition)
-- `do_channel`, `do_com`, `do_chemit` - Parser hooks (unchanged)
+- `do_channel`, `do_com` - Parser hooks
 
 **System channels** are hardcoded (not configurable via `@config`):
 - `dbinfo` - Database info (dumps, etc.)
@@ -281,12 +281,12 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 **In Progress**
 - Modernize the code to replace deprecated functions and improve logic — always in progress
 - Look for potential buffer overruns and prevent them — always in progress
-- Extensive validation — GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database. Remaining gaps in eval.c (fun_foreach) and admin.c (Wizard() macro entry guards)
+- Extensive validation — GoodObject() checks throughout all functions, except where finding a deleted object is okay like when dumping the database. Identity macros (Wizard, Guest, Robot, Builder, Dark, Alive) are self-defending with GoodObject(). eval.c fun_foreach and udef_fun validated.
 - Better documentation — more detailed explanations of logic and functions, and better inline comments
 - Improved header — comprehensive modernization notes
 
 **Future Work**
-- Help topic cleanup — ~119 @ commands still lack help documentation; audit existing topics for correct syntax
+- ~~Help topic cleanup~~ — DONE: 97 auto-generated help entries added (marked with disclaimer). Audit existing topics for correct syntax
 - ~~Unify +board and +news code~~ — DONE: news articles stored in board table with NEWS_ROOM (-2), +board has undelete/purge/ban/unban
 - Migrate object database from flat-file to MariaDB (three-table design: players, objects, attributes)
 - ~~Upgrade Pueblo 1.0 support to MXP~~ — SUPERSEDED by Universe Project Phase 1 (web client)
@@ -294,6 +294,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - ~~Fix signal.c SIGCHLD bug~~ — TESTING: `signal(SIGCHLD, SIG_IGN)` commented out 2026-03-12, reaper() handler now active
 - Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
 - ~~WebSocket connectivity (Phase 1a)~~ — DONE: libwebsockets integration, xterm.js web client, nginx proxy config
+- ~~Move powers/typenames/classnames arrays from config.h~~ — DEFERRED to Universe Project: these become per-universe configuration in MariaDB (different class names, type names, and power matrices per universe)
 
 ### Universe Project: Revert and Reimplement
 

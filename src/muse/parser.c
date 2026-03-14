@@ -721,16 +721,6 @@ static void cmd_check(dbref player, char *arg1, char *arg2)
 }
 
 /**
- * cmd_chemit - Wrapper for @chemit command
- *
- * Core: do_chemit(player, arg1, arg2)
- */
-static void cmd_chemit(dbref player, char *arg1, char *arg2)
-{
-    do_chemit(player, arg1, arg2);
-}
-
-/**
  * cmd_class - Wrapper for @class command
  *
  * Core: do_class(player, arg1, arg2)
@@ -2391,7 +2381,6 @@ static void register_demuse_commands(parser_t *parser)
         {"@announce",   cmd_announce,  2, 0, 0, 0, 0},
         {"@broadcast",  cmd_broadcast, 2, 0, 0, 0, 0},
         {"@cemit",      cmd_cemit,     2, 0, 0, 0, 0},
-        {"@chemit",     cmd_chemit,    2, 0, 0, 0, 0},
         {"@echo",       cmd_echo,      2, 0, 0, 0, 0},
         {"@emit",       cmd_emit,      2, 0, 0, 0, 0},
         {"@necho",      cmd_necho,     2, 0, 0, 0, 0},
