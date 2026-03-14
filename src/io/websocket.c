@@ -357,11 +357,31 @@ static int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
         struct descriptor_data *d;
         struct sockaddr_in addr;
         char addr_str[50];
+        char xff_buf[128];
         int fd;
 
-        /* Get peer address */
+        /* Get peer address (direct connection IP) */
         memset(&addr, 0, sizeof(addr));
         lws_get_peer_simple(wsi, addr_str, sizeof(addr_str));
+
+        /* Check for X-Forwarded-For header from reverse proxy.
+         * If present, use the first (leftmost) IP as the real client. */
+        if (lws_hdr_copy(wsi, xff_buf, sizeof(xff_buf),
+                         WSI_TOKEN_X_FORWARDED_FOR) > 0) {
+            /* X-Forwarded-For may contain: "client, proxy1, proxy2"
+             * Extract just the first IP (the original client) */
+            char *comma = strchr(xff_buf, ',');
+            if (comma) {
+                *comma = '\0';
+            }
+            /* Trim whitespace */
+            char *p = xff_buf;
+            while (*p == ' ') p++;
+            if (*p) {
+                strncpy(addr_str, p, sizeof(addr_str) - 1);
+                addr_str[sizeof(addr_str) - 1] = '\0';
+            }
+        }
 
         /* Get the raw fd for logging/identification */
         fd = lws_get_socket_fd(wsi);

@@ -293,7 +293,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - ~~Overhaul universe system~~ — SUPERSEDED by Universe Project (revert and reimplement, see below)
 - ~~Fix signal.c SIGCHLD bug~~ — TESTING: `signal(SIGCHLD, SIG_IGN)` commented out 2026-03-12, reaper() handler now active
 - Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
-- ~~WebSocket connectivity (Phase 1a)~~ — DONE: libwebsockets integration, xterm.js web client, nginx proxy config
+- ~~WebSocket connectivity (Phase 1a)~~ — DONE: libwebsockets integration, xterm.js web client, nginx proxy config, X-Forwarded-For real IP passthrough, idle boot crash fix
 - ~~Move powers/typenames/classnames arrays from config.h~~ — DEFERRED to Universe Project: these become per-universe configuration in MariaDB (different class names, type names, and power matrices per universe)
 
 ### Universe Project: Revert and Reimplement
