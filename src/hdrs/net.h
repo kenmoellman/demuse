@@ -44,6 +44,7 @@ struct descriptor_data {
 #define C_CCONTROL 1
 #define C_REMOTE 2
 #define C_WEBSOCKET 4
+#define C_CLOSING 8
   struct descriptor_data *parent; /* for C_REMOTE stuff */
   char addr[51];
   dbref player;

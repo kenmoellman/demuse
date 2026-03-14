@@ -224,7 +224,8 @@ void websocket_request_write(struct descriptor_data *d)
  * The caller must NOT free the descriptor — lws still owns it. */
 void websocket_close_connection(struct descriptor_data *d)
 {
-    if (d && d->wsi) {
+    if (d && d->wsi && !(d->cstatus & C_CLOSING)) {
+        d->cstatus |= C_CLOSING;
         lws_set_timeout((struct lws *)d->wsi,
                         PENDING_TIMEOUT_CLOSE_SEND, 1);
     }

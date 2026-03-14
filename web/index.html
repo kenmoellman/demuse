@@ -59,7 +59,7 @@
 
         var ws = null;
         var inputLine = '';
-        var reconnectTimer = null;
+        var waitingForReconnect = false;
 
         function setStatus(text, cls) {
             statusEl.textContent = text;
@@ -82,10 +82,6 @@
             ws.onopen = function() {
                 setStatus('connected', 'connected');
                 inputLine = '';
-                if (reconnectTimer) {
-                    clearTimeout(reconnectTimer);
-                    reconnectTimer = null;
-                }
             };
 
             ws.onmessage = function(ev) {
@@ -93,16 +89,10 @@
             };
 
             ws.onclose = function() {
-                setStatus('disconnected', 'disconnected');
-                term.write('\r\n\x1b[31m--- Connection closed ---\x1b[0m\r\n');
+                setStatus('disconnected — press any key to reconnect', 'disconnected');
+                term.write('\r\n\x1b[31m--- Connection closed — press any key to reconnect ---\x1b[0m\r\n');
                 ws = null;
-                /* Auto-reconnect after 5 seconds */
-                if (!reconnectTimer) {
-                    reconnectTimer = setTimeout(function() {
-                        reconnectTimer = null;
-                        connect();
-                    }, 5000);
-                }
+                waitingForReconnect = true;
             };
 
             ws.onerror = function() {
@@ -115,6 +105,11 @@
          * on Enter. This gives the user local line editing (backspace,
          * arrow keys could be added later). */
         term.onData(function(data) {
+            if (waitingForReconnect) {
+                waitingForReconnect = false;
+                connect();
+                return;
+            }
             if (!ws || ws.readyState !== 1) return;
 
             for (var i = 0; i < data.length; i++) {

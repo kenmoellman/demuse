@@ -339,7 +339,9 @@ void shutdownsock(struct descriptor_data *d)
    * is coming from the game side (idle boot, @boot, etc.), not from
    * the lws callback. Delegate to lws so it can close the connection
    * properly — lws will fire LWS_CALLBACK_CLOSED which calls us back
-   * with wsi cleared to do the actual cleanup. */
+   * with wsi cleared to do the actual cleanup.
+   * If C_CLOSING is already set, we already asked lws to close —
+   * just wait for the callback. */
   if ((d->cstatus & C_WEBSOCKET) && d->wsi) {
     websocket_close_connection(d);
     return;
