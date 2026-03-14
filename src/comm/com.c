@@ -746,6 +746,7 @@ int channel_int_ok_name(char *name)
       strchr(name, AND_TOKEN) ||
       strchr(name, OR_TOKEN) ||
       strchr(name, ';') ||
+      strchr(name, ':') ||
       strchr(name, ' ') ||
       strlen(name) > (size_t)channel_name_limit) {
     return 0;
@@ -1167,19 +1168,19 @@ void channel_lock(dbref player, char *arg2)
   const char *field;
 
   if (!arg2 || !*arg2) {
-    notify(player, "+channel: Bad lock syntax. Use: +channel lock <channel>:<type>=<lock>");
+    notify(player, "+channel: Usage: +channel lock=<channel>:<type>:<lock>");
     return;
   }
 
   locktype = strchr(arg2, ':');
   if (!locktype || !*locktype) {
-    notify(player, "+channel: Bad lock syntax. Use: +channel lock <channel>:<type>=<lock>");
+    notify(player, "+channel: Usage: +channel lock=<channel>:<type>:<lock>");
     return;
   }
 
   *locktype++ = '\0';
 
-  lock_str = strchr(locktype, '=');
+  lock_str = strchr(locktype, ':');
   if (lock_str) {
     *lock_str++ = '\0';
   }
@@ -1558,6 +1559,11 @@ void channel_alias(dbref player, char *arg2)
   char *s = strchr(alias, ':');
   if (s) {
     *s = '\0';
+  }
+
+  if (!channel_int_ok_name(alias)) {
+    notify(player, "+channel: That's not a valid alias.");
+    return;
   }
 
   chan = channel_cache_lookup(channel);
