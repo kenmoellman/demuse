@@ -371,8 +371,10 @@ This means:
 - Login: validates against `accounts` table → generates one-time token (60-second expiry) → browser redirects to `client.php` or telnet user gets `connect token:<hex>` to paste
 - Token validation in netmuse: `mariadb_auth_validate_token()` checks and consumes the token, `mariadb_auth_find_player()` looks up the player, auto-creates via `create_player()` if first login
 - Session takeover: new login disconnects any existing session for the same account
-- Legacy `connect <name> <password>` still works with migration notice
-- Expired token cleanup runs every 5 minutes via `timer.c`
+- Legacy `connect <name> <password>` fully disabled — only guest connections via `connect guest` and token auth via `connect token:<hex>` are accepted
+- Password reset: `forgot.php` generates 1-hour reset token, sends email link, `reset.php` validates and updates bcrypt hash
+- `mariadb_config_get_str()` fetches config values live from database — `welcome_msg` updates take effect immediately without server restart
+- Expired token cleanup runs every 5 minutes via `timer.c` (auth tokens, email verification tokens, password reset tokens)
 - No plain-text passwords ever cross the wire (PHP handles all password operations)
 - Real-time server push via WebSocket — room events, channel messages, notifications appear instantly
 
