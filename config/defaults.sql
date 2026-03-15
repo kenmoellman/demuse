@@ -35,7 +35,7 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('create_msg', '', 'STR'),
 ('motd_msg', '-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\\nPlease edit motd_msg via @config.\\n-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-', 'STR'),
 ('motd_msg_player', '1', 'REF'),
-('welcome_msg', '\\n                        Welcome to deMUSE\\n\\n     To connect to an existing character, type: connect <name> <password>\\n     To create a new character, type: create <name> <password>\\n\\n     Use \"help\" for more information after connecting.', 'STR'),
+('welcome_msg', '\\n                        Welcome to deMUSE\\n\\n     Please log in via the web interface to receive a connection token.\\n     To connect as a guest, type: connect guest\\n     To see who is online, type: WHO\\n\\n     If you have a token, type: connect token:<your-token>', 'STR'),
 ('guest_msg', 'You have connected as a guest, please be courteous.\\nReport any abuse you receive, in detail, to an administrator.\\n\\nSee \"help register\" for details on getting a character.\\nType \"who\" to see who''s online.\\nAnd try using \"help commands\" to find your way around.\\nHave a nice day.  Page an unidle guide or director for assistance.', 'STR'),
 ('register_msg', 'Try: connect Guest, or email an administrator', 'STR'),
 ('leave_msg', 'Thanks for visiting!', 'STR'),
@@ -105,7 +105,7 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('max_emails_per_day', '10', 'NUM'),
 ('email_cooldown', '60', 'NUM'),
 ('max_email_length', '4096', 'NUM'),
-('smtp_port', '587', 'NUM'),
+('smtp_port', '465', 'NUM'),
 ('smtp_use_ssl', '1', 'NUM')
 ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
 

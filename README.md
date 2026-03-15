@@ -294,6 +294,7 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - ~~Fix signal.c SIGCHLD bug~~ — TESTING: `signal(SIGCHLD, SIG_IGN)` commented out 2026-03-12, reaper() handler now active
 - Move powers/typenames/classnames arrays from config.h to database to eliminate compiler warnings
 - ~~WebSocket connectivity (Phase 1a)~~ — DONE: libwebsockets integration, xterm.js web client, nginx proxy config, X-Forwarded-For real IP passthrough, idle boot crash fix
+- ~~Account authentication (Phase 1b)~~ — DONE: PHP web layer (register/verify/login), token-based auth, auto-player-creation, session takeover, DEMUSE_HOME env var, Apache vhost config
 - ~~Move powers/typenames/classnames arrays from config.h~~ — DEFERRED to Universe Project: these become per-universe configuration in MariaDB (different class names, type names, and power matrices per universe)
 
 ### Universe Project: Revert and Reimplement
@@ -358,16 +359,24 @@ This means:
 - WebSocket descriptors can't survive @reload (exec) — they're cleanly disconnected with a reboot message
 
 *Web terminal client (DONE):*
-- Single HTML page with xterm.js (renders ANSI colors, local line editing, auto-reconnect)
-- Served as static files by Apache (behind the nginx reverse proxy)
-- Example config: `web/nginx.conf.example`, client: `web/index.html`
+- Token-aware xterm.js client (`web/client.php`) auto-sends `connect token:<hex>` on WebSocket open
+- Redirects to login page on disconnect (token is consumed, can't reuse)
+- Served by Apache (behind the nginx reverse proxy)
+- Example configs: `web/nginx.conf.example` (nginx), `web/apache-demuse.conf.example` (Apache)
 
-*Account system and secure auth (TODO):*
-- Authentication: HTTPS login form → validate against `accounts` table → session token → WebSocket connects with token
-- No plain-text passwords ever cross the wire
+*Account system and secure auth (DONE):*
+- PHP 8.5 web layer on local Apache handles registration, email verification, and login
+- `DEMUSE_HOME` environment variable for installation portability (set via Apache `SetEnv`)
+- Registration: username/email/password → bcrypt hash → email verification token (24-hour expiry)
+- Login: validates against `accounts` table → generates one-time token (60-second expiry) → browser redirects to `client.php` or telnet user gets `connect token:<hex>` to paste
+- Token validation in netmuse: `mariadb_auth_validate_token()` checks and consumes the token, `mariadb_auth_find_player()` looks up the player, auto-creates via `create_player()` if first login
+- Session takeover: new login disconnects any existing session for the same account
+- Legacy `connect <name> <password>` still works with migration notice
+- Expired token cleanup runs every 5 minutes via `timer.c`
+- No plain-text passwords ever cross the wire (PHP handles all password operations)
 - Real-time server push via WebSocket — room events, channel messages, notifications appear instantly
 
-*Dependencies:* libwebsockets (server-side), libargon2 or libbcrypt (password hashing, TODO), xterm.js (client-side, served by web server)
+*Dependencies:* libwebsockets (server-side), PHP 8.5 with PDO/MariaDB (web layer), xterm.js (client-side, served by web server)
 
 **Phase 2: Parser Plugin Architecture**
 

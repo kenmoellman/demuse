@@ -238,6 +238,79 @@ CREATE TABLE IF NOT EXISTS news_read (
   COMMENT='DEPRECATED - deMUSE news read tracking (migrated to board_read)';
 
 -- ============================================================================
+-- ACCOUNT AUTHENTICATION TABLES
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS accounts (
+  account_id    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  username      VARCHAR(50)  NOT NULL,
+  password_hash VARCHAR(255) NOT NULL COMMENT 'bcrypt via PHP password_hash()',
+  email         VARCHAR(255) DEFAULT NULL,
+  created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_login    TIMESTAMP    NULL,
+  is_verified   TINYINT(1)   NOT NULL DEFAULT 0,
+  is_disabled   TINYINT(1)   NOT NULL DEFAULT 0,
+  UNIQUE INDEX idx_username (username)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='User accounts for web-based authentication';
+
+CREATE TABLE IF NOT EXISTS email_verify_tokens (
+  token_id    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  account_id  BIGINT UNSIGNED NOT NULL,
+  token       VARCHAR(64)  NOT NULL,
+  created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at  TIMESTAMP    NOT NULL COMMENT '24-hour expiry',
+  UNIQUE INDEX idx_token (token),
+  FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='Email verification tokens for account registration';
+
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  token_id    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  account_id  BIGINT UNSIGNED NOT NULL,
+  token       VARCHAR(64)  NOT NULL COMMENT 'crypto-random hex string',
+  token_type  ENUM('websocket', 'telnet') NOT NULL,
+  created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at  TIMESTAMP    NOT NULL COMMENT '60-second expiry',
+  consumed    TINYINT(1)   NOT NULL DEFAULT 0,
+  UNIQUE INDEX idx_token (token),
+  INDEX idx_expires (expires_at),
+  FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='One-time login tokens for WebSocket and telnet connections';
+
+CREATE TABLE IF NOT EXISTS universe_players (
+  account_id   BIGINT UNSIGNED NOT NULL,
+  universe_id  INT UNSIGNED    NOT NULL DEFAULT 0 COMMENT '0 = lobby/default',
+  player_dbref BIGINT          NOT NULL,
+  created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (account_id, universe_id),
+  INDEX idx_universe (universe_id),
+  FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='Maps accounts to player objects per universe';
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  token_id    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  account_id  BIGINT UNSIGNED NOT NULL,
+  token       VARCHAR(64)  NOT NULL UNIQUE,
+  expires_at  DATETIME     NOT NULL COMMENT '1-hour expiry',
+  created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='Password reset tokens requested via web interface';
+
+-- ============================================================================
 -- SEED DATA
 -- ============================================================================
 -- After creating tables, load default data:

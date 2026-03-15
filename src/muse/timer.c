@@ -46,6 +46,7 @@
 #include "interface.h"
 #include "match.h"
 #include "externs.h"
+#include "mariadb_auth.h"
 
 /* ============================================================================
  * GLOBAL STATE
@@ -242,6 +243,12 @@ void dispatch(void)
   /* Check for new day (for daily maintenance) */
   if (!(ticks % 60)) {
     check_newday();
+  }
+
+  /* === EVERY 5 MINUTES === */
+  /* Clean up expired auth tokens and email verification tokens */
+  if (!(ticks % 300)) {
+    mariadb_auth_cleanup_expired();
   }
 
   /* Boot idle guests and unconnected descriptors */

@@ -1,0 +1,31 @@
+# Apache vhost for deMUSE web interface
+#
+# Copy to /etc/apache2/sites-available/demuse.conf and adjust:
+#   1. DocumentRoot path
+#   2. DEMUSE_HOME path
+#   3. Directory path
+#
+# Required Apache modules: mod_php, mod_rewrite, mod_proxy, mod_proxy_wstunnel
+#   sudo a2enmod rewrite proxy proxy_wstunnel proxy_http
+#
+# Enable with: sudo a2ensite demuse && sudo systemctl reload apache2
+
+<VirtualHost *:80>
+    ServerName localhost
+    DocumentRoot /path/to/demuse/web
+
+    # Base directory for PHP to find config files
+    SetEnv DEMUSE_HOME /path/to/demuse
+
+    <Directory /path/to/demuse/web>
+        AllowOverride All
+        Require all granted
+
+        # Default to login page
+        DirectoryIndex login.php
+    </Directory>
+
+    # WebSocket proxy to netmuse
+    ProxyPass /ws ws://localhost:4209/ upgrade=websocket
+    ProxyPassReverse /ws ws://localhost:4209/
+</VirtualHost>

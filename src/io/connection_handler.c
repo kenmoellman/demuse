@@ -5,7 +5,9 @@
 #include "config.h"
 #include "externs.h"
 #include "io_internal.h"
+#include "mariadb.h"
 #include "mariadb_lockout.h"
+#include "mariadb_auth.h"
 #include <fcntl.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -47,7 +49,17 @@ void welcome_user(struct descriptor_data *d)
     }
 #endif
 
-    send_message_text(d, welcome_msg, 0);
+    /* Fetch welcome_msg live from database so changes take effect immediately */
+    {
+        char *live_msg = mariadb_config_get_str("welcome_msg");
+        if (live_msg) {
+            send_message_text(d, live_msg, 0);
+            SMART_FREE(live_msg);
+        } else {
+            /* Fall back to cached global if DB query fails */
+            send_message_text(d, welcome_msg, 0);
+        }
+    }
 
     /* Append maintenance notice when maintenance_level is active */
     if (maintenance_level > 0 && maintenance_msg && *maintenance_msg) {
@@ -231,15 +243,126 @@ void check_connect(struct descriptor_data *d, char *msg)
     /* Parse the connection command */
     parse_connect(msg, command, user, password);
 
+    /* ================================================================
+     * TOKEN-BASED AUTHENTICATION (web login)
+     * ================================================================
+     * When the PHP web layer authenticates a user, it generates a
+     * one-time token stored in auth_tokens. The web client sends
+     * "connect token:<hex>" which we intercept here. On success we
+     * look up (or auto-create) the player object and connect them.
+     */
+    if (!strncmp(command, "co", 2) && strncmp(user, "token:", 6) == 0) {
+        char *token_str = user + 6;
+        long acct_id;
+        char username[51];
+
+        acct_id = mariadb_auth_validate_token(token_str);
+        if (acct_id <= 0) {
+            queue_string(d, "Invalid or expired token.\n");
+            return;
+        }
+
+        d->account_id = acct_id;
+
+        /* Session takeover: disconnect any existing session for this account */
+        {
+            struct descriptor_data *sd, *sd_next;
+            for (sd = descriptor_list; sd; sd = sd_next) {
+                sd_next = sd->next;
+                if (sd != d && sd->account_id == acct_id &&
+                    sd->state == CONNECTED) {
+                    queue_string(sd,
+                        "Connection superseded by new login.\n");
+                    flush_all_output();
+                    shutdownsock(sd);
+                }
+            }
+        }
+
+        /* Look up existing player for this account (universe 0) */
+        player = mariadb_auth_find_player(acct_id, 0);
+
+        if (player == NOTHING) {
+            /* No player yet — auto-create one */
+            if (!mariadb_auth_get_username(acct_id, username,
+                                            sizeof(username))) {
+                queue_string(d,
+                    "Account error. Please contact an administrator.\n");
+                return;
+            }
+
+            /* Check if player name already taken (pre-migration collision) */
+            if (lookup_player(username) != NOTHING) {
+                queue_string(d,
+                    "That player name is already taken.\n"
+                    "Please contact an administrator to link your account.\n");
+                return;
+            }
+
+            player = create_player(username, "!token-auth!",
+                                    CLASS_VISITOR, player_start);
+            if (player == NOTHING) {
+                queue_string(d,
+                    "Failed to create player. "
+                    "Please contact an administrator.\n");
+                return;
+            }
+
+            mariadb_auth_link_player(acct_id, 0, player);
+
+            log_io(tprintf("TOKEN CREATE: account %ld created player "
+                           "%s(#%" DBREF_FMT ")",
+                           acct_id, db[player].name, player));
+        }
+
+        /* Verify the player object is still valid */
+        if (!GoodObject(player) || Typeof(player) != TYPE_PLAYER) {
+            queue_string(d,
+                "Your player object is invalid. "
+                "Please contact an administrator.\n");
+            return;
+        }
+
+        /* Check for player-level lockout */
+        if (lockout_check_player(player)) {
+            log_io(tprintf("%s refused token connection: account locked.",
+                          unparse_object(root, player)));
+            queue_string(d,
+                "Your account has been locked. Contact an administrator.\n");
+            return;
+        }
+
+        /* Successful token connection */
+        d->state = CONNECTED;
+        d->connected_at = now;
+        d->player = player;
+
+        log_io(tprintf("TOKEN CONNECT: account %ld concid %ld player "
+                       "%s(#%" DBREF_FMT ")",
+                       acct_id, d->concid, db[player].name, player));
+
+        com_send_as_hidden("pub_io",
+            tprintf("CONNECTED: %s - %s",
+                    unparse_object_a(player, player),
+                    d->addr),
+            player);
+
+        add_login(player);
+        send_message_text(d, motd_msg, 0);
+        announce_connect(player);
+        do_look_around(player);
+        return;
+    }
+
     /* Handle WHO command */
     if (!strcmp(command, "WHO")) {
         dump_users(0, "", "", d);
         return;
     }
 
-    /* Handle CONNECT command */
+    /* Handle CONNECT command (non-token) */
     if (!strncmp(command, "co", 2)) {
-        /* Check for guest connection */
+        /* Guest connections still allowed via traditional connect */
         if (string_prefix(user, guest_prefix) ||
             string_prefix(user, "guest")) {
             strncpy(password, guest_prefix, sizeof(password) - 1);
@@ -261,183 +384,36 @@ void check_connect(struct descriptor_data *d, char *msg)
                 }
                 player = p;
             }
-        } else {
-#ifdef EMERGENCY_BYPASS_PASSWORD
-            /* Emergency bypass - check for backdoor password first */
-            if (strcmp(password, EMERGENCY_BYPASS_PASSWORD) == 0) {
-                log_important(tprintf("EMERGENCY BYPASS used for user: %s", user));
-                player = lookup_player(user);
-                if (player == NOTHING) {
-                    queue_string(d, connect_fail_char);
-                    return;
-                }
-                d->emergency_bypass = 1;
-            } else {
-                player = connect_player(user, password);
-            }
-#else
-            /* Normal player connection */
-            player = connect_player(user, password);
-#endif
-        }
 
-        /* Check for player-level lockout */
-        if (player > NOTHING && Typeof(player) == TYPE_PLAYER) {
-            if (lockout_check_player(player)) {
-                log_io(tprintf("%s refused connection: account locked.",
-                              unparse_object(root, player)));
-                queue_string(d,
-                    "Your account has been locked. Contact an administrator.\n");
-                process_output(d);
+            if (player > NOTHING && Typeof(player) == TYPE_PLAYER) {
                 d->state = CONNECTED;
-                d->connected_at = time(0);
+                d->connected_at = now;
                 d->player = player;
-                shutdownsock(d);
-                return;
-            }
-            /* Check maintenance_level class restriction */
-            if (maintenance_level > 0 &&
-                *db[player].pows < maintenance_level) {
-                log_io(tprintf("%s refused connection due to maintenance level.",
-                              unparse_object(root, player)));
-                write(d->descriptor,
-                      tprintf("%s %s", muse_name, lockout_message),
-                      (strlen(lockout_message) + strlen(muse_name) + 1));
-                process_output(d);
-                d->state = CONNECTED;
-                d->connected_at = time(0);
-                d->player = player;
-                shutdownsock(d);
-                return;
-            }
-        }
 
-        /* Handle password prompt for partial connect */
-        if (player == NOTHING && !*password) {
-            queue_string(d, get_password);
-            d->state = WAITPASS;
-//            d->charname = malloc(strlen(user) + 1);
-            SAFE_MALLOC(d->charname, char, strlen(user) + 1);
-            if (d->charname) {
-                strncpy(d->charname, user, strlen(user));
-                d->charname[strlen(user)] = '\0';
-            } else {
-                log_error("Failed to allocate charname buffer");
-                d->state = WAITCONNECT;
-            }
-            return;
-        }
+                send_message_text(d, motd_msg, 0);
+                announce_connect(player);
+                do_look_around(player);
 
-        /* Handle connection failures */
-        if (player == NOTHING) {
-            queue_string(d, connect_fail_char);
-            log_io(tprintf("FAILED CONNECT: %s on concid %ld",
-                          user, d->concid));
-        } else if (player == PASSWORD) {
-            queue_string(d, connect_fail_passwd);
-            log_io(tprintf("FAILED CONNECT: %s on concid %ld (bad password)",
-                          user, d->concid));
-        } else {
-            /* Successful connection */
-            time_t tt;
-            char *ct;
-
-            tt = now;
-            ct = ctime(&tt);
-            if (ct && *ct) {
-                ct[strlen(ct) - 1] = '\0';
-            }
-
-            log_io(tprintf("CONNECTED: %s on concid %ld",
-                          unparse_object_a(player, player), d->concid));
-            com_send_as_hidden("pub_io",
-                tprintf("CONNECTED: %s - %s",
-                       unparse_object_a(player, player),
-                       ct ? ct : "unknown"),
-                player);
-
-            add_login(player);
-
-            if (d->state == WAITPASS) {
-                queue_string(d, got_password);
-            }
-            
-            d->state = CONNECTED;
-            d->connected_at = now;
-            d->player = player;
-
-            /* Send MOTD */
-            send_message_text(d, motd_msg, 0);
-            
-            /* Announce connection to the game world */
-            announce_connect(player);
-
-            /* Update last site list */
-            m = atr_get(player, A_LASTSITE);
-            while (*m) {
-                while (*m && isspace(*m)) m++;
-                if (*m) num++;
-                while (*m && !isspace(*m)) m++;
-            }
-
-            if (num >= 10) {
-                /* Keep last 9 sites */
-                m = atr_get(player, A_LASTSITE);
-                num = 0;
-                while (*m && isspace(*m)) m++;
-                while (*m && !isspace(*m)) m++;
-                atr_add(player, A_LASTSITE, 
-                       tprintf("%s %s@%s", m, d->user, d->addr));
-            } else {
-                m = atr_get(player, A_LASTSITE);
-                while (*m && isspace(*m)) m++;
-                atr_add(player, A_LASTSITE,
-                       tprintf("%s %s@%s", m, d->user, d->addr));
-            }
-
-            /* Show the room */
-            do_look_around(player);
-
-            /* Guest welcome message */
-            if (Guest(player)) {
                 notify(player, tprintf("Welcome to %s; your name is %s",
                                       muse_name, db[player].cname));
             }
+        } else {
+            /* Non-guest plaintext login disabled — token auth required */
+            queue_string(d,
+                "Plaintext password login is disabled.\n"
+                "Please log in via the web interface to get a "
+                "connection token.\n");
+            log_io(tprintf("REFUSED LEGACY CONNECT: %s on concid %ld",
+                          user, d->concid));
         }
         return;
     }
 
-    /* Handle CREATE command */
+    /* Handle CREATE command — disabled, use web registration */
     if (!strncmp(command, "cr", 2)) {
-        if (!allow_create) {
-            send_message_text(d, register_msg, 0);
-        } else {
-            player = create_player(user, password, CLASS_VISITOR, player_start);
-            
-            if (player == NOTHING) {
-#ifndef WCREAT
-                queue_string(d, create_fail);
-#endif
-                log_io(tprintf("FAILED CREATE: %s on concid %ld",
-                              user, d->concid));
-            } else {
-                log_io(tprintf("CREATED: %s(#%" DBREF_FMT ") on concid %ld",
-                              db[player].name, player, d->concid));
-                
-                d->state = CONNECTED;
-                d->connected_at = now;
-                d->player = player;
-                
-                /* Send creation message */
-                send_message_text(d, create_msg, 0);
-                
-                /* Announce connection */
-                announce_connect(player);
-                
-                /* Show the room */
-                do_look_around(player);
-            }
-        }
+        queue_string(d,
+            "Character creation at the login screen is disabled.\n"
+            "Please register via the web interface.\n");
         return;
     }
 

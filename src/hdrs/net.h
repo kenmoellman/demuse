@@ -67,6 +67,7 @@ struct descriptor_data {
   int pueblo; /* flag for the pueblo client */
   int emergency_bypass; /* flag for emergency bypass login */
   void *wsi; /* libwebsockets instance handle (NULL for telnet) */
+  long account_id; /* Account ID from web auth, 0 if not authenticated via token */
 };
 
 extern struct descriptor_data *descriptor_list;

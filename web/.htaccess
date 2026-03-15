@@ -1,0 +1,4 @@
+# Deny direct browser access to internal PHP files
+<FilesMatch "^(db|mailer)\.php$">
+    Require all denied
+</FilesMatch>

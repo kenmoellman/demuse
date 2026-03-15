@@ -284,6 +284,59 @@ void mariadb_cleanup(void)
 }
 
 /* ============================================================================
+ * SINGLE-KEY CONFIG FETCH
+ * ============================================================================ */
+
+/*
+ * mariadb_config_get_str - Fetch a single STR config value live from database
+ *
+ * Queries the config table for the given key and returns the value.
+ * The returned string is allocated via SAFE_MALLOC. Caller must SMART_FREE.
+ *
+ * RETURNS: Newly allocated string on success, NULL if not found or error
+ */
+char *mariadb_config_get_str(const char *key)
+{
+    MYSQL_RES *result;
+    MYSQL_ROW row;
+    char escaped_key[129];
+    char query[256];
+    char *value = NULL;
+
+    if (!key || !*key || !mariadb_is_connected()) {
+        return NULL;
+    }
+
+    mysql_real_escape_string(mariadb_conn, escaped_key, key,
+                             (unsigned long)strlen(key));
+
+    snprintf(query, sizeof(query),
+             "SELECT config_value FROM config WHERE config_key = '%s'",
+             escaped_key);
+
+    if (mysql_query(mariadb_conn, query)) {
+        fprintf(stderr, "MariaDB: config_get_str query failed: %s\n",
+                mysql_error(mariadb_conn));
+        return NULL;
+    }
+
+    result = mysql_store_result(mariadb_conn);
+    if (!result) {
+        return NULL;
+    }
+
+    row = mysql_fetch_row(result);
+    if (row && row[0]) {
+        size_t len = strlen(row[0]);
+        SAFE_MALLOC(value, char, len + 1);
+        memcpy(value, row[0], len + 1);
+    }
+
+    mysql_free_result(result);
+    return value;
+}
+
+/* ============================================================================
  * ARRAY CONFIG OPERATIONS
  * ============================================================================ */
 

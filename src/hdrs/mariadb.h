@@ -114,6 +114,23 @@ int mariadb_config_load_array(const char *prefix, char ***out_array,
 int mariadb_config_save_array(const char *prefix, char **array, int count);
 
 /*
+ * mariadb_config_get_str - Fetch a single STR config value live from database
+ *
+ * Queries the config table for the given key and returns the value.
+ * Unlike mariadb_config_load() which bulk-loads into globals, this fetches
+ * directly from the database each time, so changes take effect immediately
+ * without a server restart.
+ *
+ * The returned string is allocated via SAFE_MALLOC. Caller must SMART_FREE.
+ *
+ * PARAMETERS:
+ *   key - Config key name (e.g. "welcome_msg")
+ *
+ * RETURNS: Newly allocated string on success, NULL if not found or error
+ */
+char *mariadb_config_get_str(const char *key);
+
+/*
  * mariadb_is_connected - Check if MariaDB connection is active
  *
  * RETURNS: 1 if connected, 0 if not
@@ -164,6 +181,8 @@ static inline int mariadb_config_save_array(const char *prefix __attribute__((un
                                              char **array __attribute__((unused)),
                                              int count __attribute__((unused)))
 { return -1; }
+static inline char *mariadb_config_get_str(const char *key __attribute__((unused)))
+{ return NULL; }
 static inline int mariadb_is_connected(void) { return 0; }
 static inline void *mariadb_get_connection(void) { return NULL; }
 static inline void mariadb_cleanup(void) { }
