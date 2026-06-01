@@ -147,8 +147,8 @@ void connect_message(struct descriptor_data *d, char *filename, int direct)
 /* Parse connection command into components */
 void parse_connect(const char *msg, char *command, char *user, char *pass)
 {
-    const char *p;
     char *out;
+    size_t n;
 
     if (!msg || !command || !user || !pass) {
         return;
@@ -164,10 +164,20 @@ void parse_connect(const char *msg, char *command, char *user, char *pass)
         msg++;
     }
 
-    /* Extract command */
+    /* Extract command.  Every caller passes MAX_COMMAND_LEN buffers, so
+     * bound the copy to that size: an over-length field is truncated and
+     * the remainder drained, never allowed to overrun the destination.
+     * (A token field can be attacker-controlled and arbitrarily long over
+     * the WebSocket path, where input lines are not pre-truncated.) */
     out = command;
+    n = 0;
     while (*msg && isascii(*msg) && !isspace(*msg)) {
-        *out++ = *msg++;
+        if (n < MAX_COMMAND_LEN - 1) {
+            *out++ = *msg++;
+            n++;
+        } else {
+            msg++;   /* keep scanning so the next field still parses */
+        }
     }
     *out = '\0';
 
@@ -176,10 +186,16 @@ void parse_connect(const char *msg, char *command, char *user, char *pass)
         msg++;
     }
 
-    /* Extract username */
+    /* Extract username (bounded, same rationale as the command field) */
     out = user;
+    n = 0;
     while (*msg && isascii(*msg) && !isspace(*msg)) {
-        *out++ = *msg++;
+        if (n < MAX_COMMAND_LEN - 1) {
+            *out++ = *msg++;
+            n++;
+        } else {
+            msg++;
+        }
     }
     *out = '\0';
 
@@ -188,10 +204,16 @@ void parse_connect(const char *msg, char *command, char *user, char *pass)
         msg++;
     }
 
-    /* Extract password */
+    /* Extract password (bounded, same rationale as the command field) */
     out = pass;
+    n = 0;
     while (*msg && isascii(*msg) && !isspace(*msg)) {
-        *out++ = *msg++;
+        if (n < MAX_COMMAND_LEN - 1) {
+            *out++ = *msg++;
+            n++;
+        } else {
+            msg++;
+        }
     }
     *out = '\0';
 }
@@ -329,6 +351,19 @@ void check_connect(struct descriptor_data *d, char *msg)
                           unparse_object(root, player)));
             queue_string(d,
                 "Your account has been locked. Contact an administrator.\n");
+            return;
+        }
+
+        /* Enforce maintenance mode.  When the operator raises
+         * maintenance_level, only players of that class or higher may
+         * connect.  The guest path and the (now-disabled) plaintext path
+         * both enforce this; the token path is the primary login route, so
+         * without this gate a registered player below the threshold could
+         * bypass a maintenance lockdown entirely. */
+        if (maintenance_level > 0 && *db[player].pows < maintenance_level) {
+            log_io(tprintf("%s refused token connection: maintenance level %d.",
+                          unparse_object(root, player), maintenance_level));
+            send_message_text(d, maintenance_msg, 0);
             return;
         }
 

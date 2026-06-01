@@ -241,9 +241,23 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 
 **Primary config files:**
 - `config/config.h` - Compile-time configuration (network options, features, limits)
-- `config/setup_mariadb.sql` - MariaDB table definitions (config, mail, board, board_read, help_topics, channels, channel_members, lockouts)
-- `config/defaults.sql` - Default configuration values (seeded on install)
+- `config/setup_mariadb.sql` - MariaDB schema (`CREATE TABLE IF NOT EXISTS` for `config`, `mail`, `board`, `channels`, `accounts`, `auth_tokens`, `rate_limit`, etc.). Re-run safely on upgrade to add any new tables.
+- `config/defaults.sql` - Default config values, all `INSERT IGNORE`. Re-run safely on upgrade to add any new defaults; operator-tuned rows are preserved (use `UPDATE` or `@config` to change a tuned value back).
 - `run/db/mariadb.conf` - MariaDB credentials (not in version control)
+
+**Upgrade workflow** (when pulling new code that adds tables or default config keys):
+```sh
+mysql -u demuse -p demuse < config/setup_mariadb.sql   # add any new tables
+mysql -u demuse -p demuse < config/defaults.sql        # add any new default rows
+cd src && make install                                 # rebuild netmuse
+```
+
+**Required after enabling the web auth flows:** set `web_url_base` to your
+canonical HTTPS URL (e.g. via `@config web_url_base https://demuse.example.com`
+or `UPDATE config ...`). When it is empty — the shipped default — account
+verification and password-reset emails are **silently not sent** (the request
+Host header is deliberately never used, to prevent host-header injection in the
+email links). Also configure the `smtp_*` values for outbound email.
 
 **Key configuration options in config.h:**
 - `MULTIHOME` - Multi-homed server support
@@ -296,6 +310,15 @@ Channels are stored in MariaDB with an in-memory cache for performance. The old 
 - ~~WebSocket connectivity (Phase 1a)~~ — DONE: libwebsockets integration, xterm.js web client, nginx proxy config, X-Forwarded-For real IP passthrough, idle boot crash fix
 - ~~Account authentication (Phase 1b)~~ — DONE: PHP web layer (register/verify/login), token-based auth, auto-player-creation, session takeover, DEMUSE_HOME env var, Apache vhost config
 - ~~Move powers/typenames/classnames arrays from config.h~~ — DEFERRED to Universe Project: these become per-universe configuration in MariaDB (different class names, type names, and power matrices per universe)
+
+**Security-review follow-ups (2026-06-01)** — deferred items from the recent account-auth/WebSocket hardening review (the critical overflow, maintenance-mode bypass, email-uniqueness, session hardening, rate_limit pruning, and web_url_base docs were already fixed):
+- Harden `web/mailer.php` `send_email()`: strip/reject CR/LF in `$to`/`$subject` (latent SMTP header injection; currently shielded only by caller validation) and fix leading-dot dot-stuffing
+- Make `web/db.php` `rate_limit_check()` first-insert race-safe: `INSERT ... ON DUPLICATE KEY UPDATE counter=counter+1` instead of a bare INSERT that can collide and fail open
+- Move `web/db.php` + `web/mailer.php` out of the web document root (or add an nginx deny block): `.htaccess` only protects them under Apache
+- Document in `config/defaults.sql` that `INSERT IGNORE` does NOT propagate a `config_type` correction for an existing key (the C loader silently ignores type-mismatched rows)
+- Rotate the CSRF token consistently and prune prior unconsumed `auth_tokens` for an account when a new one is issued in `web/login.php`
+- Re-sync this Future Work list with `MEMORY.md` (add the `demuse.conf` rename and C-side `DEMUSE_HOME` TODOs; remove the duplicated powers/typenames bullet above)
+- Add a clarifying comment to (or drop) the dead post-`SAFE_MALLOC` NULL-checks in `mariadb.c`/`websocket.c` (`safe_malloc` aborts on OOM, never returns NULL)
 
 ### Universe Project: Revert and Reimplement
 

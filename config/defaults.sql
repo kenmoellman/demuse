@@ -9,8 +9,17 @@
 -- Or via the installer:
 --   bash config/install.sh
 --
--- Uses INSERT ... ON DUPLICATE KEY UPDATE so it's safe to run multiple times.
--- Existing customized values will be overwritten!
+-- IDEMPOTENT / SAFE TO RE-RUN:
+-- All inserts use INSERT IGNORE, which silently skips a row whose
+-- (unique) key is already present. That means:
+--   * Fresh install — every default lands.
+--   * Upgrade run — only newly added defaults land; values an operator
+--     has tuned via @config or `UPDATE config ...` are preserved.
+--   * To wipe a tuned value back to its default, DELETE the row first
+--     (or run an explicit UPDATE) — re-running this file alone will
+--     not roll a customization back.
+--
+-- The default channel seeds at the bottom follow the same pattern.
 
 USE demuse;
 
@@ -18,7 +27,7 @@ USE demuse;
 -- STRING CONFIG VALUES
 -- ============================================================================
 
-INSERT INTO config (config_key, config_value, config_type) VALUES
+INSERT IGNORE INTO config (config_key, config_value, config_type) VALUES
 ('muse_name', 'YourMUSE', 'STR'),
 ('start_quota', '100', 'STR'),
 ('guest_prefix', 'Guest', 'STR'),
@@ -52,14 +61,28 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('smtp_server', 'smtp.gmail.com', 'STR'),
 ('smtp_username', 'your-game@gmail.com', 'STR'),
 ('smtp_password', 'your-app-password', 'STR'),
-('smtp_from', 'noreply@yourmud.com', 'STR')
-ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
+('smtp_from', 'noreply@yourmud.com', 'STR'),
+-- Comma-separated list of reverse-proxy IPs whose X-Forwarded-For header
+-- the WebSocket layer will trust. Connections from any other peer have
+-- their X-Forwarded-For ignored and the direct peer IP is used instead.
+-- Matching is an EXACT textual comparison against the address libwebsockets
+-- reports for the peer; IPv6 forms are NOT normalized, so list the proxy in
+-- the same form lws renders it (e.g. '::1', not '0:0:0:0:0:0:0:1', and an
+-- IPv4-mapped proxy as '::ffff:127.0.0.1'). A mismatch fails closed (XFF
+-- ignored) — safe, but it silently disables passthrough for that proxy.
+('trusted_proxies', '127.0.0.1,::1', 'STR'),
+-- Canonical base URL used in verification and password-reset emails, e.g.
+-- 'https://demuse.example.com'. MUST be set for account verification and
+-- password reset to work — when empty, those emails are silently NOT sent
+-- (forgot.php logs and skips). Never use the request Host header — it is
+-- attacker-controlled (host-header injection in outgoing email links).
+('web_url_base', '', 'STR');
 
 -- ============================================================================
 -- NUMERIC (int) CONFIG VALUES
 -- ============================================================================
 
-INSERT INTO config (config_key, config_value, config_type) VALUES
+INSERT IGNORE INTO config (config_key, config_value, config_type) VALUES
 ('allow_create', '0', 'NUM'),
 ('initial_credits', '2000', 'NUM'),
 ('allowance', '250', 'NUM'),
@@ -106,39 +129,35 @@ INSERT INTO config (config_key, config_value, config_type) VALUES
 ('email_cooldown', '60', 'NUM'),
 ('max_email_length', '4096', 'NUM'),
 ('smtp_port', '465', 'NUM'),
-('smtp_use_ssl', '1', 'NUM')
-ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
+('smtp_use_ssl', '1', 'NUM');
 
 -- ============================================================================
 -- DBREF (long) CONFIG VALUES
 -- ============================================================================
 
-INSERT INTO config (config_key, config_value, config_type) VALUES
+INSERT IGNORE INTO config (config_key, config_value, config_type) VALUES
 ('player_start', '30', 'REF'),
 ('guest_start', '25', 'REF'),
 ('default_room', '0', 'REF'),
-('root', '1', 'REF')
-ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
+('root', '1', 'REF');
 
 -- ============================================================================
 -- LONG CONFIG VALUES
 -- ============================================================================
 
-INSERT INTO config (config_key, config_value, config_type) VALUES
+INSERT IGNORE INTO config (config_key, config_value, config_type) VALUES
 ('default_idletime', '300', 'LNG'),
 ('guest_boot_time', '300', 'LNG'),
-('max_pennies', '1000000', 'LNG')
-ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
+('max_pennies', '1000000', 'LNG');
 
 -- ============================================================================
 -- PERMISSION DENIED MESSAGES (array: perm_messages-N)
 -- ============================================================================
 
-INSERT INTO config (config_key, config_value, config_type) VALUES
+INSERT IGNORE INTO config (config_key, config_value, config_type) VALUES
 ('perm_messages-1', 'Permission denied.', 'STR'),
 ('perm_messages-2', 'Ummm... no.', 'STR'),
-('perm_messages-3', 'Lemme think about that.. No.', 'STR')
-ON DUPLICATE KEY UPDATE config_value=VALUES(config_value), config_type=VALUES(config_type);
+('perm_messages-3', 'Lemme think about that.. No.', 'STR');
 
 -- ============================================================================
 -- HELP TOPICS AND NEWS - See config/help_seed.sql

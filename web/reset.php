@@ -9,6 +9,8 @@
 
 require_once __DIR__ . '/db.php';
 
+start_session();
+
 $error = '';
 $success = '';
 $token = $_GET['token'] ?? $_POST['token'] ?? '';
@@ -39,29 +41,59 @@ if (!$token) {
             $password = $_POST['password'] ?? '';
             $confirm  = $_POST['confirm'] ?? '';
 
-            if (strlen($password) < 8) {
+            /* CSRF — even though the reset token itself is unguessable
+             * and acts as a capability, a session-bound token defends
+             * against the case where a token is leaked (logs, browser
+             * history) and an attacker tries to submit a chosen
+             * password from the victim's browser. */
+            if (!csrf_check()) {
+                $error = 'Your session expired. Please reload the page and try again.';
+            }
+            /* Loose per-IP cap to slow bulk reset abuse. The token
+             * itself is single-use on success, so this mostly catches
+             * malformed retries. */
+            elseif (!rate_limit_check('reset_ip', client_ip(), 10, 3600)) {
+                $error = 'Too many attempts. Please try again later.';
+            }
+            elseif (strlen($password) < 8) {
                 $error = 'Password must be at least 8 characters.';
             } elseif ($password !== $confirm) {
                 $error = 'Passwords do not match.';
             } else {
-                /* Update password */
-                $hash = password_hash($password, PASSWORD_BCRYPT);
-                $stmt = $pdo->prepare(
-                    'UPDATE accounts SET password_hash = :h WHERE account_id = :a'
+                /* Atomically claim THIS reset token before applying the
+                 * change: delete it by token (requiring it to be unexpired)
+                 * and proceed only if exactly one row was removed. Two
+                 * concurrent submits of the same leaked token then cannot
+                 * both update the password — the loser sees rowCount() 0.
+                 * This mirrors the single-use guarantee of the C login-token
+                 * path, replacing the previous non-atomic validate-then-
+                 * delete-by-account flow. */
+                $claim = $pdo->prepare(
+                    'DELETE FROM password_reset_tokens
+                     WHERE token = :t AND expires_at > NOW()'
                 );
-                $stmt->execute([
-                    'h' => $hash,
-                    'a' => $row['account_id'],
-                ]);
+                $claim->execute(['t' => $token]);
 
-                /* Delete all reset tokens for this account */
-                $stmt = $pdo->prepare(
-                    'DELETE FROM password_reset_tokens WHERE account_id = :a'
-                );
-                $stmt->execute(['a' => $row['account_id']]);
+                if ($claim->rowCount() !== 1) {
+                    $error = 'Invalid or expired reset link. Please request a new one.';
+                    $valid_token = false;
+                } else {
+                    /* Update password */
+                    $hash = password_hash($password, PASSWORD_BCRYPT);
+                    $stmt = $pdo->prepare(
+                        'UPDATE accounts SET password_hash = :h WHERE account_id = :a'
+                    );
+                    $stmt->execute([
+                        'h' => $hash,
+                        'a' => $row['account_id'],
+                    ]);
 
-                $success = 'Password updated! You can now log in.';
-                $valid_token = false;
+                    /* Rotate the session on this privilege-changing event. */
+                    session_regenerate_id(true);
+
+                    $success = 'Password updated! You can now log in.';
+                    $valid_token = false;
+                }
             }
         }
     }
@@ -116,6 +148,7 @@ if (!$token) {
         <div class="links"><a href="login.php">Log in</a></div>
     <?php elseif ($valid_token): ?>
         <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
             <label for="password">New Password</label>
             <input type="password" id="password" name="password" required

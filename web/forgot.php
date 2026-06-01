@@ -10,13 +10,30 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/mailer.php';
 
+start_session();
+
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
 
-    if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    /* CSRF — refuse the POST if the hidden token does not match the
+     * session. */
+    if (!csrf_check()) {
+        $message = 'Your session expired. Please try again.';
+    }
+    /* Per-IP cap stops bulk reset-email floods. Per-email cap stops a
+     * single victim being mailbombed by their reset address. We use the
+     * same wording as the success path so the limit cannot be used to
+     * confirm whether an email is registered. */
+    elseif (!rate_limit_check('forgot_ip', client_ip(), 10, 3600)) {
+        $message = 'If an account with that email exists, a reset link has been sent.';
+    }
+    elseif (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $message = 'Please enter a valid email address.';
+    }
+    elseif (!rate_limit_check('forgot_email', strtolower($email), 3, 3600)) {
+        $message = 'If an account with that email exists, a reset link has been sent.';
     } else {
         $pdo = get_pdo();
 
@@ -29,36 +46,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $account = $stmt->fetch();
 
         if ($account) {
-            /* Delete any existing reset tokens for this account */
-            $stmt = $pdo->prepare(
-                'DELETE FROM password_reset_tokens WHERE account_id = :a'
-            );
-            $stmt->execute(['a' => $account['account_id']]);
+            /* Build the reset URL from the canonical web_url_base config.
+             * Never use $_SERVER['HTTP_HOST'] — it is attacker-controlled
+             * and was the cause of a host-header-injection finding.
+             * If web_url_base is unset we cannot produce a working link, so
+             * skip creating a reset-token row that could never be delivered
+             * (it would only accumulate) and surface the misconfiguration to
+             * the operator log instead. */
+            $base = get_web_url_base();
+            if ($base === null) {
+                error_log('deMUSE forgot: web_url_base config is unset; cannot send reset email');
+            } else {
+                /* Delete any existing reset tokens for this account */
+                $stmt = $pdo->prepare(
+                    'DELETE FROM password_reset_tokens WHERE account_id = :a'
+                );
+                $stmt->execute(['a' => $account['account_id']]);
 
-            /* Generate reset token (1-hour expiry) */
-            $token = bin2hex(random_bytes(32));
-            $stmt = $pdo->prepare(
-                'INSERT INTO password_reset_tokens (account_id, token, expires_at)
-                 VALUES (:a, :t, DATE_ADD(NOW(), INTERVAL 1 HOUR))'
-            );
-            $stmt->execute([
-                'a' => $account['account_id'],
-                't' => $token,
-            ]);
+                /* Generate reset token (1-hour expiry) */
+                $token = bin2hex(random_bytes(32));
+                $stmt = $pdo->prepare(
+                    'INSERT INTO password_reset_tokens (account_id, token, expires_at)
+                     VALUES (:a, :t, DATE_ADD(NOW(), INTERVAL 1 HOUR))'
+                );
+                $stmt->execute([
+                    'a' => $account['account_id'],
+                    't' => $token,
+                ]);
 
-            /* Send reset email */
-            $reset_url = (isset($_SERVER['HTTPS']) ? 'https' : 'http')
-                       . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost')
-                       . '/reset.php?token=' . urlencode($token);
+                $reset_url = $base . '/reset.php?token=' . urlencode($token);
 
-            $body = "Hello " . $account['username'] . ",\n\n"
-                  . "A password reset was requested for your deMUSE account.\n\n"
-                  . "Click the link below to set a new password:\n\n"
-                  . "$reset_url\n\n"
-                  . "This link expires in 1 hour.\n\n"
-                  . "If you did not request this, you can ignore this email.\n";
+                $body = "Hello " . $account['username'] . ",\n\n"
+                      . "A password reset was requested for your deMUSE account.\n\n"
+                      . "Click the link below to set a new password:\n\n"
+                      . "$reset_url\n\n"
+                      . "This link expires in 1 hour.\n\n"
+                      . "If you did not request this, you can ignore this email.\n";
 
-            send_email($email, 'deMUSE Password Reset', $body);
+                send_email($email, 'deMUSE Password Reset', $body);
+            }
         }
 
         /* Always show the same message (prevents email enumeration) */
@@ -114,6 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             Enter your email address and we'll send you a link to reset your password.
         </p>
         <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <label for="email">Email</label>
             <input type="email" id="email" name="email" required autofocus
                    autocomplete="email">

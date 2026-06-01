@@ -56,6 +56,8 @@ extern char *smtp_server;
 extern char *smtp_username;
 extern char *smtp_password;
 extern char *smtp_from;
+extern char *trusted_proxies;
+extern char *web_url_base;
 
 /* ============================================================================
  * NUMERIC (int) CONFIG VARIABLES

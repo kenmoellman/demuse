@@ -8,6 +8,9 @@
 *-old
 *-works
 *-saved
+# NFS "silly-rename" artifacts left when a still-open file is unlinked on an
+# NFS-backed mount (e.g. run/db/.nfs0000...). No-slash pattern matches at any depth.
+.nfs*
 run/logs/*
 !run/logs/.gitkeep
 bin/*

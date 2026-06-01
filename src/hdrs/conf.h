@@ -102,4 +102,6 @@ DO_NUM("smtp_use_ssl",smtp_use_ssl)
 DO_STR("smtp_username",smtp_username)
 DO_STR("smtp_password",smtp_password)
 DO_STR("smtp_from",smtp_from)
+DO_STR("trusted_proxies",trusted_proxies)
+DO_STR("web_url_base",web_url_base)
 

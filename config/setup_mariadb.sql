@@ -250,11 +250,24 @@ CREATE TABLE IF NOT EXISTS accounts (
   last_login    TIMESTAMP    NULL,
   is_verified   TINYINT(1)   NOT NULL DEFAULT 0,
   is_disabled   TINYINT(1)   NOT NULL DEFAULT 0,
-  UNIQUE INDEX idx_username (username)
+  UNIQUE INDEX idx_username (username),
+  UNIQUE INDEX idx_email (email)
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
   COMMENT='User accounts for web-based authentication';
+
+-- Upgrade path: installs created before idx_email need the constraint added.
+-- The web layer enforces email uniqueness only in application code, which
+-- leaves a TOCTOU window under concurrent registration; this UNIQUE index is
+-- the authoritative guard (MySQL permits multiple NULLs, which is fine since
+-- the column is nullable but the registration form always supplies a value).
+-- MariaDB's IF NOT EXISTS makes this idempotent / safe to re-run.
+-- NOTE: this ALTER fails if duplicate emails already exist — de-duplicate
+-- first, e.g.:
+--   SELECT email, COUNT(*) c FROM accounts WHERE email IS NOT NULL
+--     GROUP BY email HAVING c > 1;
+ALTER TABLE accounts ADD UNIQUE INDEX IF NOT EXISTS idx_email (email);
 
 CREATE TABLE IF NOT EXISTS email_verify_tokens (
   token_id    BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -309,6 +322,17 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci
   COMMENT='Password reset tokens requested via web interface';
+
+CREATE TABLE IF NOT EXISTS rate_limit (
+  rate_key     VARCHAR(128) NOT NULL COMMENT 'action:identifier (e.g. login:1.2.3.4)',
+  counter      INT UNSIGNED NOT NULL DEFAULT 0,
+  window_start TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (rate_key),
+  INDEX idx_window_start (window_start)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+  COMMENT='Rate-limit counters for web auth flows. A row is reset in place when its window slides forward but is never self-deleted; stale rows are pruned periodically by mariadb_auth_cleanup_expired() (DELETE WHERE window_start older than 1 day).';
 
 -- ============================================================================
 -- SEED DATA

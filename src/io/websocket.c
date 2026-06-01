@@ -78,6 +78,60 @@ static struct lws_protocols ws_protocols[] = {
 
 
 /* ============================================================================
+ * TRUSTED PROXY HELPERS
+ * ============================================================================
+ * X-Forwarded-For is only meaningful when the immediate peer is a known
+ * reverse proxy. Without that gate, any direct client of the WebSocket
+ * port could spoof their source IP by sending the header themselves —
+ * defeating IP-based lockouts, audit logs, and rate limits.
+ *
+ * The trusted_proxies config var is a comma-separated list of peer
+ * addresses (IPv4 or IPv6 textual form, exact match) that are allowed
+ * to set X-Forwarded-For. Defaults to "127.0.0.1,::1".
+ */
+
+static int is_trusted_proxy(const char *peer_ip)
+{
+    const char *list = trusted_proxies;
+    const char *p, *end;
+    size_t peer_len, entry_len;
+
+    if (!peer_ip || !*peer_ip || !list || !*list) {
+        return 0;
+    }
+    peer_len = strlen(peer_ip);
+
+    p = list;
+    while (*p) {
+        /* Skip leading separators and whitespace */
+        while (*p == ',' || *p == ' ' || *p == '\t') {
+            p++;
+        }
+        if (!*p) {
+            break;
+        }
+        /* Find end of this entry */
+        end = p;
+        while (*end && *end != ',') {
+            end++;
+        }
+        /* Trim trailing whitespace */
+        entry_len = (size_t)(end - p);
+        while (entry_len > 0 && (p[entry_len - 1] == ' '
+                                  || p[entry_len - 1] == '\t')) {
+            entry_len--;
+        }
+        if (entry_len == peer_len
+            && strncmp(p, peer_ip, peer_len) == 0) {
+            return 1;
+        }
+        p = end;
+    }
+    return 0;
+}
+
+
+/* ============================================================================
  * INITIALIZATION AND SHUTDOWN
  * ============================================================================ */
 
@@ -254,7 +308,11 @@ int websocket_write_output(struct descriptor_data *d)
         return 1;
     }
 
-    /* Allocate buffer with LWS_PRE padding */
+    /* Allocate buffer with LWS_PRE padding.  Kept as a direct safe_malloc()
+     * with an explicit (size_t) cast rather than the SAFE_MALLOC macro: this
+     * is a raw byte buffer of (LWS_PRE + total_len) bytes, and the cast avoids
+     * the signed->unsigned conversion warning the macro's count*sizeof form
+     * would emit here. */
     buf = (unsigned char *)safe_malloc(
         (size_t)(LWS_PRE + total_len), __FILE__, __LINE__);
     if (!buf) {
@@ -358,24 +416,30 @@ static int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
         struct descriptor_data *d;
         struct sockaddr_in addr;
         char addr_str[50];
+        char immediate_peer[50];
         char xff_buf[128];
         int fd;
 
-        /* Get peer address (direct connection IP) */
+        /* Get the actual TCP peer first — this is the IP we'll use unless
+         * the peer is a configured reverse proxy. */
         memset(&addr, 0, sizeof(addr));
-        lws_get_peer_simple(wsi, addr_str, sizeof(addr_str));
+        lws_get_peer_simple(wsi, immediate_peer, sizeof(immediate_peer));
+        strncpy(addr_str, immediate_peer, sizeof(addr_str) - 1);
+        addr_str[sizeof(addr_str) - 1] = '\0';
 
-        /* Check for X-Forwarded-For header from reverse proxy.
-         * If present, use the first (leftmost) IP as the real client. */
-        if (lws_hdr_copy(wsi, xff_buf, sizeof(xff_buf),
-                         WSI_TOKEN_X_FORWARDED_FOR) > 0) {
+        /* Honor X-Forwarded-For only when the immediate peer is a
+         * configured reverse proxy. Without this gate, a direct client
+         * could spoof an arbitrary source IP by sending the header. */
+        if (is_trusted_proxy(immediate_peer)
+            && lws_hdr_copy(wsi, xff_buf, sizeof(xff_buf),
+                            WSI_TOKEN_X_FORWARDED_FOR) > 0) {
             /* X-Forwarded-For may contain: "client, proxy1, proxy2"
-             * Extract just the first IP (the original client) */
+             * Extract just the first IP (the original client). */
             char *comma = strchr(xff_buf, ',');
             if (comma) {
                 *comma = '\0';
             }
-            /* Trim whitespace */
+            /* Trim leading whitespace */
             char *p = xff_buf;
             while (*p == ' ') p++;
             if (*p) {
@@ -479,7 +543,7 @@ static int ws_callback(struct lws *wsi, enum lws_callback_reasons reason,
         d->last_time = now;
 
         /* Copy to null-terminated string */
-        text = (char *)safe_malloc(len + 1, __FILE__, __LINE__);
+        SAFE_MALLOC(text, char, len + 1);
         if (!text) {
             break;
         }

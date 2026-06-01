@@ -54,6 +54,8 @@ char *smtp_server = NULL;
 char *smtp_username = NULL;
 char *smtp_password = NULL;
 char *smtp_from = NULL;
+char *trusted_proxies = NULL;
+char *web_url_base = NULL;
 
 /* ============================================================================
  * NUMERIC (int) CONFIG VARIABLES

@@ -31,15 +31,24 @@ if (!$token) {
     if (!$row) {
         $error = 'Invalid or expired verification link. Please register again.';
     } else {
-        /* Mark account as verified */
-        $stmt = $pdo->prepare('UPDATE accounts SET is_verified = 1 WHERE account_id = :a');
-        $stmt->execute(['a' => $row['account_id']]);
+        /* Atomically claim this verification token (delete by token,
+         * requiring it unexpired) before marking the account verified, so a
+         * token is consumed exactly once — mirroring the login-token path and
+         * replacing the previous validate-then-delete-by-account flow. */
+        $claim = $pdo->prepare(
+            'DELETE FROM email_verify_tokens WHERE token = :t AND expires_at > NOW()'
+        );
+        $claim->execute(['t' => $token]);
 
-        /* Delete all verification tokens for this account */
-        $stmt = $pdo->prepare('DELETE FROM email_verify_tokens WHERE account_id = :a');
-        $stmt->execute(['a' => $row['account_id']]);
+        if ($claim->rowCount() !== 1) {
+            $error = 'Invalid or expired verification link. Please register again.';
+        } else {
+            /* Mark account as verified */
+            $stmt = $pdo->prepare('UPDATE accounts SET is_verified = 1 WHERE account_id = :a');
+            $stmt->execute(['a' => $row['account_id']]);
 
-        $success = 'Your account has been verified! You can now log in.';
+            $success = 'Your account has been verified! You can now log in.';
+        }
     }
 }
 ?>

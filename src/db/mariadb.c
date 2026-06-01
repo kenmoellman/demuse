@@ -631,10 +631,17 @@ int mariadb_config_load(void)
  */
 int mariadb_config_save(const char *key, const char *value, const char *type)
 {
-    char query[2048];
-    char escaped_key[129];
-    char escaped_value[513];
-    char escaped_type[9];
+    /* config_value is a TEXT column with effectively unlimited length.
+     * mysql_real_escape_string can grow the input by up to 2x, so the
+     * escape buffer and the query buffer must be sized from the actual
+     * input length — a fixed stack buffer here would overflow on any
+     * value larger than ~256 bytes (e.g. welcome_msg, motd_msg). */
+    char escaped_key[129];   /* config_key VARCHAR(64): 2*64 + 1 */
+    char escaped_type[9];    /* config_type ENUM: 2*4 + 1 */
+    char *escaped_value = NULL;
+    char *query = NULL;
+    size_t value_len, escape_buf_len, query_len;
+    int ok = 0;
 
     if (!mariadb_is_connected()) {
         return 0;
@@ -644,15 +651,28 @@ int mariadb_config_save(const char *key, const char *value, const char *type)
         return 0;
     }
 
-    /* Escape input values to prevent SQL injection */
+    value_len = strlen(value);
+    escape_buf_len = value_len * 2 + 1;
+    /* Query template ~256 bytes + escaped_key + escaped_type +
+     * escaped_value twice + slack. */
+    query_len = 256 + sizeof(escaped_key) + sizeof(escaped_type)
+              + (escape_buf_len * 2);
+
+    SAFE_MALLOC(escaped_value, char, escape_buf_len);
+    SAFE_MALLOC(query, char, query_len);
+    if (!escaped_value || !query) {
+        log_error("MariaDB: config save allocation failed");
+        goto done;
+    }
+
     mysql_real_escape_string(mariadb_conn, escaped_key, key,
                              (unsigned long)strlen(key));
     mysql_real_escape_string(mariadb_conn, escaped_value, value,
-                             (unsigned long)strlen(value));
+                             (unsigned long)value_len);
     mysql_real_escape_string(mariadb_conn, escaped_type, type,
                              (unsigned long)strlen(type));
 
-    snprintf(query, sizeof(query),
+    snprintf(query, query_len,
              "INSERT INTO config (config_key, config_value, config_type, updated_at) "
              "VALUES ('%s', '%s', '%s', NOW()) "
              "ON DUPLICATE KEY UPDATE config_value='%s', config_type='%s', updated_at=NOW()",
@@ -662,10 +682,15 @@ int mariadb_config_save(const char *key, const char *value, const char *type)
     if (mysql_query(mariadb_conn, query)) {
         log_error(tprintf("MariaDB: config save failed for '%s': %s",
                           key, mysql_error(mariadb_conn)));
-        return 0;
+        goto done;
     }
 
-    return 1;
+    ok = 1;
+
+done:
+    if (escaped_value) SMART_FREE(escaped_value);
+    if (query) SMART_FREE(query);
+    return ok;
 }
 
 /*

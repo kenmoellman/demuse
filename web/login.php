@@ -8,7 +8,7 @@
 
 require_once __DIR__ . '/db.php';
 
-session_start();
+start_session();
 
 $error = '';
 $token = null;
@@ -19,9 +19,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $connect_via = $_POST['connect_via'] ?? 'websocket';
 
-    if (!$username || !$password) {
+    /* CSRF — refuse the POST if the hidden token does not match the
+     * session. */
+    if (!csrf_check()) {
+        $error = 'Your session expired. Please try again.';
+    }
+
+    /* Rate limit by IP and by username. The per-IP cap stops blanket
+     * brute-force; the per-username cap stops distributed brute-force
+     * focused on one account. Both windows are 15 minutes. */
+    if (!$error && !rate_limit_check('login_ip', client_ip(), 10, 900)) {
+        $error = 'Too many login attempts. Please try again later.';
+    }
+    if (!$error && $username !== ''
+        && !rate_limit_check('login_user', strtolower($username), 5, 900)) {
+        /* Identical message to the IP cap so the rate-limit doesn't
+         * leak which dimension fired. */
+        $error = 'Too many login attempts. Please try again later.';
+    }
+
+    if (!$error && (!$username || !$password)) {
         $error = 'Please enter your username and password.';
-    } else {
+    }
+
+    if (!$error) {
         $pdo = get_pdo();
 
         /* Look up account */
@@ -56,6 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             /* Update last login time */
             $stmt = $pdo->prepare('UPDATE accounts SET last_login = NOW() WHERE account_id = :a');
             $stmt->execute(['a' => $account['account_id']]);
+
+            /* Rotate the session on this privilege-changing event: a new
+             * session ID defeats fixation, and minting a fresh CSRF token
+             * keeps the two consistent. Safe here — no output yet. */
+            session_regenerate_id(true);
+            unset($_SESSION['csrf_token']);
         }
     }
 }
@@ -135,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         <form method="post">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrf_token()) ?>">
             <label for="username">Username</label>
             <input type="text" id="username" name="username" required
                    value="<?= htmlspecialchars($username ?? '') ?>"

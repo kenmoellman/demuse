@@ -37,8 +37,16 @@
 /*
  * mariadb_auth_validate_token - Validate and consume a one-time login token
  *
- * Looks up the token in auth_tokens. If found, unexpired, and unconsumed,
- * deletes the token row and returns the associated account_id.
+ * Atomically claims the token by flipping consumed 0 -> 1 in a single
+ * UPDATE keyed on (token, consumed=0, expires_at>NOW()). The row-level
+ * write lock means only one concurrent caller can flip the flag; losers
+ * see mysql_affected_rows() == 0 and bail out, preventing token replay.
+ *
+ * Once the row is claimed, the account_id is safe to fetch — no other
+ * caller can win a second SELECT against this token. The DELETE that
+ * follows is bookkeeping; even if it fails, the token is no longer
+ * usable because consumed=1 is now persistent and the validity gate
+ * also checks consumed=0.
  *
  * RETURNS: account_id on success, 0 on failure
  */
@@ -51,7 +59,14 @@ long mariadb_auth_validate_token(const char *token)
     char query[512];
     long account_id = 0;
 
-    if (!token || !*token) {
+    /* Reject anything that cannot be a valid token BEFORE escaping it.
+     * auth_tokens.token is VARCHAR(64), so a longer string can never
+     * match a row anyway — and, critically, escaped_token[129] is sized
+     * for 2*64+1.  mysql_real_escape_string() can write up to
+     * 2*strlen(token)+1 bytes, so without this length gate an
+     * unauthenticated client sending "connect token:<long string>" would
+     * smash this fixed stack buffer (remote pre-auth overflow). */
+    if (!token || !*token || strlen(token) > 64) {
         return 0;
     }
 
@@ -63,14 +78,34 @@ long mariadb_auth_validate_token(const char *token)
     mysql_real_escape_string(conn, escaped_token, token,
                              (unsigned long)strlen(token));
 
-    /* Find valid, unexpired, unconsumed token */
+    /* Atomic claim: flip consumed 0 -> 1 only if token is still valid.
+     * The row-level lock InnoDB takes here serializes concurrent
+     * validators — exactly one wins per token. */
     snprintf(query, sizeof(query),
-             "SELECT account_id FROM auth_tokens "
+             "UPDATE auth_tokens SET consumed = 1 "
              "WHERE token = '%s' AND consumed = 0 AND expires_at > NOW()",
              escaped_token);
 
     if (mysql_query(conn, query)) {
-        fprintf(stderr, "MariaDB auth: token query failed: %s\n",
+        fprintf(stderr, "MariaDB auth: token claim failed: %s\n",
+                mysql_error(conn));
+        return 0;
+    }
+
+    /* If we didn't win the race (or the token is invalid/expired),
+     * bail out without revealing anything. */
+    if (mysql_affected_rows(conn) != 1) {
+        return 0;
+    }
+
+    /* Token is now atomically claimed by us; safe to read the account. */
+    snprintf(query, sizeof(query),
+             "SELECT account_id FROM auth_tokens "
+             "WHERE token = '%s' AND consumed = 1",
+             escaped_token);
+
+    if (mysql_query(conn, query)) {
+        fprintf(stderr, "MariaDB auth: token lookup failed: %s\n",
                 mysql_error(conn));
         return 0;
     }
@@ -87,7 +122,9 @@ long mariadb_auth_validate_token(const char *token)
     mysql_free_result(result);
 
     if (account_id > 0) {
-        /* Consume the token — delete it so it can't be reused */
+        /* Bookkeeping delete — the token is already consumed; this
+         * just keeps the table tidy until the periodic cleanup runs.
+         * Failure here does not affect correctness. */
         snprintf(query, sizeof(query),
                  "DELETE FROM auth_tokens WHERE token = '%s'",
                  escaped_token);
@@ -122,6 +159,15 @@ void mariadb_auth_cleanup_expired(void)
     /* Clean up expired password reset tokens */
     mysql_query(conn,
         "DELETE FROM password_reset_tokens WHERE expires_at < NOW()");
+
+    /* Prune stale rate-limit rows.  rate_limit_check() only ever inserts
+     * or resets a counter in place, so without this sweep the table grows
+     * unbounded (one permanent row per distinct IP / username / email ever
+     * seen).  One day comfortably exceeds the longest active window
+     * (currently 1 hour), so this never drops a row an in-flight limit
+     * still relies on.  idx_window_start makes the range scan cheap. */
+    mysql_query(conn,
+        "DELETE FROM rate_limit WHERE window_start < NOW() - INTERVAL 1 DAY");
 }
 
 /* ============================================================================
